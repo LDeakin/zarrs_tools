@@ -1,6 +1,6 @@
 [package]
 name = "zarrs_tools"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Lachlan Deakin <ljdgit@gmail.com>"]
 edition = "2021"
 rust-version = "1.70"
@@ -22,7 +22,7 @@ netcdf = { version = "0.8.3", optional = true, features = ["static"] }
 rayon = "1.8.0"
 serde_json = "1.0.107"
 tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
-zarrs = { version = "0.7.0", features = ["async"] } # , features = ["bitround", "zfp"]
+zarrs = { version = "0.7.1", features = ["async"] } # , features = ["bitround", "zfp"]
 
 [[bin]]
 name = "zarrs_ncvar2zarr"
