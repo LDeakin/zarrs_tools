@@ -19,7 +19,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     metadata::Metadata,
-    storage::{store::FilesystemStore, WritableStorageTraits},
+    storage::{store::FilesystemStore, ReadableWritableStorageTraits},
 };
 
 #[derive(Parser)]
@@ -485,7 +485,7 @@ pub fn get_array_builder_reencode<TStorage>(
     array_builder
 }
 
-pub fn do_reencode<TStorageOut: WritableStorageTraits>(
+pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits>(
     array_in: &Array<FilesystemStore>,
     array_out: &Array<TStorageOut>,
     validate: bool,
