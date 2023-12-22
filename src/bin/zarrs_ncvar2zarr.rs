@@ -19,8 +19,8 @@ use zarrs::{
     metadata::Metadata,
     storage::store::FilesystemStore,
     storage::{
-        store::{MemoryStore, WritableStore},
-        StorePrefix, WritableStorageTraits,
+        store::{MemoryStore, ReadableWritableStore},
+        ReadableWritableStorageTraits, StorePrefix,
     },
 };
 
@@ -66,7 +66,7 @@ struct Cli {
     out: PathBuf,
 }
 
-fn ncfiles_to_array<TStore: WritableStorageTraits + ?Sized>(
+fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized>(
     nc_paths: &[PathBuf],
     offsets: &[u64],
     variable: &str,
@@ -268,7 +268,7 @@ fn main() {
 
     // Create storage
     let path_out = cli.out.as_path();
-    let store: WritableStore = if cli.memory_test {
+    let store: ReadableWritableStore = if cli.memory_test {
         Arc::new(MemoryStore::new())
     } else {
         Arc::new(FilesystemStore::new(path_out).unwrap())
