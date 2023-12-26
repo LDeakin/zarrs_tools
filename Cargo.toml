@@ -29,9 +29,9 @@ zarrs = { version = "0.8.0", features = ["async", "object_store"] }
 name = "zarrs_ncvar2zarr"
 required-features = ["ncvar2zarr"]
 
-[patch.crates-io]
+# [patch.crates-io]
 # zarrs = { path = "../zarrs" }
-zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
+# zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
 
 # [profile.release]
 # debug = 1
