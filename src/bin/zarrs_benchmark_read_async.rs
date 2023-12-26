@@ -2,7 +2,10 @@ use std::{sync::Arc, time::SystemTime};
 
 use clap::Parser;
 use futures::{stream::FuturesUnordered, FutureExt, StreamExt};
-use zarrs::{array_subset::ArraySubset, storage::AsyncReadableStorageTraits};
+use zarrs::{
+    array_subset::ArraySubset, storage::store::AsyncObjectStore,
+    storage::AsyncReadableStorageTraits,
+};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -19,9 +22,9 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    let storage = Arc::new(zarrs::storage::store::AsyncFilesystemStore::new(
-        args.path.clone(),
-    )?);
+    let storage = Arc::new(AsyncObjectStore::new(
+        object_store::local::LocalFileSystem::new_with_prefix(args.path.clone())?,
+    ));
     let array = zarrs::array::Array::async_new(storage.clone(), "/").await?;
     println!("{:#?}", array.metadata());
 

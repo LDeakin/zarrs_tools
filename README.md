@@ -17,8 +17,6 @@ See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/b
 
 ## Install
 
-Consider compiling with `RUSTFLAGS="-C target-feature=+avx2,+sse2"` for improved performance
-
 ### From [crates.io](https://crates.io)
 ```bash
 cargo install zarrs_tools
@@ -27,6 +25,21 @@ cargo install zarrs_tools
 ### From [source](https://github.com/LDeakin/zarrs_tools)
 ```bash
 cargo install --path .
+```
+
+### Enabling SIMD intrinsics
+Encoding and decoding performance may be improved with `avx2`/`sse2` enabled (if supported).
+
+This can be enabled by compiling with either of:
+ - `RUSTFLAGS="-C target-cpu=native"`
+ - `RUSTFLAGS="-C target-feature=+avx2,+sse2"`
+
+### Enabling non-default `zarrs` codecs
+Non-default `zarrs` codecs (see [`zarrs` crate features](https://docs.rs/zarrs/latest/zarrs/#crate-features)) can be enabled by passing them as feature flags.
+
+For example:
+```bash
+cargo install zarrs_tools --features zarrs/bitround,zarrs/zfp
 ```
 
 ## Licence
