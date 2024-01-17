@@ -102,11 +102,11 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized>(
         let mut buf = vec![0u8; array.data_type().size() * array_subset.num_elements_usize()];
         // println!("{array_subset:?} {dim_sizes:?} {}", buf.len());
         nc_var
-            .raw_values(
+            .get_raw_values(
                 &mut buf,
                 dim_sizes
                     .iter()
-                    .map(|l| netcdf::extent::Extent::from(std::ops::RangeTo { end: *l }))
+                    .map(|l| netcdf::Extent::from(std::ops::RangeTo { end: *l }))
                     .collect::<Vec<_>>(),
             )
             .unwrap();
