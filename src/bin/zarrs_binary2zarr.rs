@@ -58,7 +58,7 @@ fn stdin_to_array(array: &Array<FilesystemStore>) -> usize {
         .unwrap()
         .expect("lowest indices should have a chunk shape");
     let block_shape_n = *chunk_shape.first().unwrap();
-    let n_blocks = (array_shape_n + block_shape_n - 1) / block_shape_n;
+    let n_blocks = (array_shape_n + block_shape_n.get() - 1) / block_shape_n.get();
 
     let style =
         ProgressStyle::with_template("[{elapsed_precise}] [{bar}] ({pos}/{len} blocks, ETA {eta})")
@@ -76,8 +76,8 @@ fn stdin_to_array(array: &Array<FilesystemStore>) -> usize {
             let idx = *idxm;
             *idxm += 1;
 
-            let start = idx * block_shape_n;
-            let end = std::cmp::min((idx + 1) * block_shape_n, array_shape_n);
+            let start = idx * block_shape_n.get();
+            let end = std::cmp::min((idx + 1) * block_shape_n.get(), array_shape_n);
 
             let mut startn: Vec<u64> = vec![start];
             startn.resize(dimensionality, 0);

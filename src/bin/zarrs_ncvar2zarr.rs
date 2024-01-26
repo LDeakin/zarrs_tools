@@ -118,7 +118,7 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized>(
                 .store_array_subset(&array_subset, buf.clone())
                 .unwrap();
             let buf_validate = array.retrieve_array_subset(&array_subset).unwrap();
-            assert!(buf.into_boxed_slice() == buf_validate);
+            assert!(buf == buf_validate);
         } else {
             array.store_array_subset(&array_subset, buf).unwrap();
         }

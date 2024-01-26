@@ -90,14 +90,18 @@ pub fn get_array_builder(
     dimension_names: Option<Vec<DimensionName>>,
 ) -> zarrs::array::ArrayBuilder {
     // Set the chunk/shard shape to the array shape where it is 0, otherwise make it <= array shape
-    // Also ensure shard shape is a multiple of chunk shape
-    let chunk_shape: Vec<u64> = std::iter::zip(&encoding_args.chunk_shape, array_shape)
-        .map(|(&c, &a)| if c == 0 { a } else { c })
-        .collect();
-    let shard_shape: Option<Vec<u64>> = encoding_args.shard_shape.as_ref().map(|shard_shape| {
+    let shard_shape = encoding_args.shard_shape.as_ref().map(|shard_shape| {
         std::iter::zip(shard_shape, array_shape)
             .map(|(&s, &a)| if s == 0 { a } else { std::cmp::min(s, a) })
-            .zip(&chunk_shape)
+            .collect::<Vec<_>>()
+    });
+
+    // Also ensure shard shape is a multiple of chunk shape
+    let chunk_shape = std::iter::zip(&encoding_args.chunk_shape, array_shape)
+        .map(|(&c, &a)| if c == 0 { a } else { c })
+        .collect::<Vec<_>>();
+    let shard_shape: Option<Vec<u64>> = shard_shape.map(|shard_shape| {
+        std::iter::zip(&shard_shape, &chunk_shape)
             .map(|(s, c)| {
                 // the shard shape must be a multiple of the chunk shape
                 c * ((s + c - 1) / c)
@@ -109,18 +113,6 @@ pub fn get_array_builder(
     let block_shape = shard_shape
         .as_ref()
         .map_or(&chunk_shape, |shard_shape| shard_shape);
-
-    // Set the shard shape to the array shape where it is 0, otherwise make it <= array shape
-    let shard_shape: Option<Vec<u64>> = encoding_args.shard_shape.as_ref().map(|shard_shape| {
-        std::iter::zip(shard_shape, array_shape)
-            .map(|(&s, &a)| if s == 0 { a } else { std::cmp::min(s, a) })
-            .zip(&chunk_shape)
-            .map(|(s, c)| {
-                // the shard shape must be a multiple of the chunk shape
-                c * ((s + c - 1) / c)
-            })
-            .collect()
-    });
 
     // Get array to array codecs
     let array_to_array_codecs = encoding_args.array_to_array_codecs.as_ref().map_or_else(
@@ -182,7 +174,7 @@ pub fn get_array_builder(
     let mut array_builder = ArrayBuilder::new(
         array_shape.to_vec(),
         data_type,
-        block_shape.clone().into(),
+        block_shape.clone().try_into().unwrap(),
         fill_value,
     );
     array_builder.dimension_names(dimension_names);
@@ -199,7 +191,7 @@ pub fn get_array_builder(
             bytes_to_bytes_codecs,
         );
         array_builder.array_to_bytes_codec(Box::new(ShardingCodec::new(
-            chunk_shape.clone(),
+            chunk_shape.try_into().unwrap(),
             inner_codecs,
             index_codecs,
             sharding::ShardingIndexLocation::End,
@@ -293,7 +285,12 @@ pub fn get_array_builder_reencode<TStorage>(
         // println!("{sharding_configuration:#?}");
         let chunk_shape: Vec<u64> =
             serde_json::from_value(sharding_configuration["chunk_shape"].clone()).unwrap();
-        let shard_shape = array.chunk_shape(&vec![0; chunk_shape.len()]).unwrap();
+        let shard_shape = array
+            .chunk_shape(&vec![0; chunk_shape.len()])
+            .unwrap()
+            .iter()
+            .map(|i| i.get())
+            .collect::<Vec<_>>();
         let codecs: Vec<Metadata> =
             serde_json::from_value(sharding_configuration["codecs"].clone()).unwrap();
         let codec_chain = CodecChain::from_metadata(&codecs).unwrap();
@@ -308,7 +305,7 @@ pub fn get_array_builder_reencode<TStorage>(
             bytes_to_bytes_codecs,
         )
     } else {
-        let chunk_shape = array.chunk_grid_shape().unwrap();
+        let chunk_shape = array.chunk_grid_shape().unwrap().to_vec();
         let shard_shape = None;
         let array_to_array_codecs = array.codecs().array_to_array_codecs().to_vec();
         let array_to_bytes_codec = array.codecs().array_to_bytes_codec().clone();
@@ -366,7 +363,7 @@ pub fn get_array_builder_reencode<TStorage>(
         .map(|chunk_shape| {
             std::iter::zip(chunk_shape.as_slice(), array.shape())
                 .map(|(&c, &a)| if c == 0 { a } else { c })
-                .collect::<Vec<u64>>()
+                .collect::<Vec<_>>()
         })
         .unwrap_or(chunk_shape);
 
@@ -379,18 +376,18 @@ pub fn get_array_builder_reencode<TStorage>(
             .map_or(shard_shape, |shard_shape| {
                 let shard_shape = std::iter::zip(shard_shape, array.shape())
                     .map(|(&s, &a)| if s == 0 { a } else { std::cmp::min(s, a) })
-                    .collect();
+                    .collect::<Vec<_>>();
                 Some(shard_shape)
             });
 
     // Ensure shard shape is a multiple of the chunk shape
     let shard_shape: Option<Vec<u64>> = shard_shape.clone().map_or(shard_shape, |shard_shape| {
-        let shard_shape = std::iter::zip(&shard_shape, &chunk_shape)
+        let shard_shape = std::iter::zip(shard_shape.as_slice(), chunk_shape.as_slice())
             .map(|(s, c)| {
                 // the shard shape must be a multiple of the chunk shape
                 c * ((s + c - 1) / c)
             })
-            .collect();
+            .collect::<Vec<_>>();
         Some(shard_shape)
     });
 
@@ -459,7 +456,7 @@ pub fn get_array_builder_reencode<TStorage>(
     }
 
     if let Some(shard_shape) = shard_shape {
-        array_builder.chunk_grid(shard_shape.into());
+        array_builder.chunk_grid(shard_shape.try_into().unwrap());
         let index_codecs = CodecChain::new(
             vec![],
             Box::<BytesCodec>::default(),
@@ -471,7 +468,7 @@ pub fn get_array_builder_reencode<TStorage>(
             bytes_to_bytes_codecs,
         );
         array_builder.array_to_bytes_codec(Box::new(ShardingCodec::new(
-            chunk_shape,
+            chunk_shape.try_into().unwrap(),
             inner_codecs,
             index_codecs,
             sharding::ShardingIndexLocation::End,
@@ -522,17 +519,13 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits>(
                 if validate {
                     let bytes_clone = bytes.clone();
                     let start_write = SystemTime::now();
-                    array_out
-                        .store_chunk(&chunk_indices, bytes_clone.into_vec())
-                        .unwrap();
+                    array_out.store_chunk(&chunk_indices, bytes_clone).unwrap();
                     *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
                     let bytes_out = array_out.retrieve_chunk(&chunk_indices).unwrap();
                     assert!(bytes == bytes_out);
                 } else {
                     let start_write = SystemTime::now();
-                    array_out
-                        .store_chunk(&chunk_indices, bytes.into_vec())
-                        .unwrap();
+                    array_out.store_chunk(&chunk_indices, bytes).unwrap();
                     *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
                 }
                 pb.inc(1);
