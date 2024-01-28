@@ -1,6 +1,6 @@
 [package]
 name = "zarrs_tools"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Lachlan Deakin <ljdgit@gmail.com>"]
 edition = "2021"
 rust-version = "1.71"
@@ -28,6 +28,19 @@ zarrs = { version = "0.11", features = ["async", "object_store"] }
 [[bin]]
 name = "zarrs_ncvar2zarr"
 required-features = ["ncvar2zarr"]
+
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+[workspace.metadata.dist]
+cargo-dist-version = "0.8.1"
+ci = ["github"]
+installers = []
+targets = ["x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+pr-run-mode = "plan"
+all-features = true
+create-release = false
 
 # [patch.crates-io]
 # zarrs = { path = "../zarrs" }
