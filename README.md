@@ -1,4 +1,4 @@
-# zarrs_tools
+# zarrs_tools &emsp; [![build](https://github.com/LDeakin/zarrs_tools/actions/workflows/ci.yml/badge.svg)](https://github.com/LDeakin/zarrs_tools/actions/workflows/ci.yml) [![Latest Version](https://img.shields.io/crates/v/zarrs_tools.svg)](https://crates.io/crates/zarrs_tools)
 
 Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data with the [zarrs](https://github.com/LDeakin/zarrs) rust crate.
 
@@ -17,7 +17,7 @@ See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/b
 
 ## Install
 
-### From [crates.io](https://crates.io)
+### From [crates.io](https://crates.io/crates/zarrs_tools)
 ```bash
 cargo install zarrs_tools
 ```
