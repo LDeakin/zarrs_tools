@@ -12,7 +12,7 @@ tree --du -h tomoLoRes_nc
 └── [4.0M]  block00000001.nc
 ```
 
-With the following command, the image is encoded as a zarr array with the `sharding` codec with a *shard shape* of `(128, 1024, 1024)`
+With the following command, the image is encoded as a zarr array with the `sharding` codec with a *shard shape* of `(128, 480, 480)`
 - inner chunks in each shard have a *chunk shape* of `(32, 32, 32)`
 - inner chunks are compressed using the `blosc` codec
 

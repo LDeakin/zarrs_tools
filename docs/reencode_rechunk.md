@@ -10,8 +10,8 @@
 ```bash
 # Reencode with a chunk shape of [32, 32, 32], shard shape of [128, 1408, 1536], and zlib compression.
 zarrs_reencode \
---chunk-shape 32,32,32 `
---shard-shape 128,0,0 `
+--chunk-shape 32,32,32 \
+--shard-shape 128,0,0 \
 --bytes-to-bytes-codecs '[ { "name": "blosc", "configuration": { "cname": "zlib", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]' \
 array.zarr array_reencode.zarr
 ```

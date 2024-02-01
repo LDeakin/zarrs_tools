@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Use `cargo-dist` for releases
 
+### Fixed
+ - Fix typos/errors in various docs files
+
 ## [0.2.1] - 2024-01-26
 
 ### Changes

@@ -7,7 +7,8 @@
 - Ryzen 5900X
 - 64GB DDR4 3600MHz (16-19-19-39)
 - 2TB Samsung 990 Pro
-- `zarrs_tools` installed with `RUSTFLAGS="-C target-feature=+avx2,+sse2" cargo install --path .`
+- `zarrs_tools` installed with `RUSTFLAGS="-C target-cpu=native" cargo install --path .`
+  - zarrs_tools v0.1.0
 
 ## Read
 ```bash
@@ -37,7 +38,7 @@ zarrs_reencode -p 4  --bytes-to-bytes-codecs '[]' array.zarr array_copy.zarr
 ```bash
 Reencode array.zarr (1252.5632MB) to array_copy.zarr (1956.4475MB) in 1971.09ms
         read in ~956.72ms (5709.50MB decoded @ 5.97GB/s)
-        write in ~1014.37ms (5709.50MB encoded @ 5.63GB/s
+        write in ~1014.37ms (5709.50MB encoded @ 5.63GB/s)
 ```
 
 ## Rechunk
