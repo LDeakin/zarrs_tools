@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Use `cargo-dist` for releases
 
+### Changed
+ - Bump dependencies
+   - `zarrs` to 0.11.3
+
 ### Fixed
  - Fix typos/errors in various docs files
 
