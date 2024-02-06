@@ -34,13 +34,16 @@ inherits = "release"
 lto = "thin"
 
 [workspace.metadata.dist]
-cargo-dist-version = "0.8.1"
+cargo-dist-version = "0.9.0"
 ci = ["github"]
 installers = []
-targets = ["x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
 pr-run-mode = "plan"
 all-features = true
 create-release = false
+
+[workspace.metadata.dist.github-custom-runners]
+aarch64-apple-darwin = "macos-14"
 
 # [patch.crates-io]
 # zarrs = { path = "../zarrs" }
