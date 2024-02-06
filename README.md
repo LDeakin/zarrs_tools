@@ -2,6 +2,8 @@
 
 Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data with the [zarrs](https://github.com/LDeakin/zarrs) rust crate.
 
+**zarrs is experimental and in limited production use. Correctness issues with zarrs affecting past versions of zarrs_tools are [detailed here](https://docs.rs/zarrs/latest/zarrs/#correctness-issues-with-past-versions).**
+
 [Changelog (CHANGELOG.md)](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md)
 
 ## Tools

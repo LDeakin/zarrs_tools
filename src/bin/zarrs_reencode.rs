@@ -16,6 +16,12 @@ struct Args {
     /// The zarr array output directory. If unspecified, data is written to memory.
     path_out: String,
 
+    /// Ignore checksums.
+    ///
+    /// If set, checksum validation in codecs (e.g. crc32c) is skipped.
+    #[arg(long, default_value_t = false)]
+    ignore_checksums: bool,
+
     /// Validate written data.
     #[arg(long, default_value_t = false)]
     validate: bool,
@@ -31,6 +37,9 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
+
+    zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
+
     let storage_in =
         Arc::new(zarrs::storage::store::FilesystemStore::new(args.path_in.clone()).unwrap());
     let array_in = zarrs::array::Array::new(storage_in.clone(), "/").unwrap();

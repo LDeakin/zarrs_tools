@@ -18,6 +18,12 @@ struct Args {
     /// Number of parallel chunks.
     #[arg(long, short, default_value_t = 4)]
     parallel_chunks: usize,
+
+    /// Ignore checksums.
+    ///
+    /// If set, checksum validation in codecs (e.g. crc32c) is skipped.
+    #[arg(long, default_value_t = false)]
+    ignore_checksums: bool,
 }
 
 fn main() {
@@ -25,6 +31,8 @@ fn main() {
     let storage = Arc::new(zarrs::storage::store::FilesystemStore::new(args.path.clone()).unwrap());
     let array = zarrs::array::Array::new(storage.clone(), "/").unwrap();
     println!("{:#?}", array.metadata());
+
+    zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
 
     let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
 

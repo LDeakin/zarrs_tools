@@ -17,11 +17,20 @@ use zarrs::{
 struct Args {
     /// The zarr array directory.
     path: String,
+
+    /// Ignore checksums.
+    ///
+    /// If set, checksum validation in codecs (e.g. crc32c) is skipped.
+    #[arg(long, default_value_t = false)]
+    ignore_checksums: bool,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+
+    zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
+
     let storage = Arc::new(AsyncObjectStore::new(
         object_store::local::LocalFileSystem::new_with_prefix(args.path.clone())?,
     ));
