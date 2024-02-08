@@ -30,9 +30,9 @@ struct Args {
     #[arg(long, short, default_value_t = false)]
     verbose: bool,
 
-    /// Number of parallel chunks.
-    #[arg(long, short, default_value_t = 4)]
-    parallel_chunks: usize,
+    /// Number of concurrent chunks.
+    #[arg(long, default_value_t = 4)]
+    concurrent_chunks: usize,
 }
 
 fn main() {
@@ -58,7 +58,7 @@ fn main() {
     array_out.store_metadata().unwrap();
 
     let (duration, duration_read, duration_write, bytes_decoded) =
-        do_reencode(&array_in, &array_out, args.validate, args.parallel_chunks);
+        do_reencode(&array_in, &array_out, args.validate, args.concurrent_chunks);
     let bytes_decoded_gb = /* GB */bytes_decoded as f32 * 1e-9;
     println!(
         "Reencode {} ({:2}MB) to {} ({:2}MB) in {:.2}ms\n\tread in ~{:.2}ms ({:.2}MB decoded @ {:.2}GB/s)\n\twrite in ~{:.2}ms ({:.2}MB encoded @ {:.2}GB/s)",

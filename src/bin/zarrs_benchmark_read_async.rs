@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::SystemTime};
 
 use clap::Parser;
-use futures::{stream::FuturesUnordered, FutureExt, StreamExt};
+use futures::{FutureExt, StreamExt};
 use zarrs::{
     array_subset::ArraySubset, storage::store::AsyncObjectStore,
     storage::AsyncReadableStorageTraits,
@@ -17,6 +17,16 @@ use zarrs::{
 struct Args {
     /// The zarr array directory.
     path: String,
+
+    /// Number of concurrent chunks.
+    #[arg(long, default_value_t = 4)]
+    concurrent_chunks: usize,
+
+    /// Read the entire array in one operation.
+    ///
+    /// If set, `concurrent_chunks` is ignored.
+    #[arg(long, default_value_t = false)]
+    read_all: bool,
 
     /// Ignore checksums.
     ///
@@ -45,17 +55,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let chunk_indices = (0..chunks.shape().iter().product())
         .map(|chunk_index| zarrs::array::unravel_index(chunk_index, chunks_shape))
         .collect::<Vec<_>>();
-    let mut futures = chunk_indices
-        .iter()
-        .map(|chunk_indices| {
-            println!("Chunk/shard: {:?}", chunk_indices);
+    if args.read_all {
+        let subset = ArraySubset::new_with_shape(array.shape().to_vec());
+        bytes_decoded += array.async_retrieve_array_subset(&subset).await?.len();
+    } else {
+        let futures = chunk_indices.iter().map(|chunk_indices| {
+            // println!("Chunk/shard: {:?}", chunk_indices);
             array
                 .async_retrieve_chunk(chunk_indices)
                 .map(|bytes| bytes.map(|bytes| bytes.len()))
-        })
-        .collect::<FuturesUnordered<_>>();
-    while let Some(item) = futures.next().await {
-        bytes_decoded += item?;
+        });
+        let stream = futures::stream::iter(futures).buffer_unordered(args.concurrent_chunks);
+        let results = stream.collect::<Vec<_>>().await;
+        for result in results {
+            bytes_decoded += result?;
+        }
     }
     let duration = SystemTime::now().duration_since(start)?.as_secs_f32();
     println!(

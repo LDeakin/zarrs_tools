@@ -1,6 +1,7 @@
 use clap::Parser;
-use indicatif::{ParallelProgressIterator, ProgressStyle};
+use indicatif::{ProgressBar, ProgressStyle};
 use rayon::{iter::ParallelIterator, prelude::IntoParallelIterator};
+use rayon_iter_concurrent_limit::iter_concurrent_limit;
 use std::{io::Read, path::PathBuf, sync::atomic::AtomicUsize};
 use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
@@ -19,6 +20,10 @@ use zarrs::{
 struct Cli {
     #[command(flatten)]
     encoding: ZarrEncodingArgs,
+
+    /// Number of concurrent chunks writers.
+    #[arg(long, default_value_t = 4)]
+    concurrent_chunks: usize,
 
     /// Zarr data type. See https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#id11
     ///
@@ -47,7 +52,7 @@ struct Cli {
     // file: Vec<PathBuf>,
 }
 
-fn stdin_to_array(array: &Array<FilesystemStore>) -> usize {
+fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: usize) -> usize {
     let data_type_size = array.data_type().size();
     let dimensionality = array.chunk_grid().dimensionality();
     let array_shape = array.shape();
@@ -60,48 +65,49 @@ fn stdin_to_array(array: &Array<FilesystemStore>) -> usize {
     let block_shape_n = *chunk_shape.first().unwrap();
     let n_blocks = (array_shape_n + block_shape_n.get() - 1) / block_shape_n.get();
 
+    let bar = ProgressBar::new(n_blocks);
     let style =
         ProgressStyle::with_template("[{elapsed_precise}] [{bar}] ({pos}/{len} blocks, ETA {eta})")
             .unwrap();
+    bar.set_style(style);
 
     #[allow(clippy::mutex_integer)]
     let idxm = std::sync::Mutex::new(0u64);
     let bytes_read: AtomicUsize = 0.into();
-    let idxs = (0..n_blocks as usize).collect::<Vec<_>>();
-    idxs.into_par_iter()
-        .progress_with_style(style)
-        .map(|_| {
-            #[allow(clippy::mutex_integer)]
-            let mut idxm = idxm.lock().unwrap();
-            let idx = *idxm;
-            *idxm += 1;
+    let op = |_| {
+        #[allow(clippy::mutex_integer)]
+        let mut idxm = idxm.lock().unwrap();
+        let idx = *idxm;
+        bar.set_position(idx);
+        *idxm += 1;
 
-            let start = idx * block_shape_n.get();
-            let end = std::cmp::min((idx + 1) * block_shape_n.get(), array_shape_n);
+        let start = idx * block_shape_n.get();
+        let end = std::cmp::min((idx + 1) * block_shape_n.get(), array_shape_n);
 
-            let mut startn: Vec<u64> = vec![start];
-            startn.resize(dimensionality, 0);
-            let mut endn = vec![end];
-            endn.extend(array_shape.iter().skip(1));
-            let array_subset =
-                unsafe { ArraySubset::new_with_start_end_exc_unchecked(startn, endn) };
+        let mut startn: Vec<u64> = vec![start];
+        startn.resize(dimensionality, 0);
+        let mut endn = vec![end];
+        endn.extend(array_shape.iter().skip(1));
+        let array_subset = unsafe { ArraySubset::new_with_start_end_exc_unchecked(startn, endn) };
 
-            let bytes_len =
-                usize::try_from(array_subset.num_elements() * data_type_size as u64).unwrap();
-            let mut subset_bytes = vec![0; bytes_len];
-            std::io::stdin().read_exact(&mut subset_bytes).unwrap();
-            bytes_read.fetch_add(bytes_len, std::sync::atomic::Ordering::Relaxed);
+        let bytes_len =
+            usize::try_from(array_subset.num_elements() * data_type_size as u64).unwrap();
+        let mut subset_bytes = vec![0; bytes_len];
+        std::io::stdin().read_exact(&mut subset_bytes).unwrap();
+        bytes_read.fetch_add(bytes_len, std::sync::atomic::Ordering::Relaxed);
 
-            drop(idxm);
+        drop(idxm);
 
-            array
-                .store_array_subset(&array_subset, subset_bytes)
-                .unwrap();
-
-            // let subset_bytes_test = array.retrieve_array_subset(&array_subset).unwrap();
-            // assert_eq!(subset_bytes, subset_bytes_test);
-        })
-        .collect::<Vec<_>>();
+        array
+            .store_array_subset(&array_subset, subset_bytes)
+            .unwrap();
+    };
+    iter_concurrent_limit!(
+        concurrent_chunks,
+        (0..n_blocks as usize).into_par_iter(),
+        for_each,
+        op
+    );
     bytes_read.load(std::sync::atomic::Ordering::Relaxed)
 }
 
@@ -132,7 +138,7 @@ fn main() {
     // Read stdin to the array and write chunks/shards
     let start = std::time::Instant::now();
     // array.set_parallel_codecs(cli.shard_shape.is_some());
-    let bytes_read: usize = stdin_to_array(&array);
+    let bytes_read: usize = stdin_to_array(&array, cli.concurrent_chunks);
     let duration_s = start.elapsed().as_secs_f32();
 
     // Output stats
