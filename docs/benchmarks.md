@@ -9,116 +9,67 @@ Benchmark data is generated with `scripts/generate_benchmark_array.py` as follow
 ./scripts/generate_benchmark_array.py --compress --shard data/benchmark_compress_shard.zarr
 ```
 - Data type: `uint16`
-- Array shape: $1024^3$
+- Array shape: $1024\times2048\times2048$
 - Chunk/shard shape:
-  - ~~`--shard`~~: $32^3$
-  - `--shard`: $128\times1024\times1024$
-    - inner chunk shape: $32^3$
+  - Default: $32^3$
+  - `--shard`: $512^3$ with $32^3$ inner chunk shape
 - Bytes to bytes codec for chunks/inner chunks:
-  - ~~`--compress`~~: none
+  - Default: none
   - `--compress`: `blosclz` level 9 with bitshuffling
-    - compresses from `2.147GB` to `0.279GB`.
+    - compresses from `2.147GB` to `0.279GB`
+- Size on disk
+  - `data/benchmark.zarr`: 8.0G
+  - `data/benchmark_compress.zarr`: 1.4G
+  - `data/benchmark_compress_shard.zarr`: 1.1G
 
 ## Benchmark System
-- Ubuntu 22.04 (in Windows 11 WSL2)
 - Ryzen 5900X
 - 64GB DDR4 3600MHz (16-19-19-39)
 - 2TB Samsung 990 Pro
-- Rust 1.75.0
+- Ubuntu 22.04 (in Windows 11 WSL2, swap disabled, 24GB available memory)
+- Rust 1.76.0
 
 ## Implementation Versions Benchmarked
 - zarrs_tools v0.3.0 installed with `RUSTFLAGS="-C target-cpu=native" cargo install --path .`
 - tensorstore v0.1.53 installed with `pip install tensorstore`
 
 ## Comparative Benchmarks
-Measurements are from a best of 3 run. The disk cache is not cleared between runs.
- > TODO: Check benchmark equivalence between implementations, evaluate more implementations, automate running/table creation, switch to plots?
+ > TODO: Check benchmark equivalence between implementations, evaluate more implementations
 
-### Read (entire array)
+### Read Entire Array
 ```bash
-zarrs_benchmark_read_sync --read-all data/<array>.zarr
-```
-```bash
-zarrs_benchmark_read_async --read-all data/<array>.zarr
-```
-```bash
-./scripts/tensorstore_benchmark_read_async.py --read_all data/<array>.zarr
+python3 ./scripts/run_benchmark_read_all.py
 ```
 
-| Array                         | Zarrs (sync) | Zarrs (async) | Tensorstore |
-|----------------------------   |--------------|---------------|-------------|
-| benchmark.zarr                | 457.84ms     | 3835.24ms     | 611.25ms    |
-| benchmark_compress.zarr       | 427.76ms     | 3810.88ms     | 545.48ms    |
-| benchmark_compress_shard.zarr | 855.44ms     | 3594.28ms     | 563.19ms    |
+| Image                              |   Wall time (s)<br>zarrs<br>sync |   <br><br>async |   <br>tensorstore<br>async |   Memory usage (GB)<br>zarrs<br>sync |   <br><br>async |   <br>tensorstore<br>async |
+|:-----------------------------------|---------------------------------:|----------------:|---------------------------:|-------------------------------------:|----------------:|---------------------------:|
+| data/benchmark.zarr                |                             3    |           14.88 |                       3.29 |                                 8.41 |            8.4  |                       8.6  |
+| data/benchmark_compress.zarr       |                             2.84 |           17.36 |                       2.76 |                                 8.44 |            8.41 |                       8.53 |
+| data/benchmark_compress_shard.zarr |                             1.67 |            2.93 |                       2.66 |                                 8.63 |            8.63 |                       8.6  |
 
-### Read (chunk-by-chunk)
+
+### Read Chunk-By-Chunk
 ```bash
-zarrs_benchmark_read_sync -c <concurrency> data/<array>.zarr
-```
-```bash
-zarrs_benchmark_read_async -c <concurrency> data/<array>.zarr
-```
-```bash
-./scripts/tensorstore_benchmark_read_async.py --concurrent_chunks <concurrency> data/<array>.zarr
+python3 ./scripts/run_benchmark_read_chunks.py
 ```
 
-#### benchmark.zarr
-| Concurrent chunks | Zarrs (sync) | Zarrs (async) | Tensorstore |
-|-------------------|--------------|---------------|-------------|
-| 1                 | 225.52ms     | 2338.34ms     | 5763.46ms   |
-| 2                 | 122.65ms     | 1403.08ms     | 4911.54ms   |
-| 4                 |  80.71ms     | 1045.89ms     | 4456.76ms   |
-| 6                 |  65.98ms     | 1121.15ms     | 4369.20ms   |
-| 8                 |  63.22ms     | 1167.65ms     | 4295.48ms   |
-
-#### benchmark_compress.zarr
-| Concurrent chunks | Zarrs (sync) | Zarrs (async) | Tensorstore |
-|-------------------|--------------|---------------|-------------|
-| 1                 | 1423.97ms    | 3405.30ms     | 7027.45ms   |
-| 2                 |  730.95ms    | 2352.12ms     | 4487.39ms   |
-| 4                 |  407.31ms    | 2089.68ms     | 4637.75ms   |
-| 6                 |  272.29ms    | 2037.68ms     | 4477.85ms   |
-| 8                 |  231.69ms    | 2057.57ms     | 4659.14ms   |
-
-#### benchmark_compress_shard.zarr
-| Concurrent shards | Zarrs (sync) | Zarrs (async) | Tensorstore (async) |
-|-------------------|--------------|---------------|---------------------|
-| 1                 | 532.84ms     | 1584.01ms     | 573.81ms            |
-| 2                 | 386.09ms     | 1532.21ms     | 573.21ms            |
-| 4                 | 384.95ms     | 1493.33ms     | 601.14ms            |
-| 6                 | 383.70ms     | 1551.53ms     | 669.18ms            |
-| 8                 | 425.26ms     | 1512.71ms     | 689.08ms            |
-
-### Write (entire array)
- > TODO
-
-### Write (chunk-by-chunk)
- > TODO
-
-## Zarrs Benchmarks
-
-### Round Trip
-```bash
-zarrs_reencode --concurrent-chunks 8 data/benchmark.zarr data/benchmark_copy0.zarr
-zarrs_reencode --concurrent-chunks 8 data/benchmark_compress.zarr data/benchmark_compress_copy0.zarr
-zarrs_reencode --concurrent-chunks 4 data/benchmark_compress_shard.zarr data/benchmark_compress_shard_copy0.zarr
-```
-
-| Array                         | Concurrency | Read                 | Write               | Total    |
-|-------------------------------|-------------|----------------------|---------------------|----------|
-| benchmark.zarr                | 8           |  69.03ms (31.11GB/s) | 461.53ms (4.65GB/s) | 513.78ms |
-| benchmark_compress.zarr       | 8           | 256.17ms ( 8.38GB/s) | 516.23ms (4.16GB/s) | 772.39ms |
-| benchmark_compress_shard.zarr | 4           | 403.72ms ( 5.32GB/s) | 485.06ms (4.43GB/s) | 888.77ms |
-
-### Rechunk
-```bash
-zarrs_reencode --concurrent-chunks 8 --chunk-shape 32,32,32 --shard-shape 64,0,0 data/benchmark.zarr data/benchmark_copy1.zarr
-zarrs_reencode --concurrent-chunks 8 --chunk-shape 32,32,32 --shard-shape 64,0,0 data/benchmark_compress.zarr data/benchmark_compress_copy1.zarr
-zarrs_reencode --concurrent-chunks 4 --chunk-shape 32,32,32 --shard-shape 64,0,0 data/benchmark_compress_shard.zarr data/benchmark_compress_shard_copy1.zarr
-```
-
-| Array                         | Concurrency | Read                | Write               | Total     |
-|-------------------------------|-------------|---------------------|---------------------|-----------|
-| benchmark.zarr                | 8           | 455.04ms (4.72GB/s) | 594.05ms (3.61GB/s) | 1049.09ms |
-| benchmark_compress.zarr       | 8           | 521.12ms (4.12GB/s) | 476.53ms (4.51GB/s) |  977.65ms |
-| benchmark_compress_shard.zarr | 4           | 761.75ms (2.82GB/s) | 373.88ms (5.74GB/s) | 1135.63ms |
+| Image                              |   Concurrency |   Wall time (s)<br>zarrs<br>sync |   <br><br>async |   <br>tensorstore<br>async |   Memory usage (GB)<br>zarrs<br>sync |   <br><br>async |   <br>tensorstore<br>async |
+|:-----------------------------------|--------------:|---------------------------------:|----------------:|---------------------------:|-------------------------------------:|----------------:|---------------------------:|
+| data/benchmark.zarr                |             1 |                            25.23 |           55.17 |                      52.57 |                                 0.03 |            0.01 |                       0.51 |
+| data/benchmark.zarr                |             2 |                            14.45 |           32.84 |                      30.98 |                                 0.03 |            0.01 |                       0.52 |
+| data/benchmark.zarr                |             4 |                             7.87 |           18.28 |                      23.71 |                                 0.03 |            0.01 |                       0.51 |
+| data/benchmark.zarr                |             8 |                             4.32 |           10.67 |                      20.98 |                                 0.03 |            0.02 |                       0.52 |
+| data/benchmark.zarr                |            16 |                             2.71 |            8.03 |                      19.39 |                                 0.03 |            0.02 |                       0.52 |
+| data/benchmark.zarr                |            32 |                             2.52 |            8.22 |                      18.58 |                                 0.03 |            0.03 |                       0.53 |
+| data/benchmark_compress.zarr       |             1 |                            20.78 |           36.4  |                      46.78 |                                 0.03 |            0.02 |                       0.51 |
+| data/benchmark_compress.zarr       |             2 |                            12.47 |           19.71 |                      27.16 |                                 0.03 |            0.02 |                       0.52 |
+| data/benchmark_compress.zarr       |             4 |                             7.11 |           11.06 |                      22.32 |                                 0.03 |            0.02 |                       0.51 |
+| data/benchmark_compress.zarr       |             8 |                             3.82 |            7.29 |                      20.01 |                                 0.03 |            0.03 |                       0.52 |
+| data/benchmark_compress.zarr       |            16 |                             2.22 |            7.09 |                      18.72 |                                 0.04 |            0.04 |                       0.54 |
+| data/benchmark_compress.zarr       |            32 |                             2.18 |            6.82 |                      17.72 |                                 0.04 |            0.07 |                       0.54 |
+| data/benchmark_compress_shard.zarr |             1 |                             2.59 |            2.63 |                       2.71 |                                 0.37 |            0.4  |                       0.42 |
+| data/benchmark_compress_shard.zarr |             2 |                             1.76 |            1.77 |                       2.31 |                                 0.7  |            0.76 |                       0.56 |
+| data/benchmark_compress_shard.zarr |             4 |                             1.48 |            1.46 |                       2.31 |                                 1.29 |            1.24 |                       1.05 |
+| data/benchmark_compress_shard.zarr |             8 |                             1.41 |            1.47 |                       2.57 |                                 2.37 |            2.29 |                       1.41 |
+| data/benchmark_compress_shard.zarr |            16 |                             1.57 |            1.56 |                       2.85 |                                 4.34 |            3.99 |                       2.13 |
+| data/benchmark_compress_shard.zarr |            32 |                             1.54 |            1.76 |                       3.15 |                                 6.54 |            6.9  |                       3.46 

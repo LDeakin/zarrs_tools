@@ -21,12 +21,12 @@ See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/b
 
 ### From [crates.io](https://crates.io/crates/zarrs_tools)
 ```bash
-cargo install zarrs_tools
+cargo install zarrs_tools --all-features
 ```
 
 ### From [source](https://github.com/LDeakin/zarrs_tools)
 ```bash
-cargo install --path .
+cargo install --path .  --all-features
 ```
 
 ### Enabling SIMD intrinsics

@@ -3,8 +3,13 @@ use std::{sync::Arc, time::SystemTime};
 use clap::Parser;
 use futures::{FutureExt, StreamExt};
 use zarrs::{
-    array_subset::ArraySubset, storage::store::AsyncObjectStore,
-    storage::AsyncReadableStorageTraits,
+    array::{
+        codec::{ArrayCodecTraits, CodecOptionsBuilder},
+        concurrency::RecommendedConcurrency,
+    },
+    array_subset::ArraySubset,
+    config::global_config,
+    storage::{store::AsyncObjectStore, AsyncReadableStorageTraits},
 };
 
 #[derive(Parser, Debug)]
@@ -19,8 +24,8 @@ struct Args {
     path: String,
 
     /// Number of concurrent chunks.
-    #[arg(long, default_value_t = 4)]
-    concurrent_chunks: usize,
+    #[arg(long)]
+    concurrent_chunks: Option<usize>,
 
     /// Read the entire array in one operation.
     ///
@@ -41,11 +46,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
 
+    // let storage = Arc::new(AsyncOpendalStore::new({
+    //     let mut builder = opendal::services::Fs::default();
+    //     builder.root(&args.path.clone()); // FIXME: Absolute
+    //     Operator::new(builder)?.finish()
+    // }));
     let storage = Arc::new(AsyncObjectStore::new(
         object_store::local::LocalFileSystem::new_with_prefix(args.path.clone())?,
     ));
-    let array = zarrs::array::Array::async_new(storage.clone(), "/").await?;
-    println!("{:#?}", array.metadata());
+    let array = Arc::new(zarrs::array::Array::async_new(storage.clone(), "/").await?);
+    // println!("{:#?}", array.metadata());
 
     let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
     let chunks_shape = chunks.shape();
@@ -59,16 +69,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let subset = ArraySubset::new_with_shape(array.shape().to_vec());
         bytes_decoded += array.async_retrieve_array_subset(&subset).await?.len();
     } else {
-        let futures = chunk_indices.iter().map(|chunk_indices| {
-            // println!("Chunk/shard: {:?}", chunk_indices);
-            array
-                .async_retrieve_chunk(chunk_indices)
-                .map(|bytes| bytes.map(|bytes| bytes.len()))
-        });
-        let stream = futures::stream::iter(futures).buffer_unordered(args.concurrent_chunks);
-        let results = stream.collect::<Vec<_>>().await;
-        for result in results {
-            bytes_decoded += result?;
+        let chunk_representation =
+            array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
+        let concurrent_target = std::thread::available_parallelism().unwrap().get();
+        let (chunk_concurrent_limit, codec_concurrent_target) =
+            zarrs::array::concurrency::calc_concurrency_outer_inner(
+                concurrent_target,
+                &if let Some(concurrent_chunks) = args.concurrent_chunks {
+                    let concurrent_chunks =
+                        std::cmp::min(chunks.num_elements_usize(), concurrent_chunks);
+                    RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
+                } else {
+                    let concurrent_chunks = std::cmp::min(
+                        chunks.num_elements_usize(),
+                        global_config().chunk_concurrent_minimum(),
+                    );
+                    RecommendedConcurrency::new_minimum(concurrent_chunks)
+                },
+                &array
+                    .codecs()
+                    .recommended_concurrency(&chunk_representation)?,
+            );
+        let codec_options = CodecOptionsBuilder::new()
+            .concurrent_target(codec_concurrent_target)
+            .build();
+
+        let futures = chunk_indices
+            .into_iter()
+            .map(|chunk_indices| {
+                // println!("Chunk/shard: {:?}", chunk_indices);
+                let array = array.clone();
+                let codec_options = codec_options.clone();
+                async move {
+                    array
+                        .async_retrieve_chunk_opt(&chunk_indices, &codec_options)
+                        .map(|bytes| bytes.map(|bytes| bytes.len()))
+                        .await
+                }
+            })
+            .map(tokio::task::spawn);
+        let mut stream = futures::stream::iter(futures).buffer_unordered(chunk_concurrent_limit);
+        while let Some(item) = stream.next().await {
+            bytes_decoded += item.unwrap()?;
         }
     }
     let duration = SystemTime::now().duration_since(start)?.as_secs_f32();

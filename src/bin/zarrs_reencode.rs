@@ -16,6 +16,10 @@ struct Args {
     /// The zarr array output directory. If unspecified, data is written to memory.
     path_out: String,
 
+    /// Number of concurrent chunks.
+    #[arg(long)]
+    concurrent_chunks: Option<usize>,
+
     /// Ignore checksums.
     ///
     /// If set, checksum validation in codecs (e.g. crc32c) is skipped.
@@ -29,10 +33,6 @@ struct Args {
     /// Print verbose information, such as the array header.
     #[arg(long, short, default_value_t = false)]
     verbose: bool,
-
-    /// Number of concurrent chunks.
-    #[arg(long, default_value_t = 4)]
-    concurrent_chunks: usize,
 }
 
 fn main() {

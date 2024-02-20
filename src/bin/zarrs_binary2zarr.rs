@@ -6,11 +6,15 @@ use std::{io::Read, path::PathBuf, sync::atomic::AtomicUsize};
 use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
 use zarrs::{
-    array::{Array, DimensionName},
+    array::{
+        codec::{ArrayCodecTraits, CodecOptionsBuilder},
+        concurrency::RecommendedConcurrency,
+        Array, DimensionName,
+    },
     array_subset::ArraySubset,
+    config::global_config,
     metadata::Metadata,
-    storage::store::FilesystemStore,
-    storage::ReadableStorageTraits,
+    storage::{store::FilesystemStore, ReadableStorageTraits},
 };
 
 /// Convert an N-dimensional binary array from standard input to the Zarr V3 storage format.
@@ -21,9 +25,9 @@ struct Cli {
     #[command(flatten)]
     encoding: ZarrEncodingArgs,
 
-    /// Number of concurrent chunks writers.
-    #[arg(long, default_value_t = 4)]
-    concurrent_chunks: usize,
+    /// Number of concurrent chunk writers.
+    #[arg(long)]
+    concurrent_chunks: Option<usize>,
 
     /// Zarr data type. See https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#id11
     ///
@@ -52,7 +56,7 @@ struct Cli {
     // file: Vec<PathBuf>,
 }
 
-fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: usize) -> usize {
+fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: Option<usize>) -> usize {
     let data_type_size = array.data_type().size();
     let dimensionality = array.chunk_grid().dimensionality();
     let array_shape = array.shape();
@@ -70,6 +74,32 @@ fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: usize) -> u
         ProgressStyle::with_template("[{elapsed_precise}] [{bar}] ({pos}/{len} blocks, ETA {eta})")
             .unwrap();
     bar.set_style(style);
+
+    let n_blocks = usize::try_from(n_blocks).unwrap();
+
+    let chunk_representation = array
+        .chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])
+        .unwrap();
+    let concurrent_target = std::thread::available_parallelism().unwrap().get();
+    let (concurrent_chunks, codec_concurrent_target) =
+        zarrs::array::concurrency::calc_concurrency_outer_inner(
+            concurrent_target,
+            &if let Some(concurrent_chunks) = concurrent_chunks {
+                let concurrent_chunks = std::cmp::min(n_blocks, concurrent_chunks);
+                RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
+            } else {
+                let concurrent_chunks =
+                    std::cmp::min(n_blocks, global_config().chunk_concurrent_minimum());
+                RecommendedConcurrency::new_minimum(concurrent_chunks)
+            },
+            &array
+                .codecs()
+                .recommended_concurrency(&chunk_representation)
+                .unwrap(),
+        );
+    let codec_options = CodecOptionsBuilder::new()
+        .concurrent_target(codec_concurrent_target)
+        .build();
 
     #[allow(clippy::mutex_integer)]
     let idxm = std::sync::Mutex::new(0u64);
@@ -99,7 +129,7 @@ fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: usize) -> u
         drop(idxm);
 
         array
-            .store_array_subset(&array_subset, subset_bytes)
+            .store_array_subset_opt(&array_subset, subset_bytes, &codec_options)
             .unwrap();
     };
     iter_concurrent_limit!(
@@ -123,11 +153,9 @@ fn main() {
     let store = std::sync::Arc::new(FilesystemStore::new(path_out).unwrap());
 
     // Create array
-    let dimension_names = cli.dimension_names.map(|f| {
-        f.iter()
-            .map(|dimension_name| DimensionName::new(dimension_name))
-            .collect()
-    });
+    let dimension_names = cli
+        .dimension_names
+        .map(|f| f.iter().map(DimensionName::new).collect());
     let array_builder =
         get_array_builder(&cli.encoding, &cli.array_shape, data_type, dimension_names);
     let array = array_builder.build(store.clone(), "/").unwrap();
@@ -137,7 +165,6 @@ fn main() {
 
     // Read stdin to the array and write chunks/shards
     let start = std::time::Instant::now();
-    // array.set_parallel_codecs(cli.shard_shape.is_some());
     let bytes_read: usize = stdin_to_array(&array, cli.concurrent_chunks);
     let duration_s = start.elapsed().as_secs_f32();
 

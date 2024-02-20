@@ -27,7 +27,7 @@ async def tensorstore_benchmark_read_async(path, concurrent_chunks, read_all):
     print(dataset)
 
     domain_shape = dataset.domain.shape
-    chunk_shape = dataset.chunk_layout.write_chunk.shape # shard shape
+    chunk_shape = dataset.chunk_layout.write_chunk.shape # shard or chunk shape
 
     print("Domain shape", domain_shape)
     print("Chunk shape", chunk_shape)

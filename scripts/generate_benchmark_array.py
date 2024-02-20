@@ -20,11 +20,11 @@ def main(output_path, shard, compress):
         '--separator',
         '.',
         '--array-shape',
-        '1024,1024,1024',
+        '1024,2048,2048',
         '--chunk-shape',
         '32,32,32',
         '--shard-shape' if shard else None,
-        '128,1024,1024' if shard else None,
+        '512,512,512' if shard else None,
         '--bytes-to-bytes-codecs' if compress else None,
         '[ { "name": "blosc", "configuration": { "cname": "blosclz", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]' if compress else None,
         output_path
@@ -32,7 +32,7 @@ def main(output_path, shard, compress):
     args = [arg for arg in args if arg is not None]
 
     p = subprocess.Popen(args, stdin=subprocess.PIPE)
-    shape = [1024, 1024, 1024]
+    shape = [1024, 2048, 2048]
     bytes_per_element = 2
 
     # Write random bytes

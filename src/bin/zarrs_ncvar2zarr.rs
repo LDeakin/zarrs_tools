@@ -14,13 +14,17 @@ use std::{
 use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
 use zarrs::{
-    array::{Array, DimensionName},
+    array::{
+        codec::{ArrayCodecTraits, CodecOptionsBuilder},
+        concurrency::RecommendedConcurrency,
+        Array, DimensionName,
+    },
     array_subset::ArraySubset,
+    config::global_config,
     metadata::Metadata,
-    storage::store::FilesystemStore,
     storage::{
-        store::{MemoryStore, ReadableWritableStore},
-        ReadableWritableStorageTraits, StorePrefix,
+        store::{FilesystemStore, MemoryStore},
+        ReadableWritableStorage, ReadableWritableStorageTraits, StorePrefix,
     },
 };
 
@@ -36,12 +40,8 @@ struct Cli {
     validate: bool,
 
     /// Sets the number of netCDF blocks processed concurrently.
-    #[arg(long, default_value_t = 4)]
-    num_parallel_blocks: usize,
-
-    /// If set, parallel chunk encoding is disabled.
     #[arg(long)]
-    no_parallel_codecs: bool,
+    concurrent_blocks: Option<usize>,
 
     // /// Array shape. A comma separated list of the sizes of each array dimension.
     // #[arg(short, long, required = true, value_delimiter = ',')]
@@ -66,13 +66,13 @@ struct Cli {
     out: PathBuf,
 }
 
-fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized>(
+fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
     nc_paths: &[PathBuf],
     offsets: &[u64],
     variable: &str,
     concat_dim: usize,
     array: &Array<TStore>,
-    num_parallel_blocks: usize,
+    num_concurrent_blocks: Option<usize>,
     validate: bool,
 ) -> usize {
     let style_all =
@@ -81,6 +81,31 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized>(
     let style = ProgressStyle::with_template("[{bar}] ({pos}/{len})").unwrap();
 
     let bytes_read: AtomicUsize = 0.into();
+
+    let chunk_representation = array
+        .chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])
+        .unwrap();
+    let concurrent_target = std::thread::available_parallelism().unwrap().get();
+    let n_blocks = usize::try_from(nc_paths.len()).unwrap();
+    let (concurrent_blocks, codec_concurrent_target) =
+        zarrs::array::concurrency::calc_concurrency_outer_inner(
+            concurrent_target,
+            &if let Some(num_concurrent_blocks) = num_concurrent_blocks {
+                let num_concurrent_blocks = std::cmp::min(n_blocks, num_concurrent_blocks);
+                RecommendedConcurrency::new(num_concurrent_blocks..num_concurrent_blocks)
+            } else {
+                let num_concurrent_blocks =
+                    std::cmp::min(n_blocks, global_config().chunk_concurrent_minimum());
+                RecommendedConcurrency::new_minimum(num_concurrent_blocks)
+            },
+            &array
+                .codecs()
+                .recommended_concurrency(&chunk_representation)
+                .unwrap(),
+        );
+    let codec_options = CodecOptionsBuilder::new()
+        .concurrent_target(codec_concurrent_target)
+        .build();
 
     let process_path = |idx: usize, nc_path: &PathBuf| {
         // println!("{nc_path:?}");
@@ -115,19 +140,23 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized>(
 
         if validate {
             array
-                .store_array_subset(&array_subset, buf.clone())
+                .store_array_subset_opt(&array_subset, buf.clone(), &codec_options)
                 .unwrap();
-            let buf_validate = array.retrieve_array_subset(&array_subset).unwrap();
+            let buf_validate = array
+                .retrieve_array_subset_opt(&array_subset, &codec_options)
+                .unwrap();
             assert!(buf == buf_validate);
         } else {
-            array.store_array_subset(&array_subset, buf).unwrap();
+            array
+                .store_array_subset_opt(&array_subset, buf, &codec_options)
+                .unwrap();
         }
     };
 
-    if num_parallel_blocks > 1 {
+    if concurrent_blocks > 1 {
         let enumerated_paths = nc_paths.iter().enumerate().collect::<Vec<_>>();
         let chunks = enumerated_paths
-            .par_chunks((nc_paths.len() + num_parallel_blocks - 1) / num_parallel_blocks);
+            .par_chunks((nc_paths.len() + concurrent_blocks - 1) / concurrent_blocks);
 
         let m = MultiProgress::new();
         let pb_all = m.add(ProgressBar::new(enumerated_paths.len() as u64));
@@ -254,12 +283,7 @@ fn main() {
     }
     let array_shape = array_shape.unwrap();
     let dimension_names = dimension_names.unwrap();
-    let dimension_names = Some(
-        dimension_names
-            .iter()
-            .map(|dimension_name| DimensionName::new(dimension_name))
-            .collect(),
-    );
+    let dimension_names = Some(dimension_names.iter().map(DimensionName::new).collect());
     let datatype = datatype.unwrap();
     let data_type = zarrs::array::DataType::from_metadata(&Metadata::new(&datatype)).unwrap();
     println!("{array_shape:?}");
@@ -268,7 +292,7 @@ fn main() {
 
     // Create storage
     let path_out = cli.out.as_path();
-    let store: ReadableWritableStore = if cli.memory_test {
+    let store: ReadableWritableStorage = if cli.memory_test {
         Arc::new(MemoryStore::new())
     } else {
         Arc::new(FilesystemStore::new(path_out).unwrap())
@@ -276,7 +300,7 @@ fn main() {
 
     // Create array
     let array_builder = get_array_builder(&cli.encoding, &array_shape, data_type, dimension_names);
-    let mut array = array_builder.build(store.clone(), "/").unwrap();
+    let array = array_builder.build(store.clone(), "/").unwrap();
 
     // Erase existing data/metadata
     store.erase_prefix(&StorePrefix::new("").unwrap()).unwrap();
@@ -286,14 +310,13 @@ fn main() {
 
     // Read stdin to the array and write chunks/shards
     let start = std::time::Instant::now();
-    array.set_parallel_codecs(!cli.no_parallel_codecs);
     let bytes_read: usize = ncfiles_to_array(
         &nc_paths,
         &offsets,
         &cli.variable,
         cli.concat_dim,
         &array,
-        cli.num_parallel_blocks,
+        cli.concurrent_blocks,
         cli.validate,
     );
     let duration_s = start.elapsed().as_secs_f32();

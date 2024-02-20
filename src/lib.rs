@@ -8,16 +8,19 @@ use std::{
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use rayon::iter::{ParallelBridge, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon_iter_concurrent_limit::iter_concurrent_limit;
 use zarrs::{
     array::{
         codec::{
-            array_to_bytes::sharding, ArrayToBytesCodecTraits, BytesCodec, Codec, Crc32cCodec,
-            ShardingCodec,
+            array_to_bytes::sharding, ArrayCodecTraits, ArrayToBytesCodecTraits, BytesCodec, Codec,
+            CodecOptionsBuilder, Crc32cCodec, ShardingCodec,
         },
+        concurrency::RecommendedConcurrency,
         Array, ArrayBuilder, CodecChain, DataType, DimensionName, FillValueMetadata,
     },
     array_subset::ArraySubset,
+    config::global_config,
     metadata::Metadata,
     storage::{store::FilesystemStore, ReadableWritableStorageTraits},
 };
@@ -482,11 +485,11 @@ pub fn get_array_builder_reencode<TStorage>(
     array_builder
 }
 
-pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits>(
+pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
     array_in: &Array<FilesystemStore>,
     array_out: &Array<TStorageOut>,
     validate: bool,
-    parallel_chunks: usize,
+    concurrent_chunks: Option<usize>,
 ) -> (f32, f32, f32, usize) {
     let start = SystemTime::now();
     let bytes_decoded = Mutex::new(0);
@@ -500,37 +503,69 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits>(
     pb.set_style(style);
     pb.set_position(0);
 
-    (0..chunks.shape().iter().product())
-        .collect::<Vec<_>>()
-        .as_slice()
-        .chunks((chunks.num_elements_usize() + parallel_chunks - 1) / parallel_chunks)
-        .par_bridge()
-        .for_each(|chunk_index_chunk| {
-            for chunk_index in chunk_index_chunk {
-                let chunk_indices = zarrs::array::unravel_index(*chunk_index, chunks.shape());
-                let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
+    let chunk_representation = array_out
+        .chunk_array_representation(&vec![0; array_out.chunk_grid().dimensionality()])
+        .unwrap();
+    let chunks = ArraySubset::new_with_shape(array_out.chunk_grid_shape().unwrap());
 
-                let start_read = SystemTime::now();
-                let bytes = array_in.retrieve_array_subset(&chunk_subset).unwrap();
-                // let bytes = array_in.retrieve_chunk(&chunk_indices).unwrap();
-                *duration_read.lock().unwrap() += start_read.elapsed().unwrap();
-                *bytes_decoded.lock().unwrap() += bytes.len();
+    let concurrent_target = std::thread::available_parallelism().unwrap().get();
+    let (chunks_concurrent_limit, codec_concurrent_target) =
+        zarrs::array::concurrency::calc_concurrency_outer_inner(
+            concurrent_target,
+            &if let Some(concurrent_chunks) = concurrent_chunks {
+                let concurrent_chunks =
+                    std::cmp::min(chunks.num_elements_usize(), concurrent_chunks);
+                RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
+            } else {
+                let concurrent_chunks = std::cmp::min(
+                    chunks.num_elements_usize(),
+                    global_config().chunk_concurrent_minimum(),
+                );
+                RecommendedConcurrency::new_minimum(concurrent_chunks)
+            },
+            &array_out
+                .codecs()
+                .recommended_concurrency(&chunk_representation)
+                .unwrap(),
+        );
+    let codec_options = CodecOptionsBuilder::new()
+        .concurrent_target(codec_concurrent_target)
+        .build();
 
-                if validate {
-                    let bytes_clone = bytes.clone();
-                    let start_write = SystemTime::now();
-                    array_out.store_chunk(&chunk_indices, bytes_clone).unwrap();
-                    *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
-                    let bytes_out = array_out.retrieve_chunk(&chunk_indices).unwrap();
-                    assert!(bytes == bytes_out);
-                } else {
-                    let start_write = SystemTime::now();
-                    array_out.store_chunk(&chunk_indices, bytes).unwrap();
-                    *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
-                }
-                pb.inc(1);
+    let indices = chunks.indices();
+    iter_concurrent_limit!(
+        chunks_concurrent_limit,
+        indices.into_par_iter(),
+        for_each,
+        |chunk_indices| {
+            let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
+
+            let start_read = SystemTime::now();
+            let bytes = array_in.retrieve_array_subset(&chunk_subset).unwrap(); // NOTE: Max concurrency
+            *duration_read.lock().unwrap() += start_read.elapsed().unwrap();
+            *bytes_decoded.lock().unwrap() += bytes.len();
+
+            if validate {
+                let bytes_clone = bytes.clone();
+                let start_write = SystemTime::now();
+                array_out
+                    .store_chunk_opt(&chunk_indices, bytes_clone, &codec_options)
+                    .unwrap();
+                *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
+                let bytes_out = array_out
+                    .retrieve_chunk_opt(&chunk_indices, &codec_options)
+                    .unwrap();
+                assert!(bytes == bytes_out);
+            } else {
+                let start_write = SystemTime::now();
+                array_out
+                    .store_chunk_opt(&chunk_indices, bytes, &codec_options)
+                    .unwrap();
+                *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
             }
-        });
+            pb.inc(1);
+        }
+    );
     pb.finish_and_clear();
 
     if validate {
