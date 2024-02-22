@@ -3,7 +3,7 @@
 import subprocess
 import re
 import pandas as pd
-import os
+import numpy as np
 import math
 
 implementation_to_args = {
@@ -14,6 +14,8 @@ implementation_to_args = {
 
 def clear_cache():
     subprocess.call(['sudo', 'sh', '-c', "sync; echo 3 > /proc/sys/vm/drop_caches"])
+
+best_of = 3
 
 index = []
 rows = []
@@ -26,32 +28,42 @@ for image in [
     wall_times = []
     memory_usages = []
     for implementation in ["zarrs_sync", "zarrs_async", "tensorstore"]:
-        print(implementation, image)
-        args = implementation_to_args[implementation] + [image]
-        clear_cache()
-        pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        std_out, std_err = pipes.communicate()
-        # print(std_err)
-        wall_time = re.search(
-            r"Elapsed \(wall clock\) time \(h:mm:ss or m:ss\): (\d+?):([\d\.]+?)\\n",
-            str(std_err),
-        )
-        memory_usage = re.search(
-            r"Maximum resident set size \(kbytes\): (\d+?)\\n", str(std_err)
-        )
-        if wall_time and memory_usage:
-            m = int(wall_time.group(1))
-            s = float(wall_time.group(2))
-            wall_time_s = m * 60 + s
-            # print(wall_time_s)
-            memory_usage_kb = int(memory_usage.group(1))
-            memory_usage_gb = float(memory_usage_kb) / 1.0e6
-            # print(memory_usage_gb)
-            wall_times.append(f"{wall_time_s:.02f}")
-            memory_usages.append(f"{memory_usage_gb:.02f}")
-        else:
-            wall_times.append(math.nan)
-            memory_usages.append(math.nan)
+        wall_time_measurements = []
+        memory_usage_measurements = []
+        for i in range(best_of):
+            print(implementation, image, i)
+            args = implementation_to_args[implementation] + [image]
+            clear_cache()
+            pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            std_out, std_err = pipes.communicate()
+            # print(std_err)
+
+            wall_time = re.search(
+                r"Elapsed \(wall clock\) time \(h:mm:ss or m:ss\): (\d+?):([\d\.]+?)\\n",
+                str(std_err),
+            )
+            memory_usage = re.search(
+                r"Maximum resident set size \(kbytes\): (\d+?)\\n", str(std_err)
+            )
+            if wall_time and memory_usage:
+                m = int(wall_time.group(1))
+                s = float(wall_time.group(2))
+                wall_time_s = m * 60 + s
+                # print(wall_time_s)
+                memory_usage_kb = int(memory_usage.group(1))
+                memory_usage_gb = float(memory_usage_kb) / 1.0e6
+                # print(memory_usage_gb)
+                wall_time_measurements.append(wall_time_s)
+                memory_usage_measurements.append(memory_usage_gb)
+            else:
+                wall_time_measurements.append(math.nan)
+                memory_usage_measurements.append(math.nan)
+
+        wall_time_best = np.nanmin(wall_time_measurements)
+        memory_usages_best = np.nanmin(memory_usage_measurements)
+        wall_times.append(f"{wall_time_best:.02f}")
+        memory_usages.append(f"{memory_usages_best:.02f}")
+
     row = wall_times + memory_usages
     rows.append(row)
 

@@ -7,15 +7,15 @@ Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data wit
 [Changelog (CHANGELOG.md)](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md)
 
 ## Tools
+- Benchmark scripts that measure the time to retrieve an array either chunk-by-chunk or at once into a single array.
+  - `zarrs_benchmark_read_sync`: benchmark with the zarrs sync API.
+  - `zarrs_benchmark_read_async`: benchmark with the zarrs async API.
+  - See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/benchmarks.md) for some benchmark measurements.
 - `zarrs_reencode`: reencode a Zarr v3 array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/reencode_rechunk.md).
   - Can change the chunk size, shard size, compression, etc.
-  - Suitable for round trip benchmarking
+  - Suitable for round trip benchmarking.
 - `zarrs_binary2zarr`: create a Zarr v3 array from piped binary data. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_binary.md).
 - `zarrs_ncvar2zarr` (requires `ncvar2zarr` feature): convert a netCDF variable to a zarr V3 array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_netcdf.md).
-- `zarrs_benchmark_read_sync`: Measure the time to read (decode) each chunk of an array using the zarrs sync API.
-- `zarrs_benchmark_read_async`: Measure the time to read (decode) each chunk of an array using the zarrs async API.
-
-See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/benchmarks.md) for some benchmark measurements.
 
 ## Install
 
@@ -41,7 +41,7 @@ Non-default `zarrs` codecs (see [`zarrs` crate features](https://docs.rs/zarrs/l
 
 For example:
 ```bash
-cargo install zarrs_tools --features zarrs/bitround,zarrs/zfp
+cargo install zarrs_tools --features zarrs/bitround,zarrs/zfp,zarrs/bz2,zarrs/pcodec
 ```
 
 ## Licence

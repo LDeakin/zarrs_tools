@@ -1,6 +1,16 @@
 
 # Benchmarks
 
+> [!CAUTION]
+> Take these benchmarks with a grain of salt, they need to be audited.
+>
+> The `zarrs_benchmark_read` and `zarrs_benchmark_read_async` binaries have been optimised to be as efficient as possible with the `zarrs` API.
+>
+> Conversely, the `tensorstore` benchmark script may not be using the optimal API for tensorstore, might not be handling async very well, and may not be doing exactly what the zarrs benchmark is doing.
+> Furthermore, tensorstore benchmarks use the python rather than the C++ API and are subject to the overheads of python.
+
+> TODO: Audit benchmarks and benchmark more Zarr V3 implementations
+
 ## Benchmark Data
 Benchmark data is generated with `scripts/generate_benchmark_array.py` as follows
 ```bash
@@ -23,29 +33,34 @@ Benchmark data is generated with `scripts/generate_benchmark_array.py` as follow
   - `data/benchmark_compress_shard.zarr`: 1.1G
 
 ## Benchmark System
-- Ryzen 5900X
+- AMD Ryzen 5900X
 - 64GB DDR4 3600MHz (16-19-19-39)
 - 2TB Samsung 990 Pro
 - Ubuntu 22.04 (in Windows 11 WSL2, swap disabled, 24GB available memory)
-- Rust 1.76.0
+- Rust 1.76.0 (07dca489a 2024-02-04)
 
 ## Implementation Versions Benchmarked
-- zarrs_tools v0.3.0 installed with `RUSTFLAGS="-C target-cpu=native" cargo install --path .`
+- zarrs_tools v0.3.0 (prerelease) installed with `RUSTFLAGS="-C target-cpu=native" cargo install --path .`
 - tensorstore v0.1.53 installed with `pip install tensorstore`
 
 ## Comparative Benchmarks
- > TODO: Check benchmark equivalence between implementations, evaluate more implementations
 
 ### Read Entire Array
 ```bash
 python3 ./scripts/run_benchmark_read_all.py
 ```
 
+> [!NOTE]
+> Rather than simply calling a single retrieve method like `async_retrieve_array_subset`, the zarrs async benchmark uses a ***complicated*** alternative routine.
+>
+> This is necessary to achieve decent performance with many chunks because the zarrs async API is unable to parallelise across chunks.
+> See <https://docs.rs/zarrs/latest/zarrs/array/struct.Array.html#async-api>.
+
 | Image                              |   Wall time (s)<br>zarrs<br>sync |   <br><br>async |   <br>tensorstore<br>async |   Memory usage (GB)<br>zarrs<br>sync |   <br><br>async |   <br>tensorstore<br>async |
 |:-----------------------------------|---------------------------------:|----------------:|---------------------------:|-------------------------------------:|----------------:|---------------------------:|
-| data/benchmark.zarr                |                             3    |           14.88 |                       3.29 |                                 8.41 |            8.4  |                       8.6  |
-| data/benchmark_compress.zarr       |                             2.84 |           17.36 |                       2.76 |                                 8.44 |            8.41 |                       8.53 |
-| data/benchmark_compress_shard.zarr |                             1.67 |            2.93 |                       2.66 |                                 8.63 |            8.63 |                       8.6  |
+| data/benchmark.zarr                |                             3.03 |            9.27 |                       3.23 |                                 8.42 |            8.41 |                       8.58 |
+| data/benchmark_compress.zarr       |                             2.84 |            8.45 |                       2.68 |                                 8.44 |            8.43 |                       8.53 |
+| data/benchmark_compress_shard.zarr |                             1.62 |            1.83 |                       2.58 |                                 8.63 |            8.73 |                       8.57 |
 
 
 ### Read Chunk-By-Chunk

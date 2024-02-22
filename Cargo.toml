@@ -15,6 +15,7 @@ categories = ["command-line-utilities", "encoding"]
 ncvar2zarr = ["dep:netcdf"]
 
 [dependencies]
+async-scoped = { version = "0.9.0", features = ["use-tokio"] }
 clap = { version = "4.4.6", features = ["derive"] }
 futures = "0.3.29"
 indicatif = { version = "0.17.7", features = ["rayon"] }
