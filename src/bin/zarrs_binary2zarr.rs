@@ -134,7 +134,7 @@ fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: Option<usiz
     };
     iter_concurrent_limit!(
         concurrent_chunks,
-        (0..n_blocks as usize).into_par_iter(),
+        (0..n_blocks).into_par_iter(),
         for_each,
         op
     );

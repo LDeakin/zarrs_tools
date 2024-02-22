@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2024-02-22
+
 ### Added
  - Add benchmark data generator: `scripts/generate_benchmark_array.py`
  - Add benchmark runners: `scripts/run_benchmark/read_{all,chunks}.py`
@@ -65,7 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Initial public release
 
-[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.2.3...HEAD
+[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.3.0
 [0.2.3]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.2.2
 [0.2.2]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.2.2
 [0.2.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.2.1

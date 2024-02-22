@@ -2751,7 +2751,8 @@ dependencies = [
 [[package]]
 name = "zarrs"
 version = "0.12.0"
-source = "git+https://github.com/LDeakin/zarrs.git#2c62275d1842d39c9861b0748467387b423c209f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a4fe9497bc1af31bbbb3d77775953c7d7f9505e87c862ca605e1b8e42bc702e"
 dependencies = [
  "async-lock",
  "async-recursion",

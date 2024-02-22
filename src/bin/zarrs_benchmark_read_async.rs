@@ -118,10 +118,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .await
                     }
                 };
-                let spawner = async_scoped::spawner::use_tokio::Tokio::default();
-                let futures = chunk_indices
-                    .into_iter()
-                    .map(|chunk_indices| decode_chunk_into_array(chunk_indices));
+                let spawner = async_scoped::spawner::use_tokio::Tokio;
+                let futures = chunk_indices.into_iter().map(decode_chunk_into_array);
                 let mut stream = futures::stream::iter(futures)
                     .map(|future| spawner.spawn(future))
                     .buffer_unordered(chunk_concurrent_limit);

@@ -86,7 +86,7 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
         .chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])
         .unwrap();
     let concurrent_target = std::thread::available_parallelism().unwrap().get();
-    let n_blocks = usize::try_from(nc_paths.len()).unwrap();
+    let n_blocks = nc_paths.len();
     let (concurrent_blocks, codec_concurrent_target) =
         zarrs::array::concurrency::calc_concurrency_outer_inner(
             concurrent_target,

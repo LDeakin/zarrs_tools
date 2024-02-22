@@ -46,10 +46,11 @@ create-release = false
 
 [workspace.metadata.dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
+x86_64-apple-darwin = "macos-12"
 
-[patch.crates-io]
+# [patch.crates-io]
 # zarrs = { path = "../zarrs" }
-zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
+# zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
 
 # [profile.release]
 # debug = 1
