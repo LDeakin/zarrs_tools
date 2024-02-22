@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - Add benchmark data generator: `scripts/generate_benchmark_array.py`
- - Add benchmark runners: `scripts/run_benchmark/read_{all,chunks}.py`
+ - Add benchmark runners: `scripts/run_benchmark_read_{all,chunks}.py`
  - Add tensorstore benchmark script
 
 ### Changed
- - Bump `cargo-dist` to to 0.9.0 and use GitHub `macos-14` runners for `aarch64-apple-darwin`
+ - Bump `cargo-dist` to to 0.10.0
  - `zarrs_benchmark_read_{sync,async}`, `zarrs_binary2zarr`, `zarrs_reencode`
    - Make `--concurrent-chunks` optional, choosing optimal by default
  - `zarrs_ncvar2zarr`
