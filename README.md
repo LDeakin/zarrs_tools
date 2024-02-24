@@ -1,21 +1,28 @@
-# zarrs_tools &emsp; [![build](https://github.com/LDeakin/zarrs_tools/actions/workflows/ci.yml/badge.svg)](https://github.com/LDeakin/zarrs_tools/actions/workflows/ci.yml) [![Latest Version](https://img.shields.io/crates/v/zarrs_tools.svg)](https://crates.io/crates/zarrs_tools)
+# zarrs_tools 
+
+[![Latest Version](https://img.shields.io/crates/v/zarrs_tools.svg)](https://crates.io/crates/zarrs_tools)
+![msrv](https://img.shields.io/crates/msrv/zarrs_tools)
+[![build](https://github.com/LDeakin/zarrs_tools/actions/workflows/ci.yml/badge.svg)](https://github.com/LDeakin/zarrs_tools/actions/workflows/ci.yml)
 
 Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data with the [zarrs](https://github.com/LDeakin/zarrs) rust crate.
 
-**zarrs is experimental and in limited production use. Correctness issues with zarrs affecting past versions of zarrs_tools are [detailed here](https://docs.rs/zarrs/latest/zarrs/#correctness-issues-with-past-versions).**
+**zarrs_tools is experimental and in limited production use. Correctness issues with zarrs affecting past versions of zarrs_tools are [detailed here](https://docs.rs/zarrs/latest/zarrs/#correctness-issues-with-past-versions).**
 
 [Changelog (CHANGELOG.md)](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md)
 
 ## Tools
-- Benchmark scripts that measure the time to retrieve an array either chunk-by-chunk or at once into a single array.
-  - `zarrs_benchmark_read_sync`: benchmark with the zarrs sync API.
-  - `zarrs_benchmark_read_async`: benchmark with the zarrs async API.
-  - See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/benchmarks.md) for some benchmark measurements.
-- `zarrs_reencode`: reencode a Zarr v3 array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/reencode_rechunk.md).
-  - Can change the chunk size, shard size, compression, etc.
-  - Suitable for round trip benchmarking.
+- `zarrs_reencode`: reencode a Zarr v3 array. The chunk size, shard size, compression, etc., can be changed. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/reencode_rechunk.md).
 - `zarrs_binary2zarr`: create a Zarr v3 array from piped binary data. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_binary.md).
-- `zarrs_ncvar2zarr` (requires `ncvar2zarr` feature): convert a netCDF variable to a zarr V3 array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_netcdf.md).
+- `zarrs_ncvar2zarr`: convert a netCDF variable to a zarr V3 array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_netcdf.md).
+  - Requires the `ncvar2zarr` feature.
+  - Supports multi-file datasets where a variable has been split along a single dimension.
+
+## `zarrs` Benchmarking
+- `zarrs_reencode`: suitable for round trip benchmarking.
+- `zarrs_benchmark_read_sync`: benchmark the zarrs sync API.
+- `zarrs_benchmark_read_async`: benchmark the zarrs async API.
+
+See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/benchmarks.md) for some benchmark measurements.
 
 ## Install
 
@@ -26,7 +33,8 @@ cargo install zarrs_tools --all-features
 
 ### From [source](https://github.com/LDeakin/zarrs_tools)
 ```bash
-cargo install --path .  --all-features
+cargo install --all-features --path .
+# cargo install --all-features --git https://github.com/LDeakin/zarrs_tools
 ```
 
 ### Enabling SIMD intrinsics
