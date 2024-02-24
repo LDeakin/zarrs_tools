@@ -2,14 +2,10 @@
 # Benchmarks
 
 > [!CAUTION]
-> Take these benchmarks with a grain of salt, they need to be audited.
->
-> The `zarrs_benchmark_read` and `zarrs_benchmark_read_async` binaries have been optimised to be as efficient as possible with the `zarrs` API.
->
-> Conversely, the `tensorstore` benchmark script may not be using the optimal API for tensorstore, might not be handling async very well, and may not be doing exactly what the zarrs benchmark is doing.
-> Furthermore, tensorstore benchmarks use the python rather than the C++ API and are subject to the overheads of python.
-
-> TODO: Audit benchmarks and benchmark more Zarr V3 implementations
+> Take these benchmarks with a grain of salt, they need to be reviewed.
+> * The `zarrs_benchmark_read` and `zarrs_benchmark_read_async` binaries have been optimised to be as efficient as possible with the `zarrs` API.
+> * The `tensorstore` benchmark script may not be using the optimal tensorstore API, might not be doing async properly, and may not be equivalent to the zarrs benchmark.
+> * Tensorstore benchmarks use the python rather than the C++ API and are subject to the overheads of python.
 
 ## Benchmark Data
 Benchmark data is generated with `scripts/generate_benchmark_array.py` as follows
@@ -26,7 +22,6 @@ Benchmark data is generated with `scripts/generate_benchmark_array.py` as follow
 - Bytes to bytes codec for chunks/inner chunks:
   - Default: none
   - `--compress`: `blosclz` level 9 with bitshuffling
-    - compresses from `2.147GB` to `0.279GB`
 - Size on disk
   - `data/benchmark.zarr`: 8.0G
   - `data/benchmark_compress.zarr`: 1.4G
@@ -62,6 +57,7 @@ python3 ./scripts/run_benchmark_read_all.py
 | data/benchmark_compress.zarr       |                             2.84 |            8.45 |                       2.68 |                                 8.44 |            8.43 |                       8.53 |
 | data/benchmark_compress_shard.zarr |                             1.62 |            1.83 |                       2.58 |                                 8.63 |            8.73 |                       8.57 |
 
+These are best of 3 measurements.
 
 ### Read Chunk-By-Chunk
 ```bash
@@ -88,3 +84,5 @@ python3 ./scripts/run_benchmark_read_chunks.py
 | data/benchmark_compress_shard.zarr |             8 |                             1.41 |            1.47 |                       2.57 |                                 2.37 |            2.29 |                       1.41 |
 | data/benchmark_compress_shard.zarr |            16 |                             1.57 |            1.56 |                       2.85 |                                 4.34 |            3.99 |                       2.13 |
 | data/benchmark_compress_shard.zarr |            32 |                             1.54 |            1.76 |                       3.15 |                                 6.54 |            6.9  |                       3.46 
+
+These are best of 1 measurements.
