@@ -58,7 +58,7 @@ pub struct ZarrEncodingArgs {
 
     /// Array to array codecs (optional).
     ///
-    /// A JSON string holding array to array codec metadata.
+    /// JSON holding array to array codec metadata.
     ///
     /// Examples:
     ///   '[ { "name": "bitround", "configuration": { "keepbits": 9 } } ]'
@@ -67,7 +67,7 @@ pub struct ZarrEncodingArgs {
 
     /// Array to bytes codec (optional).
     ///
-    /// A JSON string holding array to array codec metadata.
+    /// JSON holding array to array codec metadata.
     ///
     /// Examples:
     ///   '{ "name": "zfp", "configuration": { "mode": "fixedprecision", "precision": 19 } }'
@@ -76,13 +76,18 @@ pub struct ZarrEncodingArgs {
 
     /// Bytes to bytes codecs (optional).
     ///
-    /// A JSON string holding bytes to bytes codec configurations.
+    /// JSON holding bytes to bytes codec configurations.
     ///
     /// Examples:
     ///   '[ { "name": "blosc", "configuration": { "cname": "blosclz", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]'
     ///   '[ { "name": "gzip", "configuration": { "level": 3 } } ]'
     #[arg(long, verbatim_doc_comment)]
     pub bytes_to_bytes_codecs: Option<String>,
+
+    /// Attributes (optional).
+    ///
+    /// JSON holding array attributes.
+    pub attributes: Option<String>,
 }
 
 #[must_use]
@@ -181,6 +186,11 @@ pub fn get_array_builder(
         fill_value,
     );
     array_builder.dimension_names(dimension_names);
+    if let Some(attributes) = &encoding_args.attributes {
+        let attributes: serde_json::Map<String, serde_json::Value> =
+            serde_json::from_str(attributes).expect("Attributes are invalid.");
+        array_builder.attributes(attributes);
+    }
     array_builder.chunk_key_encoding_default_separator(encoding_args.separator.try_into().unwrap());
     if shard_shape.is_some() {
         let index_codecs = CodecChain::new(
@@ -240,7 +250,7 @@ pub struct ZarrReEncodingArgs {
 
     /// Array to array codecs.
     ///
-    /// A JSON string holding array to array codec metadata.
+    /// JSON holding array to array codec metadata.
     ///
     /// Examples:
     ///   '[ { "name": "bitround", "configuration": { "keepbits": 9 } } ]'
@@ -249,7 +259,7 @@ pub struct ZarrReEncodingArgs {
 
     /// Array to bytes codec.
     ///
-    /// A JSON string holding array to array codec metadata.
+    /// JSON holding array to array codec metadata.
     ///
     /// Examples:
     ///   '{ "name": "zfp", "configuration": { "mode": "fixedprecision", "precision": 19 } }'
@@ -258,13 +268,23 @@ pub struct ZarrReEncodingArgs {
 
     /// Bytes to bytes codecs.
     ///
-    /// A JSON string holding bytes to bytes codec configurations.
+    /// JSON holding bytes to bytes codec configurations.
     ///
     /// Examples:
     ///   '[ { "name": "blosc", "configuration": { "cname": "blosclz", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]'
     ///   '[ { "name": "gzip", "configuration": { "level": 3 } } ]'
     #[arg(long, verbatim_doc_comment)]
     pub bytes_to_bytes_codecs: Option<String>,
+
+    /// Attributes (optional).
+    ///
+    /// JSON holding array attributes.
+    pub attributes: Option<String>,
+
+    /// Attributes to append (optional).
+    ///
+    /// JSON holding array attributes.
+    pub attributes_append: Option<String>,
 }
 
 #[must_use]
@@ -444,6 +464,18 @@ pub fn get_array_builder_reencode<TStorage>(
 
     // Create array
     let mut array_builder = array.builder();
+
+    if let Some(attributes) = &encoding_args.attributes {
+        let attributes: serde_json::Map<String, serde_json::Value> =
+            serde_json::from_str(attributes).expect("Attributes are invalid.");
+        array_builder.attributes(attributes);
+    }
+
+    if let Some(attributes_append) = &encoding_args.attributes_append {
+        let mut attributes_append: serde_json::Map<String, serde_json::Value> =
+            serde_json::from_str(attributes_append).expect("Attributes append are invalid.");
+        array_builder.attributes.append(&mut attributes_append);
+    }
 
     if let Some(separator) = encoding_args.separator {
         array_builder.chunk_key_encoding_default_separator(separator.try_into().unwrap());
