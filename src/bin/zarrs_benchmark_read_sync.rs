@@ -15,13 +15,9 @@ use zarrs::{
     storage::ReadableStorageTraits,
 };
 
+/// Benchmark zarrs read throughput with the sync API.
 #[derive(Parser, Debug)]
-#[command(
-    author,
-    version,
-    about,
-    long_about = "Benchmark zarrs read throughput with the sync API."
-)]
+#[command(author, version)]
 struct Args {
     /// The zarr array directory.
     path: String,
@@ -92,9 +88,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         //       But that might be cheating against tensorstore.
         rayon_iter_concurrent_limit::iter_concurrent_limit!(
             chunks_concurrent_limit,
-            (0..n_chunks).into_par_iter(),
+            0..n_chunks,
             for_each,
-            |chunk_index| {
+            |chunk_index: usize| {
                 let chunk_indices = zarrs::array::unravel_index(chunk_index as u64, chunks.shape());
                 // println!("Chunk/shard: {:?}", chunk_indices);
                 let bytes = array

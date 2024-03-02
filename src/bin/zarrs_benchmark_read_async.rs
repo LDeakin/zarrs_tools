@@ -14,13 +14,9 @@ use zarrs::{
     storage::{store::AsyncObjectStore, AsyncReadableStorageTraits},
 };
 
+/// Benchmark zarrs read throughput with the async API.
 #[derive(Parser, Debug)]
-#[command(
-    author,
-    version,
-    about,
-    long_about = "Benchmark zarrs read throughput with the async API."
-)]
+#[command(author, version)]
 struct Args {
     /// The zarr array directory.
     path: String,
@@ -48,11 +44,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
 
-    // let storage = Arc::new(AsyncOpendalStore::new({
-    //     let mut builder = opendal::services::Fs::default();
-    //     builder.root(&args.path.clone()); // FIXME: Absolute
-    //     Operator::new(builder)?.finish()
-    // }));
     let storage = Arc::new(AsyncObjectStore::new(
         object_store::local::LocalFileSystem::new_with_prefix(args.path.clone())?,
     ));

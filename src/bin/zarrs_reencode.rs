@@ -2,13 +2,14 @@ use std::sync::Arc;
 
 use clap::Parser;
 use zarrs::storage::{ReadableStorageTraits, StorePrefix, WritableStorageTraits};
-use zarrs_tools::{do_reencode, get_array_builder_reencode, ZarrReEncodingArgs};
+use zarrs_tools::{do_reencode, get_array_builder_reencode, ZarrReencodingArgs};
 
+/// Reencode a Zarr V3 array.
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = "Reencode a zarr array.")]
+#[command(author, version)]
 struct Args {
     #[command(flatten)]
-    encoding: ZarrReEncodingArgs,
+    encoding: ZarrReencodingArgs,
 
     /// The zarr array input directory.
     path_in: String,
@@ -53,7 +54,7 @@ fn main() {
     let storage_out =
         Arc::new(zarrs::storage::store::FilesystemStore::new(args.path_out.clone()).unwrap());
     storage_out.erase_prefix(&StorePrefix::root()).unwrap();
-    let builder = get_array_builder_reencode(&args.encoding, &array_in);
+    let builder = get_array_builder_reencode(&args.encoding, &array_in, None);
     let array_out = builder.build(storage_out.clone(), "/").unwrap();
     array_out.store_metadata().unwrap();
 

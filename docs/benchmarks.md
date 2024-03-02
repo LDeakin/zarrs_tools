@@ -35,7 +35,7 @@ Benchmark data is generated with `scripts/generate_benchmark_array.py` as follow
 - Rust 1.76.0 (07dca489a 2024-02-04)
 
 ## Implementation Versions Benchmarked
-- zarrs_tools v0.3.0 (prerelease) installed with `RUSTFLAGS="-C target-cpu=native" cargo install --path .`
+- zarrs_tools v0.3.0 (prerelease) installed with `RUSTFLAGS="-C target-cpu=native" cargo install --all-features --path .`
 - tensorstore v0.1.53 installed with `pip install tensorstore`
 
 ## Comparative Benchmarks

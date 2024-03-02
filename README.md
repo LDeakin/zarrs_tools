@@ -11,16 +11,26 @@ Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data wit
 [Changelog (CHANGELOG.md)](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md)
 
 ## Tools
-- `zarrs_reencode`: reencode a Zarr v3 array. The chunk size, shard size, compression, etc., can be changed. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/reencode_rechunk.md).
-- `zarrs_binary2zarr`: create a Zarr v3 array from piped binary data. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_binary.md).
-- `zarrs_ncvar2zarr`: convert a netCDF variable to a zarr V3 array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_netcdf.md).
-  - Requires the `ncvar2zarr` feature.
+- `zarrs_reencode`: reencode an array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/reencode_rechunk.md).
+  - Can change the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
+
+  - Outputs OME-Zarr `0.5-dev`. This revision is currently recognised by [Neuroglancer](https://github.com/google/neuroglancer) for Zarr V3.
+- `zarrs_binary2zarr` (feature `binary`): create an array from piped binary data. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_binary.md).
+- `zarrs_ncvar2zarr` (feature `ncvar2zarr`): convert a netCDF variable to an array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_netcdf.md).
   - Supports multi-file datasets where a variable has been split along a single dimension.
+
+> [!WARNING]
+> The following tools are experimental and have had limited production testing:
+
+- `zarrs_filter` (feature `filter`): apply simple image filters (transformations) to an array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/filter.md).
+  - Supported filters include: reencode, crop, convert, rescale, clamp, equal, downsample, gradient magnitude.
+- `zarrs_ome` (feature `ome`): convert an array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html). [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/ome.md).
+  - Computes a Gaussian image pyramid.
 
 ## `zarrs` Benchmarking
 - `zarrs_reencode`: suitable for round trip benchmarking.
-- `zarrs_benchmark_read_sync`: benchmark the zarrs sync API.
-- `zarrs_benchmark_read_async`: benchmark the zarrs async API.
+- `zarrs_benchmark_read_sync` (feature `benchmark`): benchmark the zarrs sync API.
+- `zarrs_benchmark_read_async` (feature `benchmark`): benchmark the zarrs async API.
 
 See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/benchmarks.md) for some benchmark measurements.
 
@@ -28,7 +38,7 @@ See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/b
 
 ### From [crates.io](https://crates.io/crates/zarrs_tools)
 ```bash
-cargo install zarrs_tools --all-features
+cargo install --all-features zarrs_tools
 ```
 
 ### From [source](https://github.com/LDeakin/zarrs_tools)
@@ -46,10 +56,9 @@ This can be enabled by compiling with either of:
 
 ### Enabling non-default `zarrs` codecs
 Non-default `zarrs` codecs (see [`zarrs` crate features](https://docs.rs/zarrs/latest/zarrs/#crate-features)) can be enabled by passing them as feature flags.
-
 For example:
 ```bash
-cargo install zarrs_tools --features zarrs/bitround,zarrs/zfp,zarrs/bz2,zarrs/pcodec
+cargo install zarrs_tools --all-features --features zarrs/bitround,zarrs/zfp,zarrs/bz2,zarrs/pcodec
 ```
 
 ## Licence

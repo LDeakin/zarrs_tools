@@ -1,6 +1,6 @@
 [package]
 name = "zarrs_tools"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Lachlan Deakin <ljdgit@gmail.com>"]
 edition = "2021"
 rust-version = "1.71"
@@ -12,28 +12,74 @@ keywords = ["zarr"]
 categories = ["command-line-utilities", "encoding"]
 
 [features]
+async = ["zarrs/async", "zarrs/object_store"]
+benchmark = []
+binary = []
+filter = []
 ncvar2zarr = ["dep:netcdf"]
+ome = []
 
 [dependencies]
+approx = "0.5.1"
 async-scoped = { version = "0.9.0", features = ["use-tokio"] }
 clap = { version = "4.4.6", features = ["derive"] }
+enum_dispatch = "0.3.12"
 futures = "0.3.29"
+half = { version = "2.4.0", features = ["num-traits"] }
 indicatif = { version = "0.17.7", features = ["rayon"] }
+itertools = "0.12.1"
+ndarray = { version = "0.15.6", features = ["rayon", "approx-0_5"] }
 netcdf = { version = "0.9.0", optional = true, features = ["static"] }
+num-traits = "0.2.18"
 object_store = { version = "0.9.0", features = ["http"] }
 rayon = "1.8.0"
-rayon_iter_concurrent_limit = "0.1.0"
+rayon_iter_concurrent_limit = "0.2.0"
+serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.107"
+strum = "0.26.1"
+sysinfo = "0.30.6"
+tempfile = "3.10.1"
+thiserror = "1.0.57"
 tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
-zarrs = { version = "0.12", features = ["async", "object_store", "opendal"] }
+zarrs = { version = "0.12.3", features = [] }
+
+[[bin]]
+name = "zarrs_benchmark_read_sync"
+required-features = ["benchmark"]
+
+[[bin]]
+name = "zarrs_benchmark_read_async"
+required-features = ["async", "benchmark"]
+
+[[bin]]
+name = "zarrs_binary2zarr"
+required-features = ["binary"]
+
+[[bin]]
+name = "zarrs_filter"
+required-features = ["filter"]
 
 [[bin]]
 name = "zarrs_ncvar2zarr"
 required-features = ["ncvar2zarr"]
 
+[[bin]]
+name = "zarrs_ome"
+required-features = ["ome"]
+
+[[bin]]
+name = "zarrs_reencode"
+required-features = []
+
 [profile.dist]
 inherits = "release"
 lto = "thin"
+
+[profile.release]
+strip = true
+# lto = true
+# codegen-units = 1
+# panic = "abort"
 
 # [workspace.metadata.dist]
 # cargo-dist-version = "0.10.0"
@@ -51,6 +97,9 @@ lto = "thin"
 # [patch.crates-io]
 # zarrs = { path = "../zarrs" }
 # zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
+
+[dev-dependencies]
+tempfile = "3.10.1"
 
 # [profile.release]
 # debug = 1

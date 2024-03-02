@@ -6,9 +6,6 @@ import timeit
 import asyncio
 import click
 
-# TODO: Benchmark against zarrs_benchmark_read_sync
-# TODO: Benchmark against zarrs_benchmark_read_async
-
 async def tensorstore_benchmark_read_async(path, concurrent_chunks, read_all):
     dataset_future = ts.open({
         'driver': 'zarr3',

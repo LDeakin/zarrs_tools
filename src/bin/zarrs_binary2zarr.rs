@@ -17,7 +17,7 @@ use zarrs::{
     storage::{store::FilesystemStore, ReadableStorageTraits},
 };
 
-/// Convert an N-dimensional binary array from standard input to the Zarr V3 storage format.
+/// Convert an N-dimensional binary array from standard input to a Zarr V3 array.
 #[derive(Parser)]
 #[command(author, version)]
 #[allow(rustdoc::bare_urls)]
@@ -46,7 +46,7 @@ struct Cli {
     array_shape: Vec<u64>,
 
     /// Dimension names. A comma separated list of the names of each array dimension.
-    #[arg(short, long, value_delimiter = ',')]
+    #[arg(long, value_delimiter = ',')]
     dimension_names: Option<Vec<String>>,
 
     /// The output directory for the zarr array.
@@ -132,12 +132,7 @@ fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: Option<usiz
             .store_array_subset_opt(&array_subset, subset_bytes, &codec_options)
             .unwrap();
     };
-    iter_concurrent_limit!(
-        concurrent_chunks,
-        (0..n_blocks).into_par_iter(),
-        for_each,
-        op
-    );
+    iter_concurrent_limit!(concurrent_chunks, 0..n_blocks, for_each, op);
     bytes_read.load(std::sync::atomic::Ordering::Relaxed)
 }
 
