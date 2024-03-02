@@ -87,6 +87,7 @@ pub struct ZarrEncodingArgs {
     /// Attributes (optional).
     ///
     /// JSON holding array attributes.
+    #[arg(long)]
     pub attributes: Option<String>,
 }
 
@@ -279,11 +280,13 @@ pub struct ZarrReEncodingArgs {
     /// Attributes (optional).
     ///
     /// JSON holding array attributes.
+    #[arg(long)]
     pub attributes: Option<String>,
 
     /// Attributes to append (optional).
     ///
     /// JSON holding array attributes.
+    #[arg(long)]
     pub attributes_append: Option<String>,
 }
 
