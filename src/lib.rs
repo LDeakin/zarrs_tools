@@ -1,13 +1,10 @@
 #![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md"))]
 #![doc(hidden)]
 
-use std::{
-    sync::Mutex,
-    time::{Duration, SystemTime},
-};
+use std::{sync::Mutex, time::SystemTime};
 
 use clap::Parser;
-use indicatif::{ProgressBar, ProgressStyle};
+use progress::{Progress, ProgressCallback};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rayon_iter_concurrent_limit::iter_concurrent_limit;
 use serde::{Deserialize, Serialize};
@@ -18,7 +15,8 @@ use zarrs::{
             CodecOptionsBuilder, Crc32cCodec, ShardingCodec,
         },
         concurrency::RecommendedConcurrency,
-        Array, ArrayBuilder, CodecChain, DataType, DimensionName, FillValue, FillValueMetadata,
+        Array, ArrayBuilder, ArrayError, CodecChain, DataType, DimensionName, FillValue,
+        FillValueMetadata,
     },
     array_subset::ArraySubset,
     config::global_config,
@@ -568,18 +566,10 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
     array_out: &Array<TStorageOut>,
     validate: bool,
     concurrent_chunks: Option<usize>,
-) -> (f32, f32, f32, usize) {
+    progress_callback: &ProgressCallback,
+) -> Result<(f32, f32, f32, usize), ArrayError> {
     let start = SystemTime::now();
     let bytes_decoded = Mutex::new(0);
-    let duration_read = Mutex::new(Duration::from_secs(0));
-    let duration_write = Mutex::new(Duration::from_secs(0));
-    let chunks = ArraySubset::new_with_shape(array_out.chunk_grid_shape().unwrap());
-    let style =
-        ProgressStyle::with_template("[{elapsed_precise}] [{bar}] ({pos}/{len}, ETA {eta})")
-            .unwrap();
-    let pb = ProgressBar::new(chunks.num_elements());
-    pb.set_style(style);
-    pb.set_position(0);
 
     let chunk_representation = array_out
         .chunk_array_representation(&vec![0; array_out.chunk_grid().dimensionality()])
@@ -610,64 +600,56 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
         .concurrent_target(codec_concurrent_target)
         .build();
 
+    let progress = Progress::new(chunks.num_elements_usize(), progress_callback);
     let indices = chunks.indices();
     if array_in.data_type() == array_out.data_type() {
         iter_concurrent_limit!(
             chunks_concurrent_limit,
             indices,
-            for_each,
+            try_for_each,
             |chunk_indices: Vec<u64>| {
                 let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
-
-                let start_read = SystemTime::now();
-                let bytes = array_in.retrieve_array_subset(&chunk_subset).unwrap(); // NOTE: Max concurrency
-                *duration_read.lock().unwrap() += start_read.elapsed().unwrap();
+                let bytes = progress
+                    .read(|| array_in.retrieve_array_subset_opt(&chunk_subset, &codec_options))?;
                 *bytes_decoded.lock().unwrap() += bytes.len();
 
                 if validate {
                     let bytes_clone = bytes.clone();
-                    let start_write = SystemTime::now();
-                    array_out
-                        .store_chunk_opt(&chunk_indices, bytes_clone, &codec_options)
-                        .unwrap();
-                    *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
+                    progress.write(|| {
+                        array_out.store_chunk_opt(&chunk_indices, bytes_clone, &codec_options)
+                    })?;
                     let bytes_out = array_out
                         .retrieve_chunk_opt(&chunk_indices, &codec_options)
                         .unwrap();
                     assert!(bytes == bytes_out);
                 } else {
-                    let start_write = SystemTime::now();
-                    array_out
-                        .store_chunk_opt(&chunk_indices, bytes, &codec_options)
-                        .unwrap();
-                    *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
+                    progress.write(|| {
+                        array_out.store_chunk_opt(&chunk_indices, bytes, &codec_options)
+                    })?;
                 }
-                pb.inc(1);
+                progress.next();
+                Ok::<_, ArrayError>(())
             }
-        );
+        )?;
     } else {
         // FIXME
         todo!("zarrs_reencode does not yet support data type conversion!")
     }
-    pb.finish_and_clear();
-
-    if validate {
-        println!("Validation successful");
-    }
 
     let duration = start.elapsed().unwrap().as_secs_f32();
-    let duration_read = duration_read.into_inner().unwrap().as_secs_f32();
-    let duration_write = duration_write.into_inner().unwrap().as_secs_f32();
+    let stats = progress.stats();
+    let duration_read = stats.read.as_secs_f32();
+    let duration_write = stats.write.as_secs_f32();
     let duration_read_write = duration_read + duration_write;
     let duration_read = duration_read * duration / duration_read_write;
     let duration_write = duration_write * duration / duration_read_write;
 
-    (
+    Ok((
         duration,
         duration_read,
         duration_write,
         bytes_decoded.into_inner().unwrap(),
-    )
+    ))
 }
 
 /// Convert an arrays fill value to a new data type

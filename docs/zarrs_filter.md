@@ -205,8 +205,3 @@ zarrs_filter <RUNFILE.json>
 [00:00:22/00:00:22] summed area table filter/array_sat.zarr rw:198.70/198.81 p:52.61
 ```
 </details>
-
-
-## TODO
- - Filter: GuidedFilter
- - Filter: DistanceMap

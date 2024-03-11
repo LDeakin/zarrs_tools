@@ -35,7 +35,7 @@ impl<'a> Progress<'a> {
             duration_process_steps: Mutex::new(vec![]),
             duration_write: Mutex::new(Duration::ZERO),
         };
-        progress.update(0);
+        progress.update();
         progress
     }
 
@@ -77,25 +77,30 @@ impl<'a> Progress<'a> {
         result
     }
 
-    fn update(&self, step: usize) {
+    pub fn stats(&self) -> ProgressStats {
+        let step = self.step.load(std::sync::atomic::Ordering::SeqCst);
         let read = *self.duration_read.lock().unwrap();
         let process = *self.duration_process.lock().unwrap();
         let process_steps = self.duration_process_steps.lock().unwrap().clone();
         let write = *self.duration_write.lock().unwrap();
-        let stats = ProgressStats {
+        ProgressStats {
             step,
             num_steps: self.num_steps,
             read,
             process,
             process_steps,
             write,
-        };
+        }
+    }
+
+    fn update(&self) {
+        let stats = self.stats();
         self.progress_callback.update(stats);
     }
 
     pub fn next(&self) {
-        let step = 1 + self.step.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        self.update(step);
+        self.step.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.update();
     }
 }
 
