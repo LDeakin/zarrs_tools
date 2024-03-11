@@ -1,4 +1,18 @@
-# Convert a Multi-File NetCDF Variable to a Zarr v3 Array
+# zarrs_ncvar2zarr
+
+Convert a NetCDF variable to a Zarr v3 array.
+Multi-file variables are supported.
+
+
+## Installation
+`zarrs_ncvar2zarr` is installed with the `ncvar2zarr` feature of `zarrs_tools`
+
+```
+cargo install --features=ncvar2zarr zarrs_tools
+```
+
+## Example
+
 `tomoLoRes_nc` is a directory of netCDF files, each containing a "tomo" 3D variable, which has been split along dimension 0
  - (depth, height, width) = `(1209, 480, 480)`
  - data type = `uint16`

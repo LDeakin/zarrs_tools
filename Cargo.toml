@@ -14,7 +14,7 @@ categories = ["command-line-utilities", "encoding"]
 [features]
 async = ["zarrs/async", "zarrs/object_store"]
 benchmark = []
-binary = []
+binary2zarr = []
 filter = []
 ncvar2zarr = ["dep:netcdf"]
 ome = []
@@ -52,7 +52,7 @@ required-features = ["async", "benchmark"]
 
 [[bin]]
 name = "zarrs_binary2zarr"
-required-features = ["binary"]
+required-features = ["binary2zarr"]
 
 [[bin]]
 name = "zarrs_filter"

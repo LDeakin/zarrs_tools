@@ -1,4 +1,15 @@
-# Convert a Binary Image to a Zarr V3 Array
+# zarrs_binary2zarr
+
+Create a Zarr V3 array from piped binary data.
+
+## Installation
+`zarrs_binary2zarr` is installed with the `binary2zarr` feature of `zarrs_tools`
+
+```
+cargo install --features=binary2zarr zarrs_tools
+```
+
+## Example
 `chameleon_1024x1024x1080.uint16` is an uncompressed binary 3D image split into multiple files with
  - (depth, height, width) = `(1080, 1024, 1024)`
  - data type = `uint16`

@@ -4,6 +4,8 @@ Convert a Zarr V3 array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/ind
 
 > [!WARNING]
 > `zarrs_ome` is highly experimental and has had limited production testing.
+>
+> Conformance with the OME-Zarr 0.5-dev specification is not guaranteed and input validation is currently limited.
 
 `zarrs_ome` creates a multi-resolution Zarr V3 array through various methods:
  - Gaussian image pyramid
@@ -14,7 +16,12 @@ The downsample factor defaults to 2 on all axes (careful if data includes channe
 The physical size and units of the array elements can be set explicitly.
 The array can be reencoded when output to OME-Zarr.
 
-Currently `zarrs_ome` does not guarantee full conformance with the OME-Zarr 0.5-dev specification and it does little input validation.
+## Installation
+`zarrs_ome` is installed with the `ome` feature of `zarrs_tools`
+
+```
+cargo install --features=ome zarrs_tools
+```
 
 ## Usage
 

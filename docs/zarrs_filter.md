@@ -1,30 +1,36 @@
 # zarrs_filter
 
-`zarrs_filter` is a tool supporting several simple image filters (transformations).
+Apply simple image filters (transformations) to an array.
 
 > [!WARNING]
 > `zarrs_filter` is highly experimental and has had limited production testing.
 
 The filters currently supported are:
- - **reencode**:            Reencode (change encoding, data type, etc.)
- - **crop**:                Crop given an offset and shape
- - **rescale**:             Rescale values given a multiplier and offset
- - **clamp**:               Clamp values between a minimum and maximum
- - **equal**:               Return a binary image where the input is equal to some value
- - **downsample**:          Downsample given a stride
- - **gradient-magnitude**:  Compute the gradient magnitude (sobel)
+ - **reencode**:            Reencode (change encoding, data type, etc.).
+ - **crop**:                Crop given an offset and shape.
+ - **rescale**:             Rescale values given a multiplier and offset.
+ - **clamp**:               Clamp values between a minimum and maximum.
+ - **equal**:               Return a binary image where the input is equal to some value.
+ - **downsample**:          Downsample given a stride.
+ - **gradient-magnitude**:  Compute the gradient magnitude (sobel).
  - **gaussian**:            Apply a Gaussian kernel.
+ - **summed area table**:   Compute the summed area table.
 
-# Help
+## Installation
+`zarrs_filter` is installed with the `filter` feature of `zarrs_tools`
+
+```
+cargo install --features=filter zarrs_tools
+```
+
+## Help
 ```bash
-# cargo install --features=filter --path .
 zarrs_filter --help
 zarrs_filter <COMMAND> --help
 ```
 
-# Examples (CLI)
+## Examples (CLI)
 ```bash
-cargo install --features=filter --path .
 export ENCODE_ARGS="--shard-shape 256,256,256 --chunk-shape 32,32,32"
 zarrs_filter reencode           array.zarr       array_reencode.zarr            ${ENCODE_ARGS}
 zarrs_filter reencode           array.zarr       array_reencode_int32.zarr      ${ENCODE_ARGS} --data-type int32
@@ -41,7 +47,7 @@ zarrs_filter gaussian           array.zarr       array_gaussian.zarr            
 zarrs_filter summed-area-table  array.zarr       array_sat.zarr                 ${ENCODE_ARGS} --data-type int64
 ```
 
-# Examples (Config)
+## Examples (Config)
 
 ```bash
 zarrs_filter <RUNFILE.json>
@@ -201,6 +207,6 @@ zarrs_filter <RUNFILE.json>
 </details>
 
 
-# TODO
+## TODO
  - Filter: GuidedFilter
  - Filter: DistanceMap

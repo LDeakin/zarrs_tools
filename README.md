@@ -11,20 +11,20 @@ Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data wit
 [Changelog (CHANGELOG.md)](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md)
 
 ## Tools
-- `zarrs_reencode`: reencode an array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/reencode_rechunk.md).
+- [zarrs_reencode](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array.
   - Can change the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
   - Outputs OME-Zarr `0.5-dev`. This revision is currently recognised by [Neuroglancer](https://github.com/google/neuroglancer) for Zarr V3.
-- `zarrs_binary2zarr` (feature `binary`): create an array from piped binary data. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_binary.md).
-- `zarrs_ncvar2zarr` (feature `ncvar2zarr`): convert a netCDF variable to an array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/convert_netcdf.md).
+- [zarrs_binary2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
+- [zarrs_ncvar2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ncvar2zarr.md) (feature `ncvar2zarr`): convert a netCDF variable to an array.
   - Supports multi-file datasets where a variable has been split along a single dimension.
 
-> [!WARNING]
-> The following tools are highly experimental and have had limited production testing:
+The following tools are highly experimental and have had limited production testing:
 
-- `zarrs_filter` (feature `filter`): apply simple image filters (transformations) to an array. [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/filter.md).
-  - Supported filters include: reencode, crop, convert, rescale, clamp, equal, downsample, gradient magnitude.
-- `zarrs_ome` (feature `ome`): convert an array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html). [Example](https://github.com/LDeakin/zarrs_tools/blob/main/docs/ome_zarr.md).
+- [zarrs_filter](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
+- [zarrs_ome](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html).
   - Computes a Gaussian image pyramid.
+
+See [docs/](https://github.com/LDeakin/zarrs_tools/blob/main/docs/) for tool documentation.
 
 ## `zarrs` Benchmarking
 - `zarrs_reencode`: suitable for round trip benchmarking.

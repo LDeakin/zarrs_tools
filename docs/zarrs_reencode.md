@@ -1,4 +1,15 @@
-# Reencode/Rechunk a Zarr v3 Array
+# zarrs_reencode
+
+Reencode/rechunk a Zarr v3 array.
+
+## Installation
+`zarrs_reencode` packaged by default with `zarrs_tools` and requires no extra features.
+
+```
+cargo install zarrs_tools
+```
+
+## Example
 `array.zarr` is a zarr array with the following encoding parameters:
  - data type `int16`
  - shape `[1243, 1403, 1510]`
