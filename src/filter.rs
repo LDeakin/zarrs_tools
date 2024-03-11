@@ -8,7 +8,6 @@ mod filter_traits;
 mod kernel;
 mod path_or_identifier;
 mod path_or_temp_path;
-mod progress;
 // mod chunk_cache;
 
 pub mod filters {
@@ -32,7 +31,6 @@ pub use filter_input_output_arguments::FilterInputOutputArguments;
 pub use filter_traits::FilterTraits;
 pub use path_or_identifier::PathOrIdentifier;
 pub use path_or_temp_path::PathOrTempPath;
-pub use progress::{Progress, ProgressCallback, ProgressStats};
 // pub use chunk_cache::{ChunkCache, retrieve_array_subset_ndarray_cached};
 
 use sysinfo::{MemoryRefreshKind, RefreshKind, System};

@@ -27,6 +27,7 @@ use zarrs::{
 };
 
 pub mod filter;
+pub mod progress;
 
 #[derive(Parser)]
 #[allow(rustdoc::bare_urls)]

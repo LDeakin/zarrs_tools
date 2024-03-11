@@ -9,9 +9,12 @@ use zarrs::{
     storage::store::FilesystemStore,
 };
 
-use crate::filter::{
-    calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits,
-    progress::ProgressCallback, FilterArguments, FilterCommonArguments, Progress,
+use crate::{
+    filter::{
+        calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits,
+        FilterArguments, FilterCommonArguments,
+    },
+    progress::{Progress, ProgressCallback},
 };
 
 #[derive(Debug, Clone, Parser, Serialize, Deserialize)]

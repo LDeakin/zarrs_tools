@@ -12,10 +12,12 @@ use zarrs::{
     storage::store::FilesystemStore,
 };
 
-use crate::filter::{calculate_chunk_limit, progress::ProgressCallback, Progress};
-
-use crate::filter::{
-    filter_error::FilterError, filter_traits::FilterTraits, FilterArguments, FilterCommonArguments,
+use crate::{
+    filter::{
+        calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits,
+        FilterArguments, FilterCommonArguments,
+    },
+    progress::{Progress, ProgressCallback},
 };
 
 #[derive(Debug, Clone, Parser, Serialize, Deserialize)]
@@ -254,7 +256,7 @@ impl FilterTraits for SummedAreaTable {
 
 #[cfg(test)]
 mod tests {
-    use crate::filter::ProgressStats;
+    use crate::progress::ProgressStats;
 
     use super::*;
     use std::error::Error;

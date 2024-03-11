@@ -11,13 +11,12 @@ use zarrs::{
     storage::store::FilesystemStore,
 };
 
-use crate::filter::{
-    calculate_chunk_limit, progress::ProgressCallback, ArraySubsetOverlap, Progress,
-};
-
-use crate::filter::{
-    filter_error::FilterError, filter_traits::FilterTraits, kernel::apply_1d_kernel,
-    FilterArguments, FilterCommonArguments,
+use crate::{
+    filter::{
+        calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits,
+        kernel::apply_1d_kernel, ArraySubsetOverlap, FilterArguments, FilterCommonArguments,
+    },
+    progress::{Progress, ProgressCallback},
 };
 
 #[derive(Debug, Clone, Parser, Serialize, Deserialize, Default)]
@@ -267,7 +266,7 @@ fn create_sampled_gaussian_kernel(sigma: f32, kernel_half_size: u64) -> ndarray:
 
 #[cfg(test)]
 mod tests {
-    use crate::filter::ProgressStats;
+    use crate::progress::ProgressStats;
 
     use super::*;
     use std::error::Error;

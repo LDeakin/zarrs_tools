@@ -16,8 +16,9 @@ use zarrs::{
 use zarrs_tools::{
     filter::{
         FilterCommand, FilterCommandTraits, FilterError, FilterTraits, PathOrIdentifier,
-        PathOrTempPath, ProgressCallback, ProgressStats,
+        PathOrTempPath,
     },
+    progress::{ProgressCallback, ProgressStats},
     ZarrReencodingArgs,
 };
 

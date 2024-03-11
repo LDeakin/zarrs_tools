@@ -10,8 +10,9 @@ use zarrs::{
     storage::store::FilesystemStore,
 };
 
-use crate::filter::{
-    calculate_chunk_limit, progress::ProgressCallback, ArraySubsetOverlap, Progress,
+use crate::{
+    filter::{calculate_chunk_limit, ArraySubsetOverlap},
+    progress::{Progress, ProgressCallback},
 };
 
 use crate::filter::{
@@ -242,7 +243,7 @@ impl FilterTraits for GradientMagnitude {
 
 #[cfg(test)]
 mod tests {
-    use crate::filter::ProgressStats;
+    use crate::progress::ProgressStats;
 
     use super::*;
     use std::error::Error;

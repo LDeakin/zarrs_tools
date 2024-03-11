@@ -3,9 +3,11 @@ use zarrs::{
     storage::store::FilesystemStore,
 };
 
-use crate::{convert_fill_value, get_array_builder_reencode, ZarrReencodingArgs};
+use crate::{
+    convert_fill_value, get_array_builder_reencode, progress::ProgressCallback, ZarrReencodingArgs,
+};
 
-use super::{filter_error::FilterError, progress::ProgressCallback};
+use super::filter_error::FilterError;
 
 pub trait FilterTraits {
     /// Checks if the input and output are compatible.

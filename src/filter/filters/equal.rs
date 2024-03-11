@@ -10,12 +10,13 @@ use zarrs::{
 };
 
 use crate::{
-    filter::{calculate_chunk_limit, progress::ProgressCallback, Progress},
     parse_fill_value,
+    progress::{Progress, ProgressCallback},
 };
 
 use crate::filter::{
-    filter_error::FilterError, filter_traits::FilterTraits, FilterArguments, FilterCommonArguments,
+    calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits, FilterArguments,
+    FilterCommonArguments,
 };
 
 #[derive(Debug, Clone, Parser, Serialize, Deserialize)]

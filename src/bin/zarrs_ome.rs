@@ -22,8 +22,9 @@ use zarrs::{
 use zarrs_tools::{
     filter::{
         filters::{downsample::Downsample, gaussian::Gaussian},
-        ArraySubsetOverlap, FilterError, FilterTraits, Progress, ProgressCallback, ProgressStats,
+        ArraySubsetOverlap, FilterError, FilterTraits,
     },
+    progress::{Progress, ProgressCallback, ProgressStats},
     ZarrReEncodingChangeType, ZarrReencodingArgs,
 };
 
