@@ -3,7 +3,7 @@
 Convert a Zarr V3 array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) (0.5-dev).
 
 > [!WARNING]
-> `zarrs_ome` is experimental and has had minimal production testing.
+> `zarrs_ome` is highly experimental and has had limited production testing.
 
 `zarrs_ome` creates a multi-resolution Zarr V3 array through various methods:
  - Gaussian image pyramid

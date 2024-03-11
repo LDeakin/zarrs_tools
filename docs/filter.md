@@ -3,7 +3,7 @@
 `zarrs_filter` is a tool supporting several simple image filters (transformations).
 
 > [!WARNING]
-> `zarrs_filter` is experimental and has had minimal production testing.
+> `zarrs_filter` is highly experimental and has had limited production testing.
 
 The filters currently supported are:
  - **reencode**:            Reencode (change encoding, data type, etc.)
@@ -23,23 +23,22 @@ zarrs_filter <COMMAND> --help
 ```
 
 # Examples (CLI)
-`array.zarr` is a $1243\times1403\times1510$ `int16` array.
 ```bash
 cargo install --features=filter --path .
 export ENCODE_ARGS="--shard-shape 256,256,256 --chunk-shape 32,32,32"
-zarrs_filter reencode           data/array.zarr                    data/filter/array_reencode.zarr            ${ENCODE_ARGS}
-zarrs_filter reencode           data/array.zarr                    data/filter/array_reencode_int32.zarr      ${ENCODE_ARGS} --data-type int32
-zarrs_filter reencode           data/array.zarr                    data/filter/array_reencode_float32.zarr    ${ENCODE_ARGS} --data-type float32
-zarrs_filter crop               data/array.zarr                    data/filter/array_crop.zarr                ${ENCODE_ARGS} --data-type float32 256,256,256 768,768,768
-zarrs_filter rescale            data/array.zarr                    data/filter/array_rescale.zarr             ${ENCODE_ARGS} --data-type float32 2.0 1.0 --fill-value 1.0
-zarrs_filter clamp              data/array.zarr                    data/filter/array_clamp.zarr               ${ENCODE_ARGS} --data-type float32 5 255 --fill-value 5.0
-zarrs_filter equal              data/array.zarr                    data/filter/array_equal_bool.zarr          ${ENCODE_ARGS} --data-type bool 1 --fill-value true
-zarrs_filter equal              data/array.zarr                    data/filter/array_equal_uint8.zarr         ${ENCODE_ARGS} --data-type uint8 1 --fill-value 1
-zarrs_filter downsample         data/array.zarr                    data/filter/array_downsample.zarr          ${ENCODE_ARGS} --data-type float32 2,2,2
-zarrs_filter downsample         data/filter/array_equal_uint8.zarr data/filter/array_downsample_discrete.zarr ${ENCODE_ARGS} --data-type uint8 2,2,2 --discrete
-zarrs_filter gradient-magnitude data/array.zarr                    data/filter/array_gradient_magnitude.zarr  ${ENCODE_ARGS} --data-type float32
-zarrs_filter gaussian           data/array.zarr                    data/filter/array_gaussian.zarr            ${ENCODE_ARGS} --data-type float32 1.0,1.0,1.0 3,3,3
-zarrs_filter summed-area-table  data/array.zarr                    data/filter/array_sat.zarr                 ${ENCODE_ARGS} --data-type int64
+zarrs_filter reencode           array.zarr       array_reencode.zarr            ${ENCODE_ARGS}
+zarrs_filter reencode           array.zarr       array_reencode_int32.zarr      ${ENCODE_ARGS} --data-type int32
+zarrs_filter reencode           array.zarr       array_reencode_float32.zarr    ${ENCODE_ARGS} --data-type float32
+zarrs_filter crop               array.zarr       array_crop.zarr                ${ENCODE_ARGS} --data-type float32 256,256,256 768,768,768
+zarrs_filter rescale            array.zarr       array_rescale.zarr             ${ENCODE_ARGS} --data-type float32 2.0 1.0 --fill-value 1.0
+zarrs_filter clamp              array.zarr       array_clamp.zarr               ${ENCODE_ARGS} --data-type float32 5 255 --fill-value 5.0
+zarrs_filter equal              array.zarr       array_equal_bool.zarr          ${ENCODE_ARGS} --data-type bool 1 --fill-value true
+zarrs_filter equal              array.zarr       array_eq_u8.zarr               ${ENCODE_ARGS} --data-type uint8 1 --fill-value 1
+zarrs_filter downsample         array.zarr       array_downsample.zarr          ${ENCODE_ARGS} --data-type float32 2,2,2
+zarrs_filter downsample         array_eq_u8.zarr array_downsample_discrete.zarr ${ENCODE_ARGS} --data-type uint8 2,2,2 --discrete
+zarrs_filter gradient-magnitude array.zarr       array_gradient_magnitude.zarr  ${ENCODE_ARGS} --data-type float32
+zarrs_filter gaussian           array.zarr       array_gaussian.zarr            ${ENCODE_ARGS} --data-type float32 1.0,1.0,1.0 3,3,3
+zarrs_filter summed-area-table  array.zarr       array_sat.zarr                 ${ENCODE_ARGS} --data-type int64
 ```
 
 # Examples (Config)
