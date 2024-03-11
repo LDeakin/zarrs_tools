@@ -1,6 +1,3 @@
-// TODO: Application + Library?
-// TODO: Proper error handling and input validation
-
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use rayon::{iter::ParallelIterator, slice::ParallelSlice};
@@ -283,12 +280,21 @@ fn main() {
     }
     let array_shape = array_shape.unwrap();
     let dimension_names = dimension_names.unwrap();
-    let dimension_names = Some(dimension_names.iter().map(DimensionName::new).collect());
+    let dimension_names: Option<Vec<DimensionName>> =
+        Some(dimension_names.iter().map(DimensionName::new).collect());
     let datatype = datatype.unwrap();
     let data_type = zarrs::array::DataType::from_metadata(&Metadata::new(&datatype)).unwrap();
-    println!("{array_shape:?}");
-    println!("{dimension_names:?}");
-    println!("{datatype:?}");
+    // println!("Shape: {array_shape:?}");
+    // println!("Datatype: {datatype}");
+    // println!(
+    //     "Dimension names: {:?}",
+    //     dimension_names
+    //         .as_ref()
+    //         .unwrap()
+    //         .iter()
+    //         .map(|d| d.as_str().unwrap_or_default().to_string())
+    //         .collect_vec()
+    // );
 
     // Create storage
     let path_out = cli.out.as_path();

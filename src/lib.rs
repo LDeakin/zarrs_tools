@@ -10,6 +10,7 @@ use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rayon_iter_concurrent_limit::iter_concurrent_limit;
+use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{
         codec::{
@@ -17,13 +18,15 @@ use zarrs::{
             CodecOptionsBuilder, Crc32cCodec, ShardingCodec,
         },
         concurrency::RecommendedConcurrency,
-        Array, ArrayBuilder, CodecChain, DataType, DimensionName, FillValueMetadata,
+        Array, ArrayBuilder, CodecChain, DataType, DimensionName, FillValue, FillValueMetadata,
     },
     array_subset::ArraySubset,
     config::global_config,
     metadata::Metadata,
     storage::{store::FilesystemStore, ReadableWritableStorageTraits},
 };
+
+pub mod filter;
 
 #[derive(Parser)]
 #[allow(rustdoc::bare_urls)]
@@ -36,8 +39,8 @@ pub struct ZarrEncodingArgs {
     ///   int/uint: 0
     ///   float: 0.0 "NaN" "Infinity" "-Infinity"
     ///   r*: "[0, 255]"
-    #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true))]
-    pub fill_value: String,
+    #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true), value_parser = parse_fill_value)]
+    pub fill_value: FillValueMetadata,
 
     /// The chunk key encoding separator. Either `/`. or `.`.
     #[arg(long, default_value_t = '/')]
@@ -89,6 +92,16 @@ pub struct ZarrEncodingArgs {
     /// JSON holding array attributes.
     #[arg(long)]
     pub attributes: Option<String>,
+}
+
+fn parse_metadata(metadata: &str) -> std::io::Result<Metadata> {
+    serde_json::from_str(metadata)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
+}
+
+fn parse_fill_value(fill_value: &str) -> std::io::Result<FillValueMetadata> {
+    serde_json::from_str(fill_value)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
 }
 
 #[must_use]
@@ -173,10 +186,8 @@ pub fn get_array_builder(
     );
 
     // Get data type / fill value
-    let fill_value_metadata =
-        FillValueMetadata::try_from(encoding_args.fill_value.as_str()).unwrap();
     let fill_value = data_type
-        .fill_value_from_metadata(&fill_value_metadata)
+        .fill_value_from_metadata(&encoding_args.fill_value)
         .unwrap();
 
     // Create array
@@ -219,8 +230,22 @@ pub fn get_array_builder(
     array_builder
 }
 
-#[derive(Parser, Debug)]
-pub struct ZarrReEncodingArgs {
+#[derive(Parser, Debug, Clone, Default, Serialize, Deserialize)]
+
+pub struct ZarrReencodingArgs {
+    /// The data type as a string
+    ///
+    /// Valid data types:
+    ///   - bool
+    ///   - int8, int16, int32, int64
+    ///   - uint8, uint16, uint32, uint64
+    ///   - float16, float32, float64, bfloat16
+    ///   - complex64, complex 128
+    ///   - r* (raw bits, where * is a multiple of 8)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[arg(short, long, verbatim_doc_comment, value_parser = parse_metadata)]
+    pub data_type: Option<Metadata>,
+
     /// Fill value. See <https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#fill-value>
     ///
     /// The fill value must be compatible with the data type.
@@ -229,16 +254,19 @@ pub struct ZarrReEncodingArgs {
     ///   int/uint: 0
     ///   float: 0.0 "NaN" "Infinity" "-Infinity"
     ///   r*: "[0, 255]"
-    #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true))]
-    pub fill_value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true), value_parser = parse_fill_value)]
+    pub fill_value: Option<FillValueMetadata>,
 
     /// The chunk key encoding separator. Either `/`. or `.`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long)]
     pub separator: Option<char>,
 
     /// Chunk shape. A comma separated list of the chunk size along each array dimension.
     ///
     /// If any dimension has size zero, it will be set to match the array shape.
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(short, long, value_delimiter = ',')]
     pub chunk_shape: Option<Vec<u64>>,
 
@@ -246,6 +274,7 @@ pub struct ZarrReEncodingArgs {
     ///
     /// If specified, the array is encoded using the sharding codec.
     /// If any dimension has size zero, it will be set to match the array shape.
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(short, long, verbatim_doc_comment, value_delimiter = ',')]
     pub shard_shape: Option<Vec<u64>>,
 
@@ -255,6 +284,7 @@ pub struct ZarrReEncodingArgs {
     ///
     /// Examples:
     ///   '[ { "name": "bitround", "configuration": { "keepbits": 9 } } ]'
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long, verbatim_doc_comment)]
     pub array_to_array_codecs: Option<String>,
 
@@ -264,6 +294,7 @@ pub struct ZarrReEncodingArgs {
     ///
     /// Examples:
     ///   '{ "name": "zfp", "configuration": { "mode": "fixedprecision", "precision": 19 } }'
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long, verbatim_doc_comment)]
     pub array_to_bytes_codec: Option<String>,
 
@@ -274,26 +305,56 @@ pub struct ZarrReEncodingArgs {
     /// Examples:
     ///   '[ { "name": "blosc", "configuration": { "cname": "blosclz", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]'
     ///   '[ { "name": "gzip", "configuration": { "level": 3 } } ]'
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long, verbatim_doc_comment)]
     pub bytes_to_bytes_codecs: Option<String>,
 
     /// Attributes (optional).
     ///
     /// JSON holding array attributes.
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long)]
     pub attributes: Option<String>,
 
     /// Attributes to append (optional).
     ///
     /// JSON holding array attributes.
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long)]
     pub attributes_append: Option<String>,
 }
 
+pub enum ZarrReEncodingChangeType {
+    None,
+    Metadata,
+    MetadataAndChunks,
+}
+
+impl ZarrReencodingArgs {
+    pub fn change_type(&self) -> ZarrReEncodingChangeType {
+        if self.data_type.is_some()
+            || self.fill_value.is_some()
+            || self.separator.is_some()
+            || self.chunk_shape.is_some()
+            || self.shard_shape.is_some()
+            || self.array_to_array_codecs.is_some()
+            || self.array_to_bytes_codec.is_some()
+            || self.bytes_to_bytes_codecs.is_some()
+        {
+            ZarrReEncodingChangeType::MetadataAndChunks
+        } else if self.attributes.is_some() || self.attributes_append.is_some() {
+            ZarrReEncodingChangeType::Metadata
+        } else {
+            ZarrReEncodingChangeType::None
+        }
+    }
+}
+
 #[must_use]
-pub fn get_array_builder_reencode<TStorage>(
-    encoding_args: &ZarrReEncodingArgs,
+pub fn get_array_builder_reencode<TStorage: ?Sized>(
+    encoding_args: &ZarrReencodingArgs,
     array: &Array<TStorage>,
+    array_shape: Option<Vec<u64>>,
 ) -> zarrs::array::ArrayBuilder {
     let array_to_bytes_metadata = array
         .codecs()
@@ -344,43 +405,6 @@ pub fn get_array_builder_reencode<TStorage>(
             bytes_to_bytes_codecs,
         )
     };
-
-    // let shard_shape = encoding_args.shard_shape.map(|shard_shape| {
-    //     std::iter::zip(shard_shape, array.shape())
-    //         .map(|(&s, &a)| if s == 0 { a } else { std::cmp::min(s, a) })
-    //         .zip(&chunk_shape)
-    //         .map(|(s, c)| {
-    //             // the shard shape must be a multiple of the chunk shape
-    //             c * ((s + c - 1) / c)
-    //         })
-    //         .collect::<Vec<u64>>()
-    // });
-
-    // // Set the chunk/shard shape to the array shape where it is 0, otherwise make it <= array shape
-    // // Also ensure shard shape is a multiple of chunk shape
-    // let chunk_shape: Vec<u64> = std::iter::zip(&encoding_args.chunk_shape, array.shape())
-    //     .map(|(&c, &a)| if c == 0 { a } else { c })
-    //     .collect();
-    // let shard_shape: Option<Vec<u64>> = if let Some(shard_shape) = &encoding_args.shard_shape {
-    //     let shard_shape = std::iter::zip(shard_shape, array.shape())
-    //         .map(|(&s, &a)| if s == 0 { a } else { std::cmp::min(s, a) })
-    //         .zip(&chunk_shape)
-    //         .map(|(s, c)| {
-    //             // the shard shape must be a multiple of the chunk shape
-    //             c * ((s + c - 1) / c)
-    //         })
-    //         .collect();
-    //     Some(shard_shape)
-    // } else {
-    //     None
-    // };
-
-    // // Get the "block shape", which is the shard shape if sharding, otherwise the chunk shape
-    // let block_shape = if let Some(shard_shape) = &shard_shape {
-    //     shard_shape
-    // } else {
-    //     &chunk_shape
-    // };
 
     // Chunk shape override
     let chunk_shape = encoding_args
@@ -484,14 +508,32 @@ pub fn get_array_builder_reencode<TStorage>(
         array_builder.chunk_key_encoding_default_separator(separator.try_into().unwrap());
     }
 
+    if let Some(array_shape) = array_shape {
+        array_builder.shape(array_shape);
+    }
+
+    if let Some(data_type) = &encoding_args.data_type {
+        let data_type = DataType::from_metadata(data_type).unwrap();
+        array_builder.data_type(data_type.clone());
+    }
+
     if let Some(fill_value) = &encoding_args.fill_value {
-        let fill_value_metadata = FillValueMetadata::try_from(fill_value.as_str()).unwrap();
-        let fill_value = array
-            .data_type()
-            .fill_value_from_metadata(&fill_value_metadata)
+        // An explicit fill value was supplied
+        let fill_value = array_builder
+            .data_type
+            .fill_value_from_metadata(fill_value)
             .unwrap();
         array_builder.fill_value(fill_value);
+    } else if let Some(data_type) = &encoding_args.data_type {
+        // The data type was changed, but no fill value supplied, so just cast it
+        let data_type = DataType::from_metadata(data_type).unwrap();
+        let fill_value = convert_fill_value(array.data_type(), array.fill_value(), &data_type);
+        array_builder.fill_value(fill_value);
     }
+    assert_eq!(
+        array_builder.data_type.size(),
+        array_builder.fill_value.size()
+    );
 
     if let Some(shard_shape) = shard_shape {
         array_builder.chunk_grid(shard_shape.try_into().unwrap());
@@ -568,39 +610,44 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
         .build();
 
     let indices = chunks.indices();
-    iter_concurrent_limit!(
-        chunks_concurrent_limit,
-        indices.into_par_iter(),
-        for_each,
-        |chunk_indices| {
-            let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
+    if array_in.data_type() == array_out.data_type() {
+        iter_concurrent_limit!(
+            chunks_concurrent_limit,
+            indices,
+            for_each,
+            |chunk_indices: Vec<u64>| {
+                let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
 
-            let start_read = SystemTime::now();
-            let bytes = array_in.retrieve_array_subset(&chunk_subset).unwrap(); // NOTE: Max concurrency
-            *duration_read.lock().unwrap() += start_read.elapsed().unwrap();
-            *bytes_decoded.lock().unwrap() += bytes.len();
+                let start_read = SystemTime::now();
+                let bytes = array_in.retrieve_array_subset(&chunk_subset).unwrap(); // NOTE: Max concurrency
+                *duration_read.lock().unwrap() += start_read.elapsed().unwrap();
+                *bytes_decoded.lock().unwrap() += bytes.len();
 
-            if validate {
-                let bytes_clone = bytes.clone();
-                let start_write = SystemTime::now();
-                array_out
-                    .store_chunk_opt(&chunk_indices, bytes_clone, &codec_options)
-                    .unwrap();
-                *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
-                let bytes_out = array_out
-                    .retrieve_chunk_opt(&chunk_indices, &codec_options)
-                    .unwrap();
-                assert!(bytes == bytes_out);
-            } else {
-                let start_write = SystemTime::now();
-                array_out
-                    .store_chunk_opt(&chunk_indices, bytes, &codec_options)
-                    .unwrap();
-                *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
+                if validate {
+                    let bytes_clone = bytes.clone();
+                    let start_write = SystemTime::now();
+                    array_out
+                        .store_chunk_opt(&chunk_indices, bytes_clone, &codec_options)
+                        .unwrap();
+                    *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
+                    let bytes_out = array_out
+                        .retrieve_chunk_opt(&chunk_indices, &codec_options)
+                        .unwrap();
+                    assert!(bytes == bytes_out);
+                } else {
+                    let start_write = SystemTime::now();
+                    array_out
+                        .store_chunk_opt(&chunk_indices, bytes, &codec_options)
+                        .unwrap();
+                    *duration_write.lock().unwrap() += start_write.elapsed().unwrap();
+                }
+                pb.inc(1);
             }
-            pb.inc(1);
-        }
-    );
+        );
+    } else {
+        // FIXME
+        todo!("zarrs_reencode does not yet support data type conversion!")
+    }
     pb.finish_and_clear();
 
     if validate {
@@ -620,4 +667,70 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
         duration_write,
         bytes_decoded.into_inner().unwrap(),
     )
+}
+
+/// Convert an arrays fill value to a new data type
+fn convert_fill_value(
+    data_type_in: &DataType,
+    fill_value_in: &FillValue,
+    data_type_out: &DataType,
+) -> FillValue {
+    macro_rules! convert {
+        ( $t_in:ty, $t_out:ty) => {{
+            let input_fill_value =
+                <$t_in>::from_ne_bytes(fill_value_in.as_ne_bytes().try_into().unwrap());
+            use num_traits::AsPrimitive;
+            let output_fill_value: $t_out = input_fill_value.as_();
+            FillValue::from(output_fill_value)
+        }};
+    }
+    macro_rules! apply_inner {
+        ( $type_in:ty, [$( ( $data_type_out:ident, $type_out:ty ) ),* ]) => {
+            match data_type_out {
+                $(DataType::$data_type_out => { convert!($type_in, $type_out) } ,)*
+                _ => panic!()
+            }
+        };
+    }
+    macro_rules! apply_outer {
+    ([$( ( $data_type_in:ident, $type_in:ty ) ),* ]) => {
+            match data_type_in {
+                $(
+                    DataType::$data_type_in => {
+                        apply_inner!($type_in, [
+                            (Bool, u8),
+                            (Int8, i8),
+                            (Int16, i16),
+                            (Int32, i32),
+                            (Int64, i64),
+                            (UInt8, u8),
+                            (UInt16, u16),
+                            (UInt32, u32),
+                            (UInt64, u64),
+                            (BFloat16, half::bf16),
+                            (Float16, half::f16),
+                            (Float32, f32),
+                            (Float64, f64)
+                        ]
+                    )}
+                ,)*
+                _ => panic!()
+            }
+        };
+    }
+    apply_outer!([
+        (Bool, u8),
+        (Int8, i8),
+        (Int16, i16),
+        (Int32, i32),
+        (Int64, i64),
+        (UInt8, u8),
+        (UInt16, u16),
+        (UInt32, u32),
+        (UInt64, u64),
+        (BFloat16, half::bf16),
+        (Float16, half::f16),
+        (Float32, f32),
+        (Float64, f64)
+    ])
 }

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - `zarrs_filter`: apply simple image filters (transformations) to an array
+ - `zarrs_ome`: convert an array to OME-Zarr
+
+### Changed
+ - Put various tools behind feature flags
+ - Bump `rayon_iter_concurrent_limit` to 0.2.0
+ - Various minor fixes to clap help
+ - `zarrs_reencode`: add `--attributes-append` to re-encoding options
+
 ## [0.3.0] - 2024-02-22
 
 ### Added
