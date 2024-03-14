@@ -118,12 +118,8 @@ impl FilterTraits for Equal {
         chunk_input.size_usize() + chunk_output.size_usize()
     }
 
-    fn output_data_type(&self, _input: &Array<FilesystemStore>) -> Option<DataType> {
-        Some(DataType::Bool)
-    }
-
-    fn output_fill_value(&self, _input: &Array<FilesystemStore>) -> Option<FillValue> {
-        Some(FillValue::from(false))
+    fn output_data_type(&self, _input: &Array<FilesystemStore>) -> Option<(DataType, FillValue)> {
+        Some((DataType::Bool, FillValue::from(false)))
     }
 
     fn apply(
