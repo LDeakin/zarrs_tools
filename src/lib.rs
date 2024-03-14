@@ -35,7 +35,7 @@ pub struct ZarrEncodingArgs {
     /// The fill value must be compatible with the data type.
     ///
     /// Examples:
-    ///   int/uint: 0
+    ///   int/uint: 0 100 -100
     ///   float: 0.0 "NaN" "Infinity" "-Infinity"
     ///   r*: "[0, 255]"
     #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true), value_parser = parse_fill_value)]
@@ -60,29 +60,37 @@ pub struct ZarrEncodingArgs {
 
     /// Array to array codecs (optional).
     ///
-    /// JSON holding array to array codec metadata.
+    /// JSON holding an array of array to array codec metadata.
     ///
     /// Examples:
+    ///   '[ { "name": "transpose", "configuration": { "order": [0, 2, 1] } } ]'
     ///   '[ { "name": "bitround", "configuration": { "keepbits": 9 } } ]'
     #[arg(long, verbatim_doc_comment)]
     pub array_to_array_codecs: Option<String>,
 
     /// Array to bytes codec (optional).
     ///
-    /// JSON holding array to array codec metadata.
+    /// JSON holding array to bytes codec metadata.
+    /// If unspecified, this defaults to the `bytes` codec.
+    ///
+    /// The sharding codec can be used by setting `shard_shape`, but this can also be done explicitly here.
     ///
     /// Examples:
+    ///   '{ "name": "pcodec", "configuration": { "level": 12 } }'
     ///   '{ "name": "zfp", "configuration": { "mode": "fixedprecision", "precision": 19 } }'
     #[arg(long, verbatim_doc_comment)]
     pub array_to_bytes_codec: Option<String>,
 
     /// Bytes to bytes codecs (optional).
     ///
-    /// JSON holding bytes to bytes codec configurations.
+    /// JSON holding an array of bytes to bytes codec configurations.
     ///
     /// Examples:
     ///   '[ { "name": "blosc", "configuration": { "cname": "blosclz", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]'
-    ///   '[ { "name": "gzip", "configuration": { "level": 3 } } ]'
+    ///   '[ { "name": "bz2", "configuration": { "level": 9 } } ]'
+    ///   '[ { "name": "crc32c" ]'
+    ///   '[ { "name": "gzip", "configuration": { "level": 9 } } ]'
+    ///   '[ { "name": "zstd", "configuration": { "level": 22, "checksum": false } } ]'
     #[arg(long, verbatim_doc_comment)]
     pub bytes_to_bytes_codecs: Option<String>,
 
@@ -250,7 +258,7 @@ pub struct ZarrReencodingArgs {
     /// The fill value must be compatible with the data type.
     ///
     /// Examples:
-    ///   int/uint: 0
+    ///   int/uint: 0 100 -100
     ///   float: 0.0 "NaN" "Infinity" "-Infinity"
     ///   r*: "[0, 255]"
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -279,9 +287,10 @@ pub struct ZarrReencodingArgs {
 
     /// Array to array codecs.
     ///
-    /// JSON holding array to array codec metadata.
+    /// JSON holding an array of array to array codec metadata.
     ///
     /// Examples:
+    ///   '[ { "name": "transpose", "configuration": { "order": [0, 2, 1] } } ]'
     ///   '[ { "name": "bitround", "configuration": { "keepbits": 9 } } ]'
     #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long, verbatim_doc_comment)]
@@ -289,9 +298,10 @@ pub struct ZarrReencodingArgs {
 
     /// Array to bytes codec.
     ///
-    /// JSON holding array to array codec metadata.
+    /// JSON holding array to bytes codec metadata.
     ///
     /// Examples:
+    ///   '{ "name": "pcodec", "configuration": { "level": 12 } }'
     ///   '{ "name": "zfp", "configuration": { "mode": "fixedprecision", "precision": 19 } }'
     #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long, verbatim_doc_comment)]
@@ -299,11 +309,14 @@ pub struct ZarrReencodingArgs {
 
     /// Bytes to bytes codecs.
     ///
-    /// JSON holding bytes to bytes codec configurations.
+    /// JSON holding an array bytes to bytes codec configurations.
     ///
     /// Examples:
     ///   '[ { "name": "blosc", "configuration": { "cname": "blosclz", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]'
-    ///   '[ { "name": "gzip", "configuration": { "level": 3 } } ]'
+    ///   '[ { "name": "bz2", "configuration": { "level": 9 } } ]'
+    ///   '[ { "name": "crc32c" } ]'
+    ///   '[ { "name": "gzip", "configuration": { "level": 9 } } ]'
+    ///   '[ { "name": "zstd", "configuration": { "level": 22, "checksum": false } } ]'
     #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long, verbatim_doc_comment)]
     pub bytes_to_bytes_codecs: Option<String>,
