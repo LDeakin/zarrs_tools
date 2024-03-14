@@ -3,7 +3,7 @@
 Apply simple image filters (transformations) to an array.
 
 > [!WARNING]
-> `zarrs_filter` is highly experimental and has had limited production testing.
+> `zarrs_filter` is highly experimental, has had limited production testing, and is sparsely documented.
 
 The filters currently supported are:
  - **reencode**:            Reencode (change encoding, data type, etc.).
@@ -59,73 +59,106 @@ zarrs_filter <RUNFILE.json>
 ```json
 [
     {
+        "_comment": "Rechunk the input",
         "filter": "reencode",
         "input": "array.zarr",
-        "output": "$reencode-0",
+        "output": "$reencode0",
         "shard_shape": [256, 256, 256],
         "chunk_shape": [32, 32, 32]
     },
     {
+        "_comment": "Reencode the previous output as float32, automatically cast the fill value",
+        "filter": "reencode",
+        "output": "filter/array_float32.zarr",
+        "data_type": "float32"
+    },
+    {
         "filter": "crop",
+        "input": "$reencode0",
+        "output": "filter/array_crop.zarr",
         "offset": [256, 256, 256],
         "shape": [768, 768, 768]
     },
     {
-        "filter": "reencode",
-        "data_type": "float32"
-    },
-    {
+        "_comment": "Multiply by 7.0/20000.0, casting most values in the image between 0 and 7, store in 8-bit (saturate cast)",
         "filter": "rescale",
-        "output": "filter/array_crop_convert_rescale.zarr",
-        "multiply": 2.0,
-        "add": 1.0,
-        "fill_value": 1.0
+        "input": "$reencode0",
+        "output": "filter/array_3bit.zarr",
+        "multiply": 0.00035,
+        "add": 0.0,
+        "data_type": "uint8",
+        "fill_value": 0
     },
     {
+        "_comment": "Multiply by 255.0/20000.0, casting most values in the image between 0 and 7, store in 8-bit (saturate cast)",
+        "filter": "rescale",
+        "input": "$reencode0",
+        "output": "filter/array_8bit.zarr",
+        "multiply": 0.01275,
+        "add": 0.0,
+        "data_type": "uint8",
+        "fill_value": 0
+    },
+    {
+        "_comment": "Clamp the 3-bit output between 2 and 5 and set the fill value to 2",
         "filter": "clamp",
-        "input": "$reencode-0",
-        "output": "$clamp-0",
-        "min": 5,
-        "max": 255,
-        "fill_value": 5
+        "output": "filter/array_3bit_clamp.zarr",
+        "min": 2,
+        "max": 5,
+        "fill_value": 2
     },
     {
+        "_comment": "Calculate a binary image where the input is equal to 5 (the max from the clamp). Store as bool",
         "filter": "equal",
-        "input": "$clamp-0", 
+        "input": "filter/array_3bit_clamp.zarr", 
         "output": "filter/array_clamp_equal_bool.zarr",
         "value": 5
     },
     {
+        "_comment": "Calculate a binary image where the input is equal to 5 (the max from the clamp). Store as uint8",
         "filter": "equal",
-        "input": "$clamp-0",
-        "output": "filter/array_clamp_equal_uint8.zarr",
+        "input": "filter/array_3bit_clamp.zarr",
+        "output": "filter/array_3bit_max.zarr",
         "value": 5,
         "data_type": "uint8",
-        "fill_value": 1
+        "fill_value": 0
     },
     {
+        "_comment": "Downsample clamped image by a factor of 2 with mean operator.",
         "filter": "downsample",
-        "input": "$reencode-0",
-        "output": "filter/array_downsample.zarr",
+        "input": "filter/array_3bit_clamp.zarr",
+        "output": "filter/array_3bit_clamp_by2_continuous.zarr",
         "stride": [2, 2, 2],
+        "discrete": false,
+        "data_type": "float32",
+        "shard_shape": [128, 128, 128],
+        "chunk_shape": [32, 32, 32]
+    },
+    {
+        "_comment": "Downsample clamped image by a factor of 2 with mode operator.",
+        "filter": "downsample",
+        "input": "filter/array_3bit_clamp.zarr",
+        "output": "filter/array_3bit_clamp_by2_discrete.zarr",
+        "stride": [2, 2, 2],
+        "discrete": true,
         "shard_shape": [128, 128, 128],
         "chunk_shape": [32, 32, 32]
     },
     {
         "filter": "gradient_magnitude",
-        "input": "$reencode-0",
-        "output": "filter/array_gradient_magnitude.zarr"
+        "input": "$reencode0",
+        "output": "filter/array_gradient.zarr"
     },
     {
         "filter": "gaussian",
-        "input": "$reencode-0",
+        "input": "$reencode0",
         "output": "filter/array_gaussian.zarr",
         "sigma": [1.0, 1.0, 1.0],
         "kernel_half_size": [3, 3, 3]
     },
     {
         "filter": "summed_area_table",
-        "input": "filter/array_gradient_magnitude.zarr",
+        "input": "$reencode0",
         "output": "filter/array_sat.zarr",
         "data_type": "float32"
     }
