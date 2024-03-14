@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use clap::Parser;
-use num_traits::{AsPrimitive, FromPrimitive, Zero};
+use num_traits::{AsPrimitive, FromPrimitive};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
@@ -75,21 +75,24 @@ impl Downsample {
         progress: &Progress,
     ) -> ndarray::ArrayD<TOut>
     where
-        TIn: Copy
-            + Send
-            + Sync
-            + FromPrimitive
-            + Zero
-            + std::ops::Div<Output = TIn>
-            + AsPrimitive<TOut>,
-        TOut: Copy + Send + Sync + 'static,
+        TIn: Copy + Send + Sync + AsPrimitive<f64>,
+        TOut: Copy + Send + Sync + std::iter::Sum + 'static,
+        f64: AsPrimitive<TOut>,
     {
         progress.process(|| {
             let chunk_size: Vec<usize> = std::iter::zip(&self.stride, input.shape())
                 .map(|(stride, shape)| std::cmp::min(usize::try_from(*stride).unwrap(), *shape))
                 .collect();
-            ndarray::Zip::from(input.exact_chunks(chunk_size))
-                .par_map_collect(|chunk| chunk.mean().unwrap().as_())
+            ndarray::Zip::from(input.exact_chunks(chunk_size)).par_map_collect(|chunk| {
+                (chunk
+                    .iter()
+                    .map(|v| AsPrimitive::<f64>::as_(*v))
+                    .sum::<f64>()
+                    / f64::from_usize(chunk.len()).unwrap())
+                .as_()
+                // chunk.map(|v| AsPrimitive::<TOut>::as_(*v)).mean().unwrap()
+                // chunk.mean().unwrap().as_()
+            })
         })
     }
 
@@ -108,13 +111,10 @@ impl Downsample {
                 .collect();
             ndarray::Zip::from(input.exact_chunks(chunk_size)).par_map_collect(|chunk| {
                 let mut map = HashMap::<TIn, usize>::new();
-                for element in chunk.into_iter() {
+                for element in &chunk {
                     *map.entry(*element).or_insert(0) += 1;
                 }
-                map.iter()
-                    .max_by(|a, b| a.1.cmp(b.1))
-                    .map(|(k, _v)| k.as_())
-                    .unwrap()
+                map.iter().max_by(|a, b| a.1.cmp(b.1)).unwrap().0.as_()
             })
         })
     }
