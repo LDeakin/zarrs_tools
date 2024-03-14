@@ -9,7 +9,7 @@ use clap::Parser;
 use half::{bf16, f16};
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
-use num_traits::{AsPrimitive, FromPrimitive, Zero};
+use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::Serialize;
 use zarrs::{
@@ -163,7 +163,8 @@ fn apply_chunk_continuous<T>(
     progress: &Progress,
 ) -> Result<(), FilterError>
 where
-    T: Pod + Copy + Send + Sync + FromPrimitive + Zero + std::ops::Div<Output = T> + AsPrimitive<T>,
+    T: Pod + Copy + Send + Sync + AsPrimitive<f64> + std::iter::Sum,
+    f64: AsPrimitive<T>,
 {
     let output_subset = array_output.chunk_subset_bounded(chunk_indices).unwrap();
     let downsample_input_subset =
@@ -188,8 +189,8 @@ fn apply_chunk_continuous_gaussian<T>(
     progress: &Progress,
 ) -> Result<(), FilterError>
 where
-    T: Pod + Copy + Send + Sync + Zero + std::ops::Div<Output = T> + AsPrimitive<f32>,
-    f32: AsPrimitive<T>,
+    T: Pod + Copy + Send + Sync + AsPrimitive<f32> + std::iter::Sum,
+    f64: AsPrimitive<T>,
 {
     let output_subset = array_output.chunk_subset_bounded(chunk_indices).unwrap();
     let downsample_input_subset =
