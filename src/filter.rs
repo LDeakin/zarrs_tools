@@ -17,6 +17,7 @@ pub mod filters {
     pub mod equal;
     pub mod gaussian;
     pub mod gradient_magnitude;
+    pub mod guided_filter;
     pub mod reencode;
     pub mod rescale;
     pub mod summed_area_table;

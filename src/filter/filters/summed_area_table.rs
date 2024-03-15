@@ -32,7 +32,7 @@ impl FilterArguments for SummedAreaTableArguments {
         &self,
         common_args: &FilterCommonArguments,
     ) -> Result<Box<dyn FilterTraits>, FilterError> {
-        Ok(Box::new(SummedAreaTable::new(*common_args.chunk_limit())?))
+        Ok(Box::new(SummedAreaTable::new(*common_args.chunk_limit())))
     }
 }
 
@@ -41,8 +41,8 @@ pub struct SummedAreaTable {
 }
 
 impl SummedAreaTable {
-    pub fn new(chunk_limit: Option<usize>) -> Result<Self, FilterError> {
-        Ok(Self { chunk_limit })
+    pub fn new(chunk_limit: Option<usize>) -> Self {
+        Self { chunk_limit }
     }
 
     pub fn apply_dim<TIn, TOut>(
@@ -296,7 +296,7 @@ mod tests {
             .fill_value(0u16.into())
             .build(store.into(), "/")?;
         let progress_callback = |_stats: ProgressStats| {};
-        SummedAreaTable::new(None)?.apply(
+        SummedAreaTable::new(None).apply(
             &array,
             &mut array_output,
             &ProgressCallback::new(&progress_callback),
@@ -317,4 +317,96 @@ mod tests {
 
         Ok(())
     }
+}
+
+/// Computes the summed area table on a single ndarray. Not suitable for computing on an entire zarr array.
+// FIXME: Generic
+pub fn summed_area_table_inplace(mut array: ndarray::ArrayD<f64>) -> ndarray::ArrayD<f64> {
+    for dim in (0..array.ndim()).rev() {
+        ndarray::Zip::from(array.lanes_mut(ndarray::Axis(dim)))
+            .into_par_iter()
+            .for_each(|(mut lane,)| {
+                lane.iter_mut().fold(0.0, |acc, element| {
+                    *element += acc;
+                    *element
+                });
+            });
+    }
+    array
+}
+
+/// Computes the summed area table on a single ndarray. Not suitable for computing on an entire zarr array.
+// FIXME: Generic
+pub fn summed_area_table(array: &ndarray::ArrayD<f32>, sat: &mut ndarray::ArrayD<f64>) {
+    std::iter::zip(
+        array.lanes(ndarray::Axis(array.ndim() - 1)),
+        sat.lanes_mut(ndarray::Axis(array.ndim() - 1)),
+    )
+    .for_each(|(input, mut sat)| {
+        std::iter::zip(input.iter(), sat.iter_mut()).fold(0.0, |acc, (input, sat)| {
+            *sat = *input as f64 + acc;
+            *sat
+        });
+    });
+    for dim in (0..array.ndim() - 1).rev() {
+        sat.lanes_mut(ndarray::Axis(dim))
+            .into_iter()
+            .for_each(|mut sat| {
+                sat.iter_mut().fold(0.0, |acc, sat| {
+                    *sat += acc;
+                    *sat
+                });
+            });
+    }
+}
+
+/// Compute the sum of the elements between p0 and p1 inclusive from a summed area table.
+///
+/// Panics if p0/p1 are out-of-bounds.
+pub fn summed_area_table_sum(
+    summed_area_table: &ndarray::ArrayD<f64>,
+    p0: &[usize],
+    p1: &[usize],
+) -> f32 {
+    let d = summed_area_table.ndim();
+    assert_eq!(d, p0.len());
+    assert_eq!(d, p1.len());
+
+    let mut sum = 0.0;
+    let mut x_p: Vec<usize> = Vec::with_capacity(d);
+    'outer: for i in 0..2usize.pow(d.try_into().unwrap()) {
+        x_p.clear();
+        let mut p_sum: usize = 0;
+        for (j, (p0, p1)) in std::iter::zip(p0, p1).enumerate() {
+            assert!(p1 >= p0);
+            let p = (i >> (d - 1 - j)) % 2;
+            if p == 0 {
+                if p0 == &0 {
+                    continue 'outer;
+                }
+                x_p.push(*p0 - 1)
+            } else {
+                // x_p.push(std::cmp::min(*p1, shape - 1))
+                x_p.push(*p1)
+            };
+            p_sum += p;
+        }
+        let sign: i8 = 1 - 2 * ((d - p_sum) % 2) as i8;
+        let value = summed_area_table.get(x_p.as_slice()).unwrap();
+        // println!("{i}\tp0={p0:?} p1={p1:?}\tx_p={x_p:?} I(x_p)={value} sign={sign}");
+        sum += sign as f64 * value;
+    }
+    sum as f32
+}
+
+pub fn summed_area_table_mean(
+    summed_area_table: &ndarray::ArrayD<f64>,
+    p0: &[usize],
+    p1: &[usize],
+) -> f32 {
+    let sum = summed_area_table_sum(summed_area_table, p0, p1);
+    let n_elements = std::iter::zip(p0, p1)
+        .map(|(p0, p1)| p1 - p0 + 1)
+        .product::<usize>();
+    sum / n_elements as f32
 }

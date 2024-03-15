@@ -83,4 +83,6 @@ pub enum FilterCommand {
     Gaussian(FilterCombinedArgs<filters::gaussian::GaussianArguments>),
     /// Compute a summed area table (integral image).
     SummedAreaTable(FilterCombinedArgs<filters::summed_area_table::SummedAreaTableArguments>),
+    /// Apply a guided filter (edge-preserving noise filter).
+    GuidedFilter(FilterCombinedArgs<filters::guided_filter::GuidedFilterArguments>),
 }

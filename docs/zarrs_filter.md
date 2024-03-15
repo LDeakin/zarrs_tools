@@ -15,6 +15,7 @@ The filters currently supported are:
  - **gradient-magnitude**:  Compute the gradient magnitude (sobel).
  - **gaussian**:            Apply a Gaussian kernel.
  - **summed area table**:   Compute the summed area table.
+ - **guided filter**:       Apply a guided filter (edge-preserving noise filter).
 
 ## Installation
 `zarrs_filter` is installed with the `filter` feature of `zarrs_tools`
@@ -32,19 +33,20 @@ zarrs_filter <COMMAND> --help
 ## Examples (CLI)
 ```bash
 export ENCODE_ARGS="--shard-shape 256,256,256 --chunk-shape 32,32,32"
-zarrs_filter reencode           array.zarr       array_reencode.zarr            ${ENCODE_ARGS}
-zarrs_filter reencode           array.zarr       array_reencode_int32.zarr      ${ENCODE_ARGS} --data-type int32
-zarrs_filter reencode           array.zarr       array_reencode_float32.zarr    ${ENCODE_ARGS} --data-type float32
-zarrs_filter crop               array.zarr       array_crop.zarr                ${ENCODE_ARGS} --data-type float32 256,256,256 768,768,768
-zarrs_filter rescale            array.zarr       array_rescale.zarr             ${ENCODE_ARGS} --data-type float32 2.0 1.0 --fill-value 1.0
-zarrs_filter clamp              array.zarr       array_clamp.zarr               ${ENCODE_ARGS} --data-type float32 5 255 --fill-value 5.0
-zarrs_filter equal              array.zarr       array_equal_bool.zarr          ${ENCODE_ARGS} --data-type bool 1 --fill-value true
-zarrs_filter equal              array.zarr       array_eq_u8.zarr               ${ENCODE_ARGS} --data-type uint8 1 --fill-value 1
-zarrs_filter downsample         array.zarr       array_downsample.zarr          ${ENCODE_ARGS} --data-type float32 2,2,2
+zarrs_filter reencode           array.zarr       array_reenc.zarr               ${ENCODE_ARGS}
+zarrs_filter reencode           array_reenc.zarr array_reenc_int32.zarr         ${ENCODE_ARGS} --data-type int32
+zarrs_filter reencode           array_reenc.zarr array_reenc_float32.zarr       ${ENCODE_ARGS} --data-type float32
+zarrs_filter crop               array_reenc.zarr array_crop.zarr                ${ENCODE_ARGS} --data-type float32 256,256,256 768,768,768
+zarrs_filter rescale            array_reenc.zarr array_rescale.zarr             ${ENCODE_ARGS} --data-type float32 2.0 1.0 --fill-value 1.0
+zarrs_filter clamp              array_reenc.zarr array_clamp.zarr               ${ENCODE_ARGS} --data-type float32 5 255 --fill-value 5.0
+zarrs_filter equal              array_reenc.zarr array_equal_bool.zarr          ${ENCODE_ARGS} --data-type bool 1 --fill-value true
+zarrs_filter equal              array_reenc.zarr array_eq_u8.zarr               ${ENCODE_ARGS} --data-type uint8 1 --fill-value 1
+zarrs_filter downsample         array_reenc.zarr array_downsample.zarr          ${ENCODE_ARGS} --data-type float32 2,2,2
 zarrs_filter downsample         array_eq_u8.zarr array_downsample_discrete.zarr ${ENCODE_ARGS} --data-type uint8 2,2,2 --discrete
-zarrs_filter gradient-magnitude array.zarr       array_gradient_magnitude.zarr  ${ENCODE_ARGS} --data-type float32
-zarrs_filter gaussian           array.zarr       array_gaussian.zarr            ${ENCODE_ARGS} --data-type float32 1.0,1.0,1.0 3,3,3
-zarrs_filter summed-area-table  array.zarr       array_sat.zarr                 ${ENCODE_ARGS} --data-type int64
+zarrs_filter gradient-magnitude array_reenc.zarr array_gradient_magnitude.zarr  ${ENCODE_ARGS} --data-type float32
+zarrs_filter gaussian           array_reenc.zarr array_gaussian.zarr            ${ENCODE_ARGS} --data-type float32 1.0,1.0,1.0 3,3,3
+zarrs_filter summed-area-table  array_reenc.zarr array_sat.zarr                 ${ENCODE_ARGS} --data-type int64
+zarrs_filter guided-filter      array_reenc.zarr array_guided_filter.zarr       ${ENCODE_ARGS} --data-type float32 40000 3
 ```
 
 ## Examples (Config)
@@ -69,13 +71,13 @@ zarrs_filter <RUNFILE.json>
     {
         "_comment": "Reencode the previous output as float32, automatically cast the fill value",
         "filter": "reencode",
-        "output": "filter/array_float32.zarr",
+        "output": "array_float32.zarr",
         "data_type": "float32"
     },
     {
         "filter": "crop",
         "input": "$reencode0",
-        "output": "filter/array_crop.zarr",
+        "output": "array_crop.zarr",
         "offset": [256, 256, 256],
         "shape": [768, 768, 768]
     },
@@ -83,7 +85,7 @@ zarrs_filter <RUNFILE.json>
         "_comment": "Multiply by 7.0/20000.0, casting most values in the image between 0 and 7, store in 8-bit (saturate cast)",
         "filter": "rescale",
         "input": "$reencode0",
-        "output": "filter/array_3bit.zarr",
+        "output": "array_3bit.zarr",
         "multiply": 0.00035,
         "add": 0.0,
         "data_type": "uint8",
@@ -93,7 +95,7 @@ zarrs_filter <RUNFILE.json>
         "_comment": "Multiply by 255.0/20000.0, casting most values in the image between 0 and 7, store in 8-bit (saturate cast)",
         "filter": "rescale",
         "input": "$reencode0",
-        "output": "filter/array_8bit.zarr",
+        "output": "array_8bit.zarr",
         "multiply": 0.01275,
         "add": 0.0,
         "data_type": "uint8",
@@ -102,7 +104,7 @@ zarrs_filter <RUNFILE.json>
     {
         "_comment": "Clamp the 3-bit output between 2 and 5 and set the fill value to 2",
         "filter": "clamp",
-        "output": "filter/array_3bit_clamp.zarr",
+        "output": "array_3bit_clamp.zarr",
         "min": 2,
         "max": 5,
         "fill_value": 2
@@ -110,15 +112,15 @@ zarrs_filter <RUNFILE.json>
     {
         "_comment": "Calculate a binary image where the input is equal to 5 (the max from the clamp). Store as bool",
         "filter": "equal",
-        "input": "filter/array_3bit_clamp.zarr", 
-        "output": "filter/array_clamp_equal_bool.zarr",
+        "input": "array_3bit_clamp.zarr", 
+        "output": "array_clamp_equal_bool.zarr",
         "value": 5
     },
     {
         "_comment": "Calculate a binary image where the input is equal to 5 (the max from the clamp). Store as uint8",
         "filter": "equal",
-        "input": "filter/array_3bit_clamp.zarr",
-        "output": "filter/array_3bit_max.zarr",
+        "input": "array_3bit_clamp.zarr",
+        "output": "array_3bit_max.zarr",
         "value": 5,
         "data_type": "uint8",
         "fill_value": 0
@@ -126,8 +128,8 @@ zarrs_filter <RUNFILE.json>
     {
         "_comment": "Downsample clamped image by a factor of 2 with mean operator.",
         "filter": "downsample",
-        "input": "filter/array_3bit_clamp.zarr",
-        "output": "filter/array_3bit_clamp_by2_continuous.zarr",
+        "input": "array_3bit_clamp.zarr",
+        "output": "array_3bit_clamp_by2_continuous.zarr",
         "stride": [2, 2, 2],
         "discrete": false,
         "data_type": "float32",
@@ -137,8 +139,8 @@ zarrs_filter <RUNFILE.json>
     {
         "_comment": "Downsample clamped image by a factor of 2 with mode operator.",
         "filter": "downsample",
-        "input": "filter/array_3bit_clamp.zarr",
-        "output": "filter/array_3bit_clamp_by2_discrete.zarr",
+        "input": "array_3bit_clamp.zarr",
+        "output": "array_3bit_clamp_by2_discrete.zarr",
         "stride": [2, 2, 2],
         "discrete": true,
         "shard_shape": [128, 128, 128],
@@ -147,19 +149,27 @@ zarrs_filter <RUNFILE.json>
     {
         "filter": "gradient_magnitude",
         "input": "$reencode0",
-        "output": "filter/array_gradient.zarr"
+        "output": "array_gradient.zarr"
     },
     {
         "filter": "gaussian",
         "input": "$reencode0",
-        "output": "filter/array_gaussian.zarr",
+        "output": "array_gaussian.zarr",
         "sigma": [1.0, 1.0, 1.0],
         "kernel_half_size": [3, 3, 3]
     },
     {
         "filter": "summed_area_table",
         "input": "$reencode0",
-        "output": "filter/array_sat.zarr",
+        "output": "array_sat.zarr",
+        "data_type": "float32"
+    },
+    {
+        "filter": "guided_filter",
+        "input": "$reencode0",
+        "output": "array_guided_filter.zarr",
+        "epsilon": 40000.0,
+        "radius": 3,
         "data_type": "float32"
     }
 ]
