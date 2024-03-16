@@ -101,9 +101,8 @@ pub struct ZarrEncodingArgs {
     pub attributes: Option<String>,
 }
 
-fn parse_metadata(metadata: &str) -> std::io::Result<Metadata> {
-    serde_json::from_str(metadata)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
+fn parse_data_type(data_type: &str) -> std::io::Result<Metadata> {
+    Ok(Metadata::new(data_type))
 }
 
 fn parse_fill_value(fill_value: &str) -> std::io::Result<FillValueMetadata> {
@@ -250,7 +249,7 @@ pub struct ZarrReencodingArgs {
     ///   - complex64, complex 128
     ///   - r* (raw bits, where * is a multiple of 8)
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[arg(short, long, verbatim_doc_comment, value_parser = parse_metadata)]
+    #[arg(short, long, verbatim_doc_comment, value_parser = parse_data_type)]
     pub data_type: Option<Metadata>,
 
     /// Fill value. See <https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#fill-value>
