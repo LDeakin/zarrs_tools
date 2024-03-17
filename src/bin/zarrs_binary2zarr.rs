@@ -7,7 +7,10 @@ use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
 use zarrs::{
     array::{
-        codec::{ArrayCodecTraits, CodecOptionsBuilder},
+        codec::{
+            array_to_bytes::bytes::{reverse_endianness, Endianness},
+            ArrayCodecTraits, CodecOptionsBuilder,
+        },
         concurrency::RecommendedConcurrency,
         Array, DimensionName,
     },
@@ -22,6 +25,10 @@ use zarrs::{
 #[command(author, version)]
 #[allow(rustdoc::bare_urls)]
 struct Cli {
+    /// The endianness of the binary data. If unspecified, it is assumed to match the host endianness.
+    #[arg(long, value_parser = parse_endianness)]
+    endianness: Option<Endianness>,
+
     #[command(flatten)]
     encoding: ZarrEncodingArgs,
 
@@ -56,7 +63,24 @@ struct Cli {
     // file: Vec<PathBuf>,
 }
 
-fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: Option<usize>) -> usize {
+fn parse_endianness(endianness: &str) -> std::io::Result<Endianness> {
+    if endianness == "little" {
+        Ok(Endianness::Little)
+    } else if endianness == "big" {
+        Ok(Endianness::Big)
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Endianness must be little or big",
+        ))
+    }
+}
+
+fn stdin_to_array(
+    array: &Array<FilesystemStore>,
+    endianness: Option<Endianness>,
+    concurrent_chunks: Option<usize>,
+) -> usize {
     let data_type_size = array.data_type().size();
     let dimensionality = array.chunk_grid().dimensionality();
     let array_shape = array.shape();
@@ -128,6 +152,12 @@ fn stdin_to_array(array: &Array<FilesystemStore>, concurrent_chunks: Option<usiz
 
         drop(idxm);
 
+        if let Some(endianness) = endianness {
+            if !endianness.is_native() {
+                reverse_endianness(&mut subset_bytes, array.data_type());
+            }
+        }
+
         array
             .store_array_subset_opt(&array_subset, subset_bytes, &codec_options)
             .unwrap();
@@ -160,7 +190,7 @@ fn main() {
 
     // Read stdin to the array and write chunks/shards
     let start = std::time::Instant::now();
-    let bytes_read: usize = stdin_to_array(&array, cli.concurrent_chunks);
+    let bytes_read: usize = stdin_to_array(&array, cli.endianness, cli.concurrent_chunks);
     let duration_s = start.elapsed().as_secs_f32();
 
     // Output stats

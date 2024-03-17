@@ -12,7 +12,10 @@ use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
 use zarrs::{
     array::{
-        codec::{ArrayCodecTraits, CodecOptionsBuilder},
+        codec::{
+            array_to_bytes::bytes::{reverse_endianness, Endianness, NATIVE_ENDIAN},
+            ArrayCodecTraits, CodecOptionsBuilder,
+        },
         concurrency::RecommendedConcurrency,
         Array, DimensionName,
     },
@@ -63,12 +66,14 @@ struct Cli {
     out: PathBuf,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
     nc_paths: &[PathBuf],
     offsets: &[u64],
     variable: &str,
     concat_dim: usize,
     array: &Array<TStore>,
+    endianness: Endianness,
     num_concurrent_blocks: Option<usize>,
     validate: bool,
 ) -> usize {
@@ -134,6 +139,10 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
             .unwrap();
         // println!("Read netCDF done");
         bytes_read.fetch_add(buf.len(), Ordering::Relaxed);
+
+        if !endianness.is_native() {
+            reverse_endianness(&mut buf, array.data_type());
+        }
 
         if validate {
             array
@@ -237,12 +246,12 @@ fn main() {
     //  - array shape taking into the concat dimension
     //  - dimension names
     //  - endianness
-    // FIXME: Endianness
     let mut array_shape: Option<Vec<u64>> = None;
     let mut dimension_names: Option<Vec<String>> = None;
     let mut datatype: Option<String> = None;
     let mut offset: u64 = 0;
     let mut offsets = Vec::with_capacity(nc_paths.len());
+    let mut endianness = None;
     for nc_path in &nc_paths {
         let nc_file = netcdf::open(nc_path).expect("Could not open netCDF file");
         let nc_var = nc_file
@@ -259,6 +268,16 @@ fn main() {
         }
 
         let dims = nc_var.dimensions();
+        endianness = Some(
+            match nc_var
+                .endianness()
+                .expect("Could not get the variable endianness")
+            {
+                netcdf::Endianness::Native => NATIVE_ENDIAN,
+                netcdf::Endianness::Big => Endianness::Big,
+                netcdf::Endianness::Little => Endianness::Little,
+            },
+        );
         let dim_names: Vec<_> = dims.iter().map(|dim| dim.name()).collect();
         let dim_sizes: Vec<_> = dims.iter().map(|dim| dim.len() as u64).collect();
 
@@ -284,6 +303,7 @@ fn main() {
         Some(dimension_names.iter().map(DimensionName::new).collect());
     let datatype = datatype.unwrap();
     let data_type = zarrs::array::DataType::from_metadata(&Metadata::new(&datatype)).unwrap();
+    let endianness = endianness.unwrap();
     // println!("Shape: {array_shape:?}");
     // println!("Datatype: {datatype}");
     // println!(
@@ -322,6 +342,7 @@ fn main() {
         &cli.variable,
         cli.concat_dim,
         &array,
+        endianness,
         cli.concurrent_blocks,
         cli.validate,
     );
