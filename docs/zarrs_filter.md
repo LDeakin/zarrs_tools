@@ -47,6 +47,7 @@ zarrs_filter gradient-magnitude array_reenc.zarr array_gradient_magnitude.zarr  
 zarrs_filter gaussian           array_reenc.zarr array_gaussian.zarr            ${ENCODE_ARGS} --data-type float32 1.0,1.0,1.0 3,3,3
 zarrs_filter summed-area-table  array_reenc.zarr array_sat.zarr                 ${ENCODE_ARGS} --data-type int64
 zarrs_filter guided-filter      array_reenc.zarr array_guided_filter.zarr       ${ENCODE_ARGS} --data-type float32 40000 3
+zarrs_filter replace-value      array_reenc.zarr array_replace.zarr             ${ENCODE_ARGS} 65535 0 --fill-value 0
 ```
 
 ## Examples (Config)
@@ -80,6 +81,13 @@ zarrs_filter <RUNFILE.json>
         "output": "array_crop.zarr",
         "offset": [256, 256, 256],
         "shape": [768, 768, 768]
+    },
+    {
+        "filter": "replace_value",
+        "input": "$reencode0",
+        "output": "array_replace.zarr",
+        "value": 65535,
+        "replace": 0
     },
     {
         "_comment": "Multiply by 7.0/20000.0, casting most values in the image between 0 and 7, store in 8-bit (saturate cast)",

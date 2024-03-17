@@ -19,6 +19,7 @@ pub mod filters {
     pub mod gradient_magnitude;
     pub mod guided_filter;
     pub mod reencode;
+    pub mod replace_value;
     pub mod rescale;
     pub mod summed_area_table;
 }

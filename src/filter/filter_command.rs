@@ -85,4 +85,6 @@ pub enum FilterCommand {
     SummedAreaTable(FilterCombinedArgs<filters::summed_area_table::SummedAreaTableArguments>),
     /// Apply a guided filter (edge-preserving noise filter).
     GuidedFilter(FilterCombinedArgs<filters::guided_filter::GuidedFilterArguments>),
+    /// Replace a value with another value.
+    ReplaceValue(FilterCombinedArgs<filters::replace_value::ReplaceValueArguments>),
 }
