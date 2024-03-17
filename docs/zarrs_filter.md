@@ -53,7 +53,7 @@ zarrs_filter replace-value      array_reenc.zarr array_replace.zarr             
 ## Examples (Config)
 
 ```bash
-zarrs_filter <RUNFILE.json>
+zarrs_filter <RUN.json>
 ```
 
 <details>
@@ -191,68 +191,92 @@ zarrs_filter <RUNFILE.json>
 0 reencode
         args:   {}
         encode: {"chunk_shape":[32,32,32],"shard_shape":[256,256,256]}
-        input:  int16 [1243, 1403, 1510] "array.zarr"
-        output: int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$reencode-0UN9BaQ"
-1 crop
+        input:  uint16 [1243, 1403, 1510] "array.zarr"
+        output: uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+1 reencode
+        args:   {}
+        encode: {"data_type":"float32"}
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: float32 [1243, 1403, 1510] "array_float32.zarr" (overwrite)
+2 crop
         args:   {"offset":[256,256,256],"shape":[768,768,768]}
         encode: {}
-        input:  int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$reencode-0UN9BaQ"
-        output: int16 [768, 768, 768] "/tmp/.tmpCZFyRP/.tmpVdcTSm"
-2 reencode
-        args:   {}
-        encode: {"data_type":"float32"}
-        input:  int16 [768, 768, 768] "/tmp/.tmpCZFyRP/.tmpVdcTSm"
-        output: float32 [768, 768, 768] "/tmp/.tmpCZFyRP/.tmpVWBgf7"
-3 rescale
-        args:   {"multiply":2.0,"add":1.0,"add_first":false}
-        encode: {"fill_value":1.0}
-        input:  float32 [768, 768, 768] "/tmp/.tmpCZFyRP/.tmpVWBgf7"
-        output: float32 [768, 768, 768] "filter/array_crop_convert_rescale.zarr"
-4 clamp
-        args:   {"min":5.0,"max":255.0}
-        encode: {"fill_value":5}
-        input:  int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$reencode-0UN9BaQ"
-        output: int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$clamp-0kAPqI5"
-5 equal
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: uint16 [768, 768, 768] "array_crop.zarr" (overwrite)
+3 replace_value
+        args:   {"value":65535,"replace":0}
+        encode: {}
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: uint16 [1243, 1403, 1510] "array_replace.zarr" (overwrite)
+4 rescale
+        args:   {"multiply":0.00035,"add":0.0,"add_first":false}
+        encode: {"data_type":"uint8","fill_value":0}
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: uint8 [1243, 1403, 1510] "array_3bit.zarr" (overwrite)
+5 rescale
+        args:   {"multiply":0.01275,"add":0.0,"add_first":false}
+        encode: {"data_type":"uint8","fill_value":0}
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: uint8 [1243, 1403, 1510] "array_8bit.zarr" (overwrite)
+6 clamp
+        args:   {"min":2.0,"max":5.0}
+        encode: {"fill_value":2}
+        input:  uint8 [1243, 1403, 1510] "array_8bit.zarr"
+        output: uint8 [1243, 1403, 1510] "array_3bit_clamp.zarr" (overwrite)
+7 equal
         args:   {"value":5}
         encode: {}
-        input:  int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$clamp-0kAPqI5"
-        output: bool [1243, 1403, 1510] "filter/array_clamp_equal_bool.zarr"
-6 equal
+        input:  uint8 [1243, 1403, 1510] "array_3bit_clamp.zarr"
+        output: bool [1243, 1403, 1510] "array_clamp_equal_bool.zarr" (overwrite)
+8 equal
         args:   {"value":5}
-        encode: {"data_type":"uint8","fill_value":1}
-        input:  int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$clamp-0kAPqI5"
-        output: uint8 [1243, 1403, 1510] "filter/array_clamp_equal_uint8.zarr"
-7 downsample
+        encode: {"data_type":"uint8","fill_value":0}
+        input:  uint8 [1243, 1403, 1510] "array_3bit_clamp.zarr"
+        output: uint8 [1243, 1403, 1510] "array_3bit_max.zarr" (overwrite)
+9 downsample
         args:   {"stride":[2,2,2],"discrete":false}
+        encode: {"data_type":"float32","chunk_shape":[32,32,32],"shard_shape":[128,128,128]}
+        input:  uint8 [1243, 1403, 1510] "array_3bit_clamp.zarr"
+        output: float32 [621, 701, 755] "array_3bit_clamp_by2_continuous.zarr" (overwrite)
+10 downsample
+        args:   {"stride":[2,2,2],"discrete":true}
         encode: {"chunk_shape":[32,32,32],"shard_shape":[128,128,128]}
-        input:  int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$reencode-0UN9BaQ"
-        output: int16 [621, 701, 755] "filter/array_downsample.zarr"
-8 gradient magnitude
+        input:  uint8 [1243, 1403, 1510] "array_3bit_clamp.zarr"
+        output: uint8 [621, 701, 755] "array_3bit_clamp_by2_discrete.zarr" (overwrite)
+11 gradient_magnitude
         args:   {}
         encode: {}
-        input:  int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$reencode-0UN9BaQ"
-        output: int16 [1243, 1403, 1510] "filter/array_gradient_magnitude.zarr"
-9 gaussian
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: uint16 [1243, 1403, 1510] "array_gradient.zarr" (overwrite)
+12 gaussian
         args:   {"sigma":[1.0,1.0,1.0],"kernel_half_size":[3,3,3]}
         encode: {}
-        input:  int16 [1243, 1403, 1510] "/tmp/.tmpCZFyRP/$reencode-0UN9BaQ"
-        output: int16 [1243, 1403, 1510] "filter/array_gaussian.zarr"
-10 summed area table
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: uint16 [1243, 1403, 1510] "array_gaussian.zarr" (overwrite)
+13 summed area table
         args:   {}
         encode: {"data_type":"float32"}
-        input:  int16 [1243, 1403, 1510] "filter/array_gradient_magnitude.zarr"
-        output: float32 [1243, 1403, 1510] "filter/array_sat.zarr"
-[00:00:01/00:00:01] reencode /tmp/.tmpCZFyRP/$reencode-0UN9BaQ rw:28.84/32.41 p:0.00
-[00:00:00/00:00:00] crop /tmp/.tmpCZFyRP/.tmpVdcTSm rw:3.07/3.56 p:0.00
-[00:00:00/00:00:00] reencode /tmp/.tmpCZFyRP/.tmpVWBgf7 rw:5.53/11.19 p:2.42
-[00:00:01/00:00:01] rescale filter/array_crop_convert_rescale.zarr rw:12.20/12.19 p:4.23
-[00:00:02/00:00:02] clamp /tmp/.tmpCZFyRP/$clamp-0kAPqI5 rw:28.65/30.70 p:3.25
-[00:00:01/00:00:01] equal filter/array_clamp_equal_bool.zarr rw:22.89/14.02 p:3.51
-[00:00:01/00:00:01] equal filter/array_clamp_equal_uint8.zarr rw:21.26/9.90 p:4.32
-[00:00:03/00:00:03] downsample filter/array_downsample.zarr rw:10.46/2.66 p:93.33
-[00:00:20/00:00:20] gradient magnitude filter/array_gradient_magnitude.zarr rw:73.93/17.15 p:235.75
-[00:00:10/00:00:10] gaussian filter/array_gaussian.zarr rw:46.85/15.63 p:161.30
-[00:00:22/00:00:22] summed area table filter/array_sat.zarr rw:198.70/198.81 p:52.61
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: float32 [1243, 1403, 1510] "array_sat.zarr" (overwrite)
+14 guided_filter
+        args:   {"epsilon":40000.0,"radius":3}
+        encode: {"data_type":"float32"}
+        input:  uint16 [1243, 1403, 1510] "/tmp/.tmpCbeEcJ/$reencode0bxiFEM"
+        output: float32 [1243, 1403, 1510] "array_guided_filter.zarr" (overwrite)
+[00:00:02/00:00:02] reencode /tmp/.tmpCbeEcJ/$reencode0bxiFEM rw:34.78/28.90 p:0.00
+[00:00:04/00:00:04] reencode array_float32.zarr rw:30.06/76.57 p:14.16
+[00:00:00/00:00:00] crop array_crop.zarr rw:3.46/3.34 p:0.00
+[00:00:02/00:00:02] replace_value array_replace.zarr rw:26.73/47.32 p:7.25
+[00:00:01/00:00:01] rescale array_3bit.zarr rw:18.11/14.43 p:11.55
+[00:00:01/00:00:01] rescale array_8bit.zarr rw:23.54/21.99 p:11.08
+[00:00:00/00:00:00] clamp array_3bit_clamp.zarr rw:9.70/10.34 p:0.96
+[00:00:00/00:00:00] equal array_clamp_equal_bool.zarr rw:10.61/9.32 p:4.56
+[00:00:00/00:00:00] equal array_3bit_max.zarr rw:10.29/9.49 p:3.61
+[00:00:02/00:00:02] downsample array_3bit_clamp_by2_continuous.zarr rw:7.01/1.95 p:71.76
+[00:00:06/00:00:06] downsample array_3bit_clamp_by2_discrete.zarr rw:16.08/1.01 p:168.86
+[00:00:20/00:00:20] gradient_magnitude array_gradient.zarr rw:147.16/14.38 p:289.05
+[00:00:10/00:00:10] gaussian array_gaussian.zarr rw:36.19/22.01 p:181.06
+[00:00:23/00:00:23] summed area table array_sat.zarr rw:190.51/215.68 p:54.39
+[00:01:51/00:01:51] guided_filter array_guided_filter.zarr rw:29.57/59.96 p:2427.96
 ```
 </details>

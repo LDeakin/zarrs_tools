@@ -27,7 +27,7 @@ pub struct GradientMagnitudeArguments {}
 
 impl FilterArguments for GradientMagnitudeArguments {
     fn name(&self) -> String {
-        "gradient magnitude".to_string()
+        "gradient_magnitude".to_string()
     }
 
     fn init(

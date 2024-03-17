@@ -45,7 +45,7 @@ pub struct ReplaceValueArguments {
 
 impl FilterArguments for ReplaceValueArguments {
     fn name(&self) -> String {
-        "replace value".to_string()
+        "replace_value".to_string()
     }
 
     fn init(

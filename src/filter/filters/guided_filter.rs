@@ -32,7 +32,7 @@ pub struct GuidedFilterArguments {
 
 impl FilterArguments for GuidedFilterArguments {
     fn name(&self) -> String {
-        "guided filter".to_string()
+        "guided_filter".to_string()
     }
 
     fn init(
