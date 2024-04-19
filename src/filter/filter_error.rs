@@ -1,7 +1,7 @@
 use thiserror::Error;
 use zarrs::{
     array::{
-        data_type::{IncompatibleFillValueErrorMetadataError, UnsupportedDataTypeError},
+        data_type::{IncompatibleFillValueMetadataError, UnsupportedDataTypeError},
         ArrayCreateError, ArrayError,
     },
     storage::StorageError,
@@ -22,7 +22,7 @@ pub enum FilterError {
     #[error("Unsupported data type {_0}")]
     UnsupportedDataType(#[from] UnsupportedDataTypeError),
     #[error(transparent)]
-    IncompatibleFillValue(#[from] IncompatibleFillValueErrorMetadataError),
+    IncompatibleFillValue(#[from] IncompatibleFillValueMetadataError),
     #[error(transparent)]
     IOError(#[from] std::io::Error),
     #[error("{_0}")]
