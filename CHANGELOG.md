@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Various minor fixes to clap help
  - `zarrs_reencode`: add `--attributes-append` to re-encoding options
  - Bump `zarrs` to 0.13.0
+ - **Breaking**: Bump MSRV to 1.75
 
 ## [0.3.0] - 2024-02-22
 
