@@ -22,6 +22,14 @@ use zarrs_tools::{
     ZarrReencodingArgs,
 };
 
+#[derive(clap::ValueEnum, Debug, Clone)]
+enum OutputExists {
+    /// Erase the output
+    Erase,
+    /// Exit if the output already exists
+    Exit,
+}
+
 /// Apply simple image filters (transformations) to a Zarr V3 array.
 #[derive(Parser, Debug)]
 #[command(author, version)]
@@ -30,9 +38,10 @@ struct Cli {
     #[arg(long)]
     hide_progress: bool,
 
-    /// Exit instead of overwriting an existing array.
+    /// Behaviour if the output exists.
     #[arg(long)]
-    no_overwrite: bool,
+    #[clap(value_enum, default_value_t=OutputExists::Erase)]
+    exists: OutputExists,
 
     /// Directory for temporary arrays.
     ///
@@ -211,11 +220,15 @@ fn run() -> Result<(), Box<dyn Error>> {
         output_paths,
         exists,
     } = get_input_output_paths(&filter_commands, tmp_dir.path())?;
-    // println!("{output_paths:?}");
-    if cli.no_overwrite && exists.iter().any(|i| *i) {
-        Err(FilterError::Other(
-            "Run without --no-overwrite to overwrite".to_string(),
-        ))?;
+
+    // Handle an existing output
+    match cli.exists {
+        OutputExists::Exit => {
+            if exists.iter().any(|i| *i) {
+                Err(FilterError::Other("Output exists, exiting".to_string()))?;
+            }
+        }
+        OutputExists::Erase => {}
     }
 
     // Instantiate the filters

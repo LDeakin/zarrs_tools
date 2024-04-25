@@ -28,6 +28,16 @@ use zarrs_tools::{
     ZarrReEncodingChangeType, ZarrReencodingArgs,
 };
 
+#[derive(clap::ValueEnum, Debug, Clone)]
+enum OutputExists {
+    /// Overwrite existing files. Useful if the output includes additional non-zarr files to be preserved.
+    Overwrite,
+    /// Erase the output
+    Erase,
+    /// Exit if the output already exists
+    Exit,
+}
+
 /// Convert a Zarr V3 array to OME-Zarr (0.5-dev).
 #[derive(Parser, Debug)]
 #[command(author, version)]
@@ -67,9 +77,10 @@ struct Cli {
     #[arg(long)]
     discrete: bool,
 
-    /// Exit instead of overwriting an existing array.
+    /// Behaviour if the output exists.
     #[arg(long)]
-    no_overwrite: bool,
+    #[clap(value_enum, default_value_t=OutputExists::Overwrite)]
+    exists: OutputExists,
 
     /// Attributes (optional).
     ///
@@ -251,13 +262,18 @@ fn run() -> Result<(), Box<dyn Error>> {
         group.attributes_mut().append(&mut group_attributes);
     }
 
-    // Check for overwrite
-    if cli.no_overwrite && cli.output.exists() {
-        Err(FilterError::Other(
-            "Run without --no-overwrite to overwrite".to_string(),
-        ))?;
+    // Handle an existing output
+    match cli.exists {
+        OutputExists::Exit => {
+            if cli.output.exists() {
+                Err(FilterError::Other("Output exists, exiting".to_string()))?;
+            }
+        }
+        OutputExists::Erase => {
+            store.erase_prefix(&StorePrefix::root()).unwrap();
+        }
+        OutputExists::Overwrite => {}
     }
-    store.erase_prefix(&StorePrefix::root()).unwrap();
 
     {
         let output_0_path = cli.output.join("0");

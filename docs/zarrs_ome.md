@@ -66,8 +66,15 @@ Options:
       --discrete
           Do majority downsampling and do not apply gaussian smoothing
 
-      --no-overwrite
-          Exit instead of overwriting an existing array
+      --exists <EXISTS>
+          Behaviour if the output exists
+          
+          [default: overwrite]
+
+          Possible values:
+          - overwrite: Overwrite existing files. Useful if the output includes additional non-zarr files to be preserved
+          - erase:     Erase the output
+          - exit:      Exit if the output already exists
 
       --group-attributes <GROUP_ATTRIBUTES>
           Attributes (optional).
