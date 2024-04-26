@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Replace `--no_overwrite` with `--exists` in `zarrs_filter` and `zarrs_ome`
    - Both support `erase` and `exit` options
    - `zarrs_ome` also supports an `overwrite` option
+ - `zarrs_ncvar2zarr`:
+  - clear progress bars on finish
 
 ## [0.4.0] - 2024-04-20
 

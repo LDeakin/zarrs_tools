@@ -186,9 +186,9 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
                 pb.inc(1);
                 pb_all.inc(1);
             }
-            pb.finish();
+            pb.finish_and_clear();
         });
-        pb_all.finish();
+        pb_all.finish_and_clear();
     } else {
         let pb = create_progress_bar(show_progress.then_some(nc_paths.len() as u64));
         pb.set_style(style_all);
@@ -197,7 +197,7 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
             process_path(idx, nc_path);
             pb.inc(1);
         }
-        pb.finish();
+        pb.finish_and_clear();
     }
     bytes_read.load(Ordering::Relaxed)
 }
