@@ -311,7 +311,6 @@ fn run() -> Result<(), Box<dyn Error>> {
                 output_path.to_string_lossy()
             ));
             bar.finish();
-            println!();
             bar.reset();
             Ok::<(), FilterError>(())
         },

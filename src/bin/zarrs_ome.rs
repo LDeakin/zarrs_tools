@@ -249,7 +249,6 @@ fn run() -> Result<(), Box<dyn Error>> {
         bar.set_style(bar_style_finish());
         bar.set_prefix(format!("{} {}", bar.prefix(), path.to_string_lossy()));
         bar.finish();
-        println!();
         bar.reset();
     };
 
