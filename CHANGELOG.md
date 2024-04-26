@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - `zarrs_ome` also supports an `overwrite` option
  - `zarrs_ncvar2zarr`:
   - clear progress bars on finish
+  - output size change in human readable bytes
 
 ## [0.4.0] - 2024-04-20
 
