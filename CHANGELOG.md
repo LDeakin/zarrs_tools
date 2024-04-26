@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - Add `--hide-progress` to `zarrs_ncvar2zarr`
+
 ### Changed
  - Replace `--no_overwrite` with `--exists` in `zarrs_filter` and `zarrs_ome`
    - Both support `erase` and `exit` options

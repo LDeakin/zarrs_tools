@@ -53,6 +53,10 @@ struct Cli {
     #[arg(long, default_value_t = false)]
     memory_test: bool,
 
+    /// Set to hide the progress bar.
+    #[arg(long)]
+    hide_progress: bool,
+
     /// The path to a netCDF file or a directory of netcdf files.
     path: PathBuf,
 
@@ -61,6 +65,14 @@ struct Cli {
 
     /// The output directory for the zarr array.
     out: PathBuf,
+}
+
+fn create_progress_bar(len: Option<u64>) -> ProgressBar {
+    if let Some(len) = len {
+        ProgressBar::new(len)
+    } else {
+        ProgressBar::hidden()
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -72,6 +84,7 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
     array: &Array<TStore>,
     num_concurrent_blocks: Option<usize>,
     validate: bool,
+    show_progress: bool,
 ) -> usize {
     let style_all =
         ProgressStyle::with_template("[{bar}] ({pos}/{len} blocks, {elapsed_precise}, ETA {eta})")
@@ -157,11 +170,15 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
             .par_chunks((nc_paths.len() + concurrent_blocks - 1) / concurrent_blocks);
 
         let m = MultiProgress::new();
-        let pb_all = m.add(ProgressBar::new(enumerated_paths.len() as u64));
+        let pb_all = m.add(create_progress_bar(
+            show_progress.then_some(enumerated_paths.len() as u64),
+        ));
         pb_all.set_style(style_all.clone());
         pb_all.set_position(0);
         chunks.for_each(|blocks| {
-            let pb = m.add(ProgressBar::new(blocks.len() as u64));
+            let pb = m.add(create_progress_bar(
+                show_progress.then_some(blocks.len() as u64),
+            ));
             pb.set_style(style.clone());
             pb.set_position(0);
             for (idx, nc_path) in blocks {
@@ -173,7 +190,7 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
         });
         pb_all.finish();
     } else {
-        let pb = ProgressBar::new(nc_paths.len() as u64);
+        let pb = create_progress_bar(show_progress.then_some(nc_paths.len() as u64));
         pb.set_style(style_all);
         pb.set_position(0);
         for (idx, nc_path) in nc_paths.iter().enumerate() {
@@ -323,6 +340,7 @@ fn main() {
         &array,
         cli.concurrent_blocks,
         cli.validate,
+        !cli.hide_progress,
     );
     let duration_s = start.elapsed().as_secs_f32();
 
