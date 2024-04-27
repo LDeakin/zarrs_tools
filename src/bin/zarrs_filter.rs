@@ -6,7 +6,7 @@ use std::{
 };
 
 use clap::Parser;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use tempfile::TempDir;
 use zarrs::{
@@ -34,10 +34,6 @@ enum OutputExists {
 #[derive(Parser, Debug)]
 #[command(author, version)]
 struct Cli {
-    /// Set to hide the progress bar.
-    #[arg(long)]
-    hide_progress: bool,
-
     /// Behaviour if the output exists.
     #[arg(long)]
     #[clap(value_enum, default_value_t=OutputExists::Erase)]
@@ -175,14 +171,9 @@ fn run() -> Result<(), Box<dyn Error>> {
     // Parse command line arguments
     let cli = Cli::parse();
 
-    // Setup progress bar
-    let bar = if cli.hide_progress {
-        ProgressBar::hidden()
-    } else {
-        ProgressBar::new(0)
-    };
-    let progress_callback = |stats: ProgressStats| progress_callback(stats, &bar);
-    let progress_callback = ProgressCallback::new(&progress_callback);
+    let start = std::time::Instant::now();
+
+    let multi_progress = MultiProgress::new();
 
     // Create temporary directory
     let tmp_dir = if let Some(tmp) = cli.tmp {
@@ -203,6 +194,17 @@ fn run() -> Result<(), Box<dyn Error>> {
             "no filters supplied",
         ))?
     };
+
+    // Setup progress bars
+    let bars = filter_commands
+        .iter()
+        .map(|filter| {
+            let bar = multi_progress.add(ProgressBar::new(1));
+            bar.set_style(bar_style_run());
+            bar.set_prefix(filter.name());
+            bar
+        })
+        .collect_vec();
 
     // Propagate global settings to filters
     for filter in &mut filter_commands {
@@ -293,11 +295,12 @@ fn run() -> Result<(), Box<dyn Error>> {
         .try_for_each(|(_, _, _, array_output, _)| array_output.erase_metadata())?;
 
     // Run the filters
-    filter_input_output.into_iter().try_for_each(
-        |(name, filter, array_input, mut array_output, output_path)| {
-            bar.set_style(bar_style_run());
-            bar.set_prefix(name);
+    std::iter::zip(filter_input_output, bars).try_for_each(
+        |((_name, filter, array_input, mut array_output, output_path), bar)| {
+            bar.reset();
 
+            let progress_callback = |stats: ProgressStats| progress_callback(stats, &bar);
+            let progress_callback = ProgressCallback::new(&progress_callback);
             // Run the filter
             filter.apply(&array_input, &mut array_output, &progress_callback)?;
 
@@ -310,11 +313,13 @@ fn run() -> Result<(), Box<dyn Error>> {
                 bar.prefix(),
                 output_path.to_string_lossy()
             ));
-            bar.finish();
-            bar.reset();
+            bar.abandon();
             Ok::<(), FilterError>(())
         },
     )?;
+
+    let duration_s = start.elapsed().as_secs_f32();
+    println!("Completed in {duration_s:.2}s");
 
     Ok(())
 }

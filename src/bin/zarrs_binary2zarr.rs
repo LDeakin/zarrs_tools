@@ -1,5 +1,5 @@
 use clap::Parser;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{DecimalBytes, ProgressBar, ProgressStyle};
 use rayon::{iter::ParallelIterator, prelude::IntoParallelIterator};
 use rayon_iter_concurrent_limit::iter_concurrent_limit;
 use std::{io::Read, path::PathBuf, sync::atomic::AtomicUsize};
@@ -195,8 +195,12 @@ fn main() {
 
     // Output stats
     let duration_ms = duration_s * 1.0e3;
-    let gbs = (bytes_read as f32 * 1e-9) / duration_s;
     let size_out = store.size().unwrap();
-    let space_saving = 100.0 * (1.0 - (size_out as f32 / bytes_read as f32));
-    println!("Output {path_out:?} in {duration_ms:.2}ms ({gbs:.2} GB/s) [{bytes_read}B -> {size_out}B ({space_saving:.2}%)]");
+    // let space_saving = 100.0 * (1.0 - (size_out as f32 / bytes_read as f32));
+    let relative_size = 100.0 * (size_out as f32 / bytes_read as f32);
+    println!("Output {path_out:?} in {duration_ms:.2}ms ({gbs:.2} GB/s) [{bytes_read} -> {size_out} ({relative_size:.2}%)]",
+    gbs = (bytes_read as f32 * 1e-9) / duration_s,
+        bytes_read = DecimalBytes(bytes_read as u64),
+        size_out = DecimalBytes(size_out),
+    );
 }

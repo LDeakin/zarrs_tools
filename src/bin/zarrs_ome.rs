@@ -7,7 +7,7 @@ use std::{
 
 use clap::Parser;
 use half::{bf16, f16};
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -228,28 +228,44 @@ where
     Ok(())
 }
 
+fn progress_callback(stats: ProgressStats, bar: &ProgressBar) {
+    bar.set_length(stats.num_steps as u64);
+    bar.set_position(stats.step as u64);
+    bar.set_message(format!(
+        "rw:{:.2}/{:.2} p:{:.2}",
+        stats.read.as_secs_f32(),
+        stats.write.as_secs_f32(),
+        stats.process.as_secs_f32(),
+    ));
+}
+
 fn run() -> Result<(), Box<dyn Error>> {
     // Parse command line arguments
     let cli = Cli::parse();
 
-    let bar = ProgressBar::new(0);
-    let progress_callback = |stats: ProgressStats| {
-        bar.set_length(stats.num_steps as u64);
-        bar.set_position(stats.step as u64);
-        bar.set_message(format!(
-            "rw:{:.2}/{:.2} p:{:.2}",
-            stats.read.as_secs_f32(),
-            stats.write.as_secs_f32(),
-            stats.process.as_secs_f32(),
-        ));
-    };
-    let progress_callback = ProgressCallback::new(&progress_callback);
+    let start = std::time::Instant::now();
 
-    let finish_step = |path: &Path| {
+    let store_in = FilesystemStore::new(&cli.input)?;
+    let array_in = Array::new(store_in.into(), "/")?;
+
+    let multi_progress = MultiProgress::new();
+    let bars = (0..=cli.max_levels)
+        .map(|level| {
+            let bar = multi_progress.add(ProgressBar::new(1));
+            bar.set_style(bar_style_run());
+            if level == 0 {
+                bar.set_prefix(format!("0 {:?}", array_in.shape()));
+            } else {
+                bar.set_prefix(format!("{}", level));
+            }
+            bar
+        })
+        .collect_vec();
+
+    let finish_step = |bar: &ProgressBar, path: &Path| {
         bar.set_style(bar_style_finish());
         bar.set_prefix(format!("{} {}", bar.prefix(), path.to_string_lossy()));
-        bar.finish();
-        bar.reset();
+        bar.abandon();
     };
 
     // Create group
@@ -275,11 +291,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
 
     {
+        let bar = bars.first().unwrap();
+        bar.reset();
+
         let output_0_path = cli.output.join("0");
-        let store_in = FilesystemStore::new(&cli.input)?;
-        let array_in = Array::new(store_in.into(), "/")?;
-        bar.set_style(bar_style_run());
-        bar.set_prefix(format!("0 {:?}", array_in.shape()));
+        let progress_callback = |stats: ProgressStats| progress_callback(stats, bar);
+        let progress_callback = ProgressCallback::new(&progress_callback);
         if let ZarrReEncodingChangeType::None = cli.reencoding.change_type() {
             // Copy full res input to output
             let dir_count = count_dir(&cli.input)?;
@@ -295,7 +312,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             reencode.apply(&array_in, &mut array_out, &progress_callback)?;
             array_out.store_metadata()?;
         }
-        finish_step(&output_0_path);
+        finish_step(bar, &output_0_path);
     }
 
     // Setup attributes
@@ -385,7 +402,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     // println!("sigma:{sigma} kernel_half_size:{kernel_half_size}");
 
     for i in 1..=cli.max_levels {
-        bar.set_style(bar_style_run());
+        let bar = bars.get(i).unwrap();
+        bar.reset();
+
+        let progress_callback = |stats: ProgressStats| progress_callback(stats, bar);
+        let progress_callback = ProgressCallback::new(&progress_callback);
 
         // Input
         let store = FilesystemStore::new(&cli.output)?;
@@ -603,7 +624,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         multiscales.datasets.push(dataset);
 
         array_output.store_metadata()?;
-        finish_step(&output_path);
+        finish_step(bar, &output_path);
 
         // Stop when for all axis the output shape is 1 or stride is 1
         if std::iter::zip(&downsample_factor, &output_shape).all(|(df, s)| *df == 1 || *s == 1) {
@@ -618,6 +639,9 @@ fn run() -> Result<(), Box<dyn Error>> {
         serde_json::Value::Array(multiscales),
     );
     group.store_metadata()?;
+
+    let duration_s = start.elapsed().as_secs_f32();
+    println!("Output {:?} in {duration_s:.2}s", cli.output);
 
     Ok(())
 }
