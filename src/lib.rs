@@ -76,6 +76,7 @@ pub struct ZarrEncodingArgs {
     /// The sharding codec can be used by setting `shard_shape`, but this can also be done explicitly here.
     ///
     /// Examples:
+    ///   '{ "name": "bytes", "configuration": { "endian": "little" } }'
     ///   '{ "name": "pcodec", "configuration": { "level": 12 } }'
     ///   '{ "name": "zfp", "configuration": { "mode": "fixedprecision", "precision": 19 } }'
     #[arg(long, verbatim_doc_comment)]
@@ -300,6 +301,7 @@ pub struct ZarrReencodingArgs {
     /// JSON holding array to bytes codec metadata.
     ///
     /// Examples:
+    ///   '{ "name": "bytes", "configuration": { "endian": "little" } }'
     ///   '{ "name": "pcodec", "configuration": { "level": 12 } }'
     ///   '{ "name": "zfp", "configuration": { "mode": "fixedprecision", "precision": 19 } }'
     #[serde(skip_serializing_if = "Option::is_none")]

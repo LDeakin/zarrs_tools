@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - `zarrs_{ncvar,binary}2zarr` output size change in human readable bytes
  - Change `zarrs_{filter,ome}` to multi progress bars
  - Print input path with `zarrs_{ncva2zarr,ome}`
+ - Add bytes codec to encoding/reencoding help
 
 ### Removed
  - Remove `--hide-progress` from `zarrs_filter`
