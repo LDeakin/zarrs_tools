@@ -243,6 +243,8 @@ fn run() -> Result<(), Box<dyn Error>> {
     // Parse command line arguments
     let cli = Cli::parse();
 
+    println!("Input {:?}", cli.input);
+
     let start = std::time::Instant::now();
 
     let store_in = FilesystemStore::new(&cli.input)?;

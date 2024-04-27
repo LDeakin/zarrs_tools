@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - `zarrs_ome` also supports an `overwrite` option
  - `zarrs_{ncvar,binary}2zarr` output size change in human readable bytes
  - Change `zarrs_{filter,ome}` to multi progress bars
+ - Print input path with `zarrs_{ncva2zarr,ome}`
 
 ### Removed
  - Remove `--hide-progress` from `zarrs_filter`

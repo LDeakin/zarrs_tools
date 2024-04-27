@@ -54,7 +54,7 @@ struct Cli {
     memory_test: bool,
 
     /// The path to a netCDF file or a directory of netcdf files.
-    path: PathBuf,
+    input: PathBuf,
 
     /// The name of the netCDF variable.
     variable: String,
@@ -228,9 +228,12 @@ fn main() {
     if let Some(shard_shape) = &cli.encoding.shard_shape {
         assert_eq!(cli.encoding.chunk_shape.len(), shard_shape.len());
     }
+    println!("Input {:?}", cli.input);
+
+    let start = std::time::Instant::now();
 
     // Sort the files
-    let nc_paths = get_netcdf_paths(&cli.path).expect("cannot retrieve netCDF filenames");
+    let nc_paths = get_netcdf_paths(&cli.input).expect("cannot retrieve netCDF filenames");
     // println!("{nc_paths:?}");
 
     // Inspect the variable for each netCDF file, and get the
@@ -314,7 +317,6 @@ fn main() {
     array.store_metadata().unwrap();
 
     // Read stdin to the array and write chunks/shards
-    let start = std::time::Instant::now();
     let bytes_read: usize = ncfiles_to_array(
         &nc_paths,
         &offsets,
