@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2024-05-06
+
 ### Changed
  - Replace `--no_overwrite` with `--exists` in `zarrs_filter` and `zarrs_ome`
    - Both support `erase` and `exit` options
@@ -94,7 +96,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Initial public release
 
-[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.0
 [0.4.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.0
 [0.3.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.3.0
 [0.2.3]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.2.2
