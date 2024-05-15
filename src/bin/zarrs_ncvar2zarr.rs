@@ -1,6 +1,5 @@
 use clap::Parser;
-use indicatif::{DecimalBytes, MultiProgress, ProgressBar, ProgressStyle};
-use rayon::{iter::ParallelIterator, slice::ParallelSlice};
+use indicatif::{DecimalBytes, ProgressBar, ProgressStyle};
 use std::{
     path::PathBuf,
     sync::{
@@ -11,13 +10,8 @@ use std::{
 use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
 use zarrs::{
-    array::{
-        codec::{ArrayCodecTraits, CodecOptionsBuilder},
-        concurrency::RecommendedConcurrency,
-        Array, DimensionName,
-    },
+    array::{codec::CodecOptionsBuilder, Array, DimensionName},
     array_subset::ArraySubset,
-    config::global_config,
     metadata::Metadata,
     storage::{
         store::{FilesystemStore, MemoryStore},
@@ -36,7 +30,7 @@ struct Cli {
     #[arg(long, default_value_t = false)]
     validate: bool,
 
-    /// Sets the number of netCDF blocks processed concurrently.
+    /// Sets the number of netCDF blocks processed concurrently. This parameter is currently ignored.
     #[arg(long)]
     concurrent_blocks: Option<usize>,
 
@@ -70,39 +64,18 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
     variable: &str,
     concat_dim: usize,
     array: &Array<TStore>,
-    num_concurrent_blocks: Option<usize>,
+    // num_concurrent_blocks: Option<usize>,
     validate: bool,
 ) -> usize {
     let style_all =
         ProgressStyle::with_template("[{bar}] ({pos}/{len} blocks, {elapsed_precise}, ETA {eta})")
             .unwrap();
-    let style = ProgressStyle::with_template("[{bar}] ({pos}/{len})").unwrap();
 
     let bytes_read: AtomicUsize = 0.into();
 
-    let chunk_representation = array
-        .chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])
-        .unwrap();
     let concurrent_target = std::thread::available_parallelism().unwrap().get();
-    let n_blocks = nc_paths.len();
-    let (concurrent_blocks, codec_concurrent_target) =
-        zarrs::array::concurrency::calc_concurrency_outer_inner(
-            concurrent_target,
-            &if let Some(num_concurrent_blocks) = num_concurrent_blocks {
-                let num_concurrent_blocks = std::cmp::min(n_blocks, num_concurrent_blocks);
-                RecommendedConcurrency::new(num_concurrent_blocks..num_concurrent_blocks)
-            } else {
-                let num_concurrent_blocks =
-                    std::cmp::min(n_blocks, global_config().chunk_concurrent_minimum());
-                RecommendedConcurrency::new_minimum(num_concurrent_blocks)
-            },
-            &array
-                .codecs()
-                .recommended_concurrency(&chunk_representation)
-                .unwrap(),
-        );
     let codec_options = CodecOptionsBuilder::new()
-        .concurrent_target(codec_concurrent_target)
+        .concurrent_target(concurrent_target)
         .build();
 
     let process_path = |idx: usize, nc_path: &PathBuf| {
@@ -118,7 +91,6 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
         let dim_sizes_u64: Vec<_> = dims.iter().map(|dim| dim.len() as u64).collect();
         // println!("{dim_sizes:?}");
 
-        // FIXME: Read chunk by chunk
         let mut start = vec![0u64; array.chunk_grid().dimensionality()];
         start[concat_dim] = offsets[idx];
         let array_subset = ArraySubset::new_with_start_shape(start, dim_sizes_u64.clone()).unwrap();
@@ -151,37 +123,14 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
         }
     };
 
-    if concurrent_blocks > 1 {
-        let enumerated_paths = nc_paths.iter().enumerate().collect::<Vec<_>>();
-        let chunks = enumerated_paths
-            .par_chunks((nc_paths.len() + concurrent_blocks - 1) / concurrent_blocks);
-
-        let m = MultiProgress::new();
-        let pb_all = m.add(ProgressBar::new(enumerated_paths.len() as u64));
-        pb_all.set_style(style_all.clone());
-        pb_all.set_position(0);
-        chunks.for_each(|blocks| {
-            let pb = m.add(ProgressBar::new(blocks.len() as u64));
-            pb.set_style(style.clone());
-            pb.set_position(0);
-            for (idx, nc_path) in blocks {
-                process_path(*idx, nc_path);
-                pb.inc(1);
-                pb_all.inc(1);
-            }
-            pb.abandon();
-        });
-        pb_all.abandon();
-    } else {
-        let pb = ProgressBar::new(nc_paths.len() as u64);
-        pb.set_style(style_all);
-        pb.set_position(0);
-        for (idx, nc_path) in nc_paths.iter().enumerate() {
-            process_path(idx, nc_path);
-            pb.inc(1);
-        }
-        pb.abandon();
+    let pb = ProgressBar::new(nc_paths.len() as u64);
+    pb.set_style(style_all);
+    pb.set_position(0);
+    for (idx, nc_path) in nc_paths.iter().enumerate() {
+        process_path(idx, nc_path);
+        pb.inc(1);
     }
+    pb.abandon();
     bytes_read.load(Ordering::Relaxed)
 }
 
@@ -301,7 +250,7 @@ fn main() {
     // Create storage
     let path_out = cli.out.as_path();
     let store: ReadableWritableStorage = if cli.memory_test {
-        Arc::new(MemoryStore::new())
+        Arc::new(MemoryStore::default())
     } else {
         Arc::new(FilesystemStore::new(path_out).unwrap())
     };
@@ -323,7 +272,6 @@ fn main() {
         &cli.variable,
         cli.concat_dim,
         &array,
-        cli.concurrent_blocks,
         cli.validate,
     );
     let duration_s = start.elapsed().as_secs_f32();
