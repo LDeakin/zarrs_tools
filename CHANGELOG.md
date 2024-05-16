@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2024-05-16
+
+### Changed
+ - Bump zarrs to 0.14.0
+ - Disable concurrent netCDF block processing in `zarrs_ncvar2zarr`
+
 ## [0.4.1] - 2024-05-06
 
 ### Changed
@@ -96,8 +102,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Initial public release
 
-[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.4.1...HEAD
-[0.4.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.0
+[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.2
+[0.4.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.1
 [0.4.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.0
 [0.3.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.3.0
 [0.2.3]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.2.2
