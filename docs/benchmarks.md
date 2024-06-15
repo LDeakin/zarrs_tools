@@ -30,7 +30,7 @@ Benchmark data is generated with `scripts/generate_benchmark_array.py` as follow
 ## Implementations Benchmarked
 - [`LDeakin/zarrs`](https://github.com/LDeakin/zarrs) v0.14 (Rust 1.79.0) via [`LDeakin/zarrs_tools`](https://github.com/LDeakin/zarrs_tools) 0.4.2
   - Benchmark executable: [zarrs_benchmark_read_sync](https://github.com/LDeakin/zarrs_tools/blob/main/src/bin/zarrs_benchmark_read_sync.rs)
-  - ~~Benchmark executable: [zarrs_benchmark_read_async](https://github.com/LDeakin/zarrs_tools/blob/main/src/bin/zarrs_benchmark_read_sync.rs)~~
+  - ~~Benchmark executable: [zarrs_benchmark_read_async](https://github.com/LDeakin/zarrs_tools/blob/main/src/bin/zarrs_benchmark_read_async.rs)~~
 - [`google/tensorstore`](https://github.com/google/tensorstore) v0.1.61 (Python 3.12.3)
   - Benchmark script: <https://github.com/LDeakin/zarrs_tools/blob/main/scripts/tensorstore_python_benchmark_read_async.py>
 - [`zarr-developers/zarr-python`](https://github.com/zarr-developers/zarr-python) 3.0.0a0 (Python 3.12.3)
