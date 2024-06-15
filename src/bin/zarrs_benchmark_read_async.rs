@@ -1,3 +1,6 @@
+// TODO: Use an io_uring filesystem store
+// https://github.com/apache/opendal/issues/4520
+
 use std::{cell::UnsafeCell, sync::Arc, time::SystemTime};
 
 use async_scoped::spawner::Spawner;
@@ -11,7 +14,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::{store::AsyncObjectStore, AsyncReadableStorageTraits},
+    storage::{store::AsyncOpendalStore, AsyncReadableStorageTraits},
 };
 
 /// Benchmark zarrs read throughput with the async API.
@@ -44,9 +47,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
 
-    let storage = Arc::new(AsyncObjectStore::new(
-        object_store::local::LocalFileSystem::new_with_prefix(args.path.clone())?,
-    ));
+    let mut builder = opendal::services::Fs::default();
+    builder.root(&args.path);
+    let operator = opendal::Operator::new(builder)?.finish();
+    let storage = Arc::new(AsyncOpendalStore::new(operator));
     let array = Arc::new(zarrs::array::Array::async_new(storage.clone(), "/").await?);
     // println!("{:#?}", array.metadata());
 

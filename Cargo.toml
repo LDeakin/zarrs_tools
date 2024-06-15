@@ -1,6 +1,6 @@
 [package]
 name = "zarrs_tools"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Lachlan Deakin <ljdgit@gmail.com>"]
 edition = "2021"
 rust-version = "1.75"
@@ -12,7 +12,7 @@ keywords = ["zarr"]
 categories = ["command-line-utilities", "encoding"]
 
 [features]
-async = ["zarrs/async", "zarrs/object_store"]
+async = ["zarrs/async", "zarrs/opendal"]
 benchmark = []
 binary2zarr = []
 filter = []
@@ -31,7 +31,7 @@ itertools = "0.12.1"
 ndarray = { version = "0.15.6", features = ["rayon", "approx-0_5"] }
 netcdf = { version = "0.9.0", optional = true, features = ["static"] }
 num-traits = "0.2.18"
-object_store = { version = "0.9.0", features = ["http"] }
+opendal = { version = "0.45", default-features = false, features = ["services-fs"] }
 rayon = "1.8.0"
 rayon_iter_concurrent_limit = "0.2.0"
 serde = { version = "1.0.197", features = ["derive"] }
@@ -79,6 +79,7 @@ strip = true
 # lto = true
 # codegen-units = 1
 # panic = "abort"
+# debug = true
 
 # [workspace.metadata.dist]
 # cargo-dist-version = "0.10.0"
@@ -96,6 +97,3 @@ strip = true
 # [patch.crates-io]
 # zarrs = { path = "../zarrs" }
 # zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
-
-# [profile.release]
-# debug = 1
