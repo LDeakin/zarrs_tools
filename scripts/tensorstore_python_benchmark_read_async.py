@@ -1,12 +1,26 @@
 #!/usr/bin/env python3
 
-import tensorstore as ts
 import numpy as np
 import timeit
 import asyncio
 import click
+from functools import wraps
 
-async def tensorstore_benchmark_read_async(path, concurrent_chunks, read_all):
+import tensorstore as ts
+
+def coro(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        return asyncio.run(f(*args, **kwargs))
+
+    return wrapper
+
+@click.command()
+@coro
+@click.argument('path')
+@click.option('--concurrent_chunks', default=4, help='Number of concurrent async chunk reads. Ignore if --read-all is set')
+@click.option('--read_all', is_flag=True, show_default=True, default=False, help='Read the entire array in one operation.')
+async def main(path, concurrent_chunks, read_all):
     dataset_future = ts.open({
         'driver': 'zarr3',
         'kvstore': {
@@ -41,7 +55,7 @@ async def tensorstore_benchmark_read_async(path, concurrent_chunks, read_all):
             chunk_slice = [ts.Dim(inclusive_min=index*cshape, exclusive_max=min(index * cshape + cshape, dshape)) for (index, cshape, dshape) in zip(chunk_index, chunk_shape, domain_shape)]
             async def chunk_read(chunk_index, chunk_slice):
                 # print("Reading", chunk_index)
-                await dataset[ts.IndexDomain(chunk_slice)].read()
+                return await dataset[ts.IndexDomain(chunk_slice)].read()
                 # print("Read", chunk_index)
             async def chunk_read_future(chunk_index, chunk_slice):
                 async with semaphore:
@@ -54,14 +68,5 @@ async def tensorstore_benchmark_read_async(path, concurrent_chunks, read_all):
     elapsed_ms = elapsed * 1000.0
     print(f"Decoded in {elapsed_ms:.2f}ms")
 
-@click.command()
-@click.argument('path')
-@click.option('--concurrent_chunks', default=4, help='Number of concurrent async chunk reads. Ignore if --read-all is set')
-@click.option('--read_all', is_flag=True, show_default=True, default=False, help='Read the entire array in one operation.')
-def main(path, concurrent_chunks, read_all):
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(tensorstore_benchmark_read_async(path, concurrent_chunks, read_all))
-    loop.close()
-
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

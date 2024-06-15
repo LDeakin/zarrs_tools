@@ -3,31 +3,36 @@
 import subprocess
 import re
 import pandas as pd
-import numpy as np
 import math
-
-implementation_to_args = {
-    "zarrs_sync": ["/usr/bin/time", "-v", "zarrs_benchmark_read_sync", "--read-all"],
-    "zarrs_async": ["/usr/bin/time", "-v", "zarrs_benchmark_read_async", "--read-all"],
-    "tensorstore": ["/usr/bin/time", "-v", "./scripts/tensorstore_benchmark_read_async.py", "--read_all"],
-}
+import numpy as np
 
 def clear_cache():
     subprocess.call(['sudo', 'sh', '-c', "sync; echo 3 > /proc/sys/vm/drop_caches"])
+
+implementation_to_args = {
+    "zarrs_rust": ["/usr/bin/time", "-v", "zarrs_benchmark_read_sync", "--read-all"],
+    # "zarrs_rust_async": ["/usr/bin/time", "-v", "zarrs_benchmark_read_async", "--read-all"],
+    "tensorstore_python": ["/usr/bin/time", "-v", "./scripts/tensorstore_python_benchmark_read_async.py", "--read_all"],
+    "zarr_python": ["/usr/bin/time", "-v", "./scripts/zarr_python_benchmark_read_async.py", "--read_all"],
+}
+
+implementations = ["zarrs_rust", "tensorstore_python", "zarr_python"]
+
+images = [
+    "data/benchmark.zarr",
+    "data/benchmark_compress.zarr",
+    "data/benchmark_compress_shard.zarr",
+]
 
 best_of = 3
 
 index = []
 rows = []
-for image in [
-    "data/benchmark.zarr",
-    "data/benchmark_compress.zarr",
-    "data/benchmark_compress_shard.zarr",
-]:
+for image in images:
     index.append(image)
     wall_times = []
     memory_usages = []
-    for implementation in ["zarrs_sync", "zarrs_async", "tensorstore"]:
+    for implementation in implementations:
         wall_time_measurements = []
         memory_usage_measurements = []
         for i in range(best_of):
@@ -49,10 +54,9 @@ for image in [
                 m = int(wall_time.group(1))
                 s = float(wall_time.group(2))
                 wall_time_s = m * 60 + s
-                # print(wall_time_s)
                 memory_usage_kb = int(memory_usage.group(1))
                 memory_usage_gb = float(memory_usage_kb) / 1.0e6
-                # print(memory_usage_gb)
+                print(wall_time_s, memory_usage_gb)
                 wall_time_measurements.append(wall_time_s)
                 memory_usage_measurements.append(memory_usage_gb)
             else:
@@ -67,13 +71,12 @@ for image in [
     row = wall_times + memory_usages
     rows.append(row)
 
-
 columns_pandas = []
 columns_markdown = []
-for metric in ["Wall time (s)", "Memory usage (GB)"]:
+for metric in ["Time (s)", "Memory (GB)"]:
     include_metric = True
     last_implementation = ""
-    for implementation, execution in [("zarrs", "sync"), ("zarrs", "async"), ("tensorstore", "async")]:
+    for implementation in implementations:
         column_markdown = ""
 
         # Metric
@@ -82,24 +85,20 @@ for metric in ["Wall time (s)", "Memory usage (GB)"]:
         column_markdown += "<br>"
         include_metric = False
 
-        # Implemnentation
+        # Implementation
         if implementation != last_implementation:
             last_implementation = implementation
-            column_markdown += implementation
-        column_markdown += "<br>"
-
-        # Execution
-        column_markdown += execution
+            column_markdown += implementation.replace("_", "<br>")
 
         columns_markdown.append(column_markdown)
-        columns_pandas.append((metric, implementation, execution))
+        columns_pandas.append((metric, implementation))
 
 data = {
     "index": index,
     "columns": columns_pandas,
     "data": rows,
     "index_names": ["Image"],
-    "column_names": ["Metric", "Implementation", "Execution"],
+    "column_names": ["Metric", "Implementation"],
 }
 
 # print(data)
