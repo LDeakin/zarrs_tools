@@ -21,7 +21,6 @@ ome = []
 
 [dependencies]
 approx = "0.5.1"
-async-scoped = { version = "0.9.0", features = ["use-tokio"] }
 clap = { version = "4.4.6", features = ["derive"] }
 enum_dispatch = "0.3.12"
 futures = "0.3.29"
@@ -31,7 +30,7 @@ itertools = "0.12.1"
 ndarray = { version = "0.15.6", features = ["rayon", "approx-0_5"] }
 netcdf = { version = "0.9.0", optional = true, features = ["static"] }
 num-traits = "0.2.18"
-opendal = { version = "0.45", default-features = false, features = ["services-fs"] }
+opendal = { version = "0.47", default-features = false, features = ["services-fs"] }
 rayon = "1.8.0"
 rayon_iter_concurrent_limit = "0.2.0"
 serde = { version = "1.0.197", features = ["derive"] }
@@ -40,7 +39,7 @@ sysinfo = "0.30.6"
 tempfile = "3.10.1"
 thiserror = "1.0.57"
 tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
-zarrs = { version = "0.14.0", features = [] }
+zarrs = { version = "0.15.0", features = [] }
 
 [[bin]]
 name = "zarrs_benchmark_read_sync"
@@ -94,6 +93,6 @@ strip = true
 # aarch64-apple-darwin = "macos-14"
 # x86_64-apple-darwin = "macos-12"
 
-# [patch.crates-io]
+[patch.crates-io]
 # zarrs = { path = "../zarrs" }
-# zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
+zarrs = { git = "https://github.com/LDeakin/zarrs.git", branch = "async_spawning" }
