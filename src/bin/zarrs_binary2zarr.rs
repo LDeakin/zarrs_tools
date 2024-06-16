@@ -1,9 +1,7 @@
 use clap::Parser;
 use indicatif::{DecimalBytes, ProgressBar, ProgressStyle};
-use rayon::{
-    iter::{IndexedParallelIterator, ParallelIterator},
-    prelude::IntoParallelIterator,
-};
+use rayon::{iter::ParallelIterator, prelude::IntoParallelIterator};
+use rayon_iter_concurrent_limit::iter_concurrent_limit;
 use std::{io::Read, path::PathBuf, sync::atomic::AtomicUsize};
 use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
@@ -164,10 +162,7 @@ fn stdin_to_array(
             .store_array_subset_opt(&array_subset, subset_bytes, &codec_options)
             .unwrap();
     };
-    (0..n_blocks)
-        .into_par_iter()
-        .by_uniform_blocks(n_blocks.div_ceil(concurrent_chunks).max(1))
-        .for_each(op);
+    iter_concurrent_limit!(concurrent_chunks, 0..n_blocks, for_each, op);
     bytes_read.load(std::sync::atomic::Ordering::Relaxed)
 }
 

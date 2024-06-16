@@ -5,7 +5,8 @@ use std::{sync::Mutex, time::SystemTime};
 
 use clap::Parser;
 use progress::{Progress, ProgressCallback};
-use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon_iter_concurrent_limit::iter_concurrent_limit;
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{
@@ -616,10 +617,11 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
     let progress = Progress::new(chunks.num_elements_usize(), progress_callback);
     let indices = chunks.indices();
     if array_in.data_type() == array_out.data_type() {
-        indices
-            .into_par_iter()
-            .by_uniform_blocks(indices.len().div_ceil(chunks_concurrent_limit).max(1))
-            .try_for_each(|chunk_indices: Vec<u64>| {
+        iter_concurrent_limit!(
+            chunks_concurrent_limit,
+            indices,
+            try_for_each,
+            |chunk_indices: Vec<u64>| {
                 let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
                 let bytes = progress
                     .read(|| array_in.retrieve_array_subset_opt(&chunk_subset, &codec_options))?;
@@ -641,7 +643,8 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
                 }
                 progress.next();
                 Ok::<_, ArrayError>(())
-            })?;
+            }
+        )?;
     } else {
         // FIXME
         todo!("zarrs_reencode does not yet support data type conversion!")

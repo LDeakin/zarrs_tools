@@ -3,7 +3,7 @@ use std::ops::AddAssign;
 use clap::Parser;
 use itertools::Itertools;
 use num_traits::{AsPrimitive, Zero};
-use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
@@ -177,10 +177,11 @@ impl FilterTraits for SummedAreaTable {
                 .collect_vec();
             let chunks_dim = ArraySubset::new_with_shape(chunk_grid_shape_dim);
             let indices = chunks_dim.indices();
-            indices
-                .into_par_iter()
-                .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
-                .try_for_each(|chunk_start_dim: Vec<u64>| {
+            rayon_iter_concurrent_limit::iter_concurrent_limit!(
+                chunk_limit,
+                indices,
+                try_for_each,
+                |chunk_start_dim: Vec<u64>| {
                     macro_rules! sat {
                         ( $t_in:ty, $t_out:ty) => {{
                             self.apply_dim::<$t_in, $t_out>(
@@ -244,7 +245,8 @@ impl FilterTraits for SummedAreaTable {
                         (Float64, f64)
                     ]));
                     Ok::<_, FilterError>(())
-                })?;
+                }
+            )?;
         }
 
         Ok(())

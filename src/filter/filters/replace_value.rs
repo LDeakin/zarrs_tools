@@ -1,6 +1,6 @@
 use clap::Parser;
 use num_traits::AsPrimitive;
-use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType, FillValueMetadata},
@@ -161,10 +161,10 @@ impl FilterTraits for ReplaceValue {
         };
 
         let indices = chunks.indices();
-        indices
-        .into_par_iter()
-        .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
-        .try_for_each(
+        rayon_iter_concurrent_limit::iter_concurrent_limit!(
+            chunk_limit,
+            indices,
+            try_for_each,
             |chunk_indices: Vec<u64>| {
                 let input_output_subset = output.chunk_subset_bounded(&chunk_indices).unwrap();
                 macro_rules! apply_input {

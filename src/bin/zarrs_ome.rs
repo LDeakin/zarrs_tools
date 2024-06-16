@@ -10,7 +10,7 @@ use half::{bf16, f16};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use num_traits::AsPrimitive;
-use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::Serialize;
 use zarrs::{
     array::{Array, ArrayCodecTraits, ChunkRepresentation},
@@ -525,10 +525,11 @@ fn run() -> Result<(), Box<dyn Error>> {
 
         // Apply
         let indices = chunks.indices();
-        indices
-            .into_par_iter()
-            .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
-            .try_for_each(|chunk_indices: Vec<u64>| {
+        rayon_iter_concurrent_limit::iter_concurrent_limit!(
+            chunk_limit,
+            indices,
+            try_for_each,
+            |chunk_indices: Vec<u64>| {
                 macro_rules! discrete_or_continuous {
                     ( $t:ty ) => {{
                         if cli.discrete {
@@ -606,7 +607,8 @@ fn run() -> Result<(), Box<dyn Error>> {
 
                 progress.next();
                 Ok::<_, FilterError>(())
-            })?;
+            }
+        )?;
 
         // Append multiscales dataset metadata
         let dataset = Dataset {

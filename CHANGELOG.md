@@ -13,10 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Bump `rayon` to 1.10.0
  - Bump `itertools` to 0.13
 
-### Removed
- - Remove `rayon_iter_concurrent_limit` dependency
-   - Rayon `rayon::iter::IndexedParallelIterator::by_uniform_blocks` (since `rayon` 1.9) is used instead
-
 ## [0.4.2] - 2024-05-16
 
 ### Changed
