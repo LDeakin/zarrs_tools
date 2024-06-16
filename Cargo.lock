@@ -1562,15 +1562,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rayon_iter_concurrent_limit"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d09ee01023de07fa073ce14c37cbe0a9e099c6b0b60a29cf4af6d04d9553fed7"
-dependencies = [
- "rayon",
-]
-
-[[package]]
 name = "redox_syscall"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2436,7 +2427,6 @@ dependencies = [
  "num-traits",
  "opendal",
  "rayon",
- "rayon_iter_concurrent_limit",
  "serde",
  "serde_json",
  "sysinfo",

@@ -254,10 +254,10 @@ impl FilterTraits for GuidedFilter {
         };
 
         let indices = chunks.indices();
-        rayon_iter_concurrent_limit::iter_concurrent_limit!(
-            chunk_limit,
-            indices,
-            try_for_each,
+        indices
+        .into_par_iter()
+        .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
+        .try_for_each(
             |chunk_indices: Vec<u64>| {
                 macro_rules! apply_output {
                     ( $type_in:ty, [$( ( $data_type_out:ident, $type_out:ty ) ),* ]) => {
