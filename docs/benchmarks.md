@@ -42,7 +42,7 @@ Benchmark data is generated with `scripts/generate_benchmark_array.py` as follow
 ## Read Benchmarks
 
 ### Entire Array
-This benchmark measures the time and maximum memory used to read an entire dataset into memory.
+This benchmark measures the minimum time and memory used to read an entire dataset into memory.
  - These are best of 3 measurements
  - The disk cache is cleared between each measurement
 
@@ -57,10 +57,12 @@ python3 ./scripts/run_benchmark_read_all.py
 | data/benchmark_compress_shard.zarr |                        1.47 |                        2.18 |                36.37 |                           8.63 |                        8.94 |                27.42 |
 
 ### Chunk-By-Chunk
-This benchmark measures the time to read a dataset chunk-by-chunk into memory.
+<details>
+<summary>TODO: Need to review benchmark scripts for tensorstore/zarr-python, performance is not improving much with concurrency</summary>
+
+This benchmark measures the the minimum time and memory to read a dataset chunk-by-chunk into memory.
  - These are best of 1 measurements
  - The disk cache is cleared between each measurement
- - TODO: Need to review scripts for tensorstore/zarr-python, performance is not improving much with concurrency
 
 ```bash
 python3 ./scripts/run_benchmark_read_chunks.py
@@ -86,6 +88,8 @@ python3 ./scripts/run_benchmark_read_chunks.py
 | data/benchmark_compress_shard.zarr |             8 |                        1.5  |                           2.21 |
 | data/benchmark_compress_shard.zarr |            16 |                        1.38 |                           4.46 |
 | data/benchmark_compress_shard.zarr |            32 |                        1.5  |                           6.69 |
+
+</details>
 
 ## Round Trip Benchmarks
 TODO
