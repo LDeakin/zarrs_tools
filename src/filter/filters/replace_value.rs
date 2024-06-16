@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType, FillValueMetadata},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -86,8 +85,8 @@ impl ReplaceValue {
         replace: TOut,
     ) -> Result<Vec<TOut>, FilterError>
     where
-        TIn: Pod + Copy + Send + Sync + PartialEq + AsPrimitive<TOut>,
-        TOut: Pod + Send + Sync,
+        TIn: bytemuck::Pod + Copy + Send + Sync + PartialEq + AsPrimitive<TOut>,
+        TOut: bytemuck::Pod + Send + Sync,
     {
         let output_elements = input_elements
             .into_par_iter()

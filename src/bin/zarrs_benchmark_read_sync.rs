@@ -12,7 +12,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::ReadableStorageTraits,
+    storage::ListableStorageTraits,
 };
 
 /// Benchmark zarrs read throughput with the sync API.

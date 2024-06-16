@@ -15,7 +15,6 @@ use serde::Serialize;
 use zarrs::{
     array::{Array, ArrayCodecTraits, ChunkRepresentation},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     group::Group,
     storage::{store::FilesystemStore, StorePrefix, WritableStorageTraits},
 };
@@ -150,7 +149,7 @@ fn apply_chunk_discrete<T>(
     progress: &Progress,
 ) -> Result<(), FilterError>
 where
-    T: Pod + Copy + Send + Sync + Eq + PartialEq + Hash + AsPrimitive<T>,
+    T: bytemuck::Pod + Copy + Send + Sync + Eq + PartialEq + Hash + AsPrimitive<T>,
 {
     let output_subset = array_output.chunk_subset_bounded(chunk_indices).unwrap();
     let downsample_input_subset =
@@ -174,7 +173,7 @@ fn apply_chunk_continuous<T>(
     progress: &Progress,
 ) -> Result<(), FilterError>
 where
-    T: Pod + Copy + Send + Sync + AsPrimitive<f64> + std::iter::Sum,
+    T: bytemuck::Pod + Copy + Send + Sync + AsPrimitive<f64> + std::iter::Sum,
     f64: AsPrimitive<T>,
 {
     let output_subset = array_output.chunk_subset_bounded(chunk_indices).unwrap();
@@ -200,7 +199,7 @@ fn apply_chunk_continuous_gaussian<T>(
     progress: &Progress,
 ) -> Result<(), FilterError>
 where
-    T: Pod + Copy + Send + Sync + AsPrimitive<f32> + std::iter::Sum,
+    T: bytemuck::Pod + Copy + Send + Sync + AsPrimitive<f32> + std::iter::Sum,
     f64: AsPrimitive<T>,
 {
     let output_subset = array_output.chunk_subset_bounded(chunk_indices).unwrap();

@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType, FillValue, FillValueMetadata},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -65,8 +64,8 @@ impl Equal {
         equal: &TIn,
     ) -> Result<Vec<TOut>, FilterError>
     where
-        TIn: Pod + Copy + Send + Sync + PartialEq,
-        TOut: Pod + Send + Sync,
+        TIn: bytemuck::Pod + Copy + Send + Sync + PartialEq,
+        TOut: bytemuck::Pod + Send + Sync,
         bool: AsPrimitive<TOut>,
     {
         let output_elements = input_elements
@@ -206,7 +205,7 @@ impl FilterTraits for Equal {
                         };
                     }
                 apply_output!([
-                    (Bool, u8), // bool != Pod, but apply_chunk only stores 0 or 1, so can store as u8
+                    (Bool, u8), // bool != bytemuck::Pod, but apply_chunk only stores 0 or 1, so can store as u8
                     (UInt8, u8)
                 ])
             }

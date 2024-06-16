@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -55,8 +54,8 @@ impl SummedAreaTable {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: Pod + Send + Sync,
-        TOut: Pod + Send + Sync + Zero + AddAssign,
+        TIn: bytemuck::Pod + Send + Sync,
+        TOut: bytemuck::Pod + Send + Sync + Zero + AddAssign,
         TIn: AsPrimitive<TOut>,
     {
         let dimensionality = chunk_start_dim.len();

@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -59,7 +58,7 @@ impl Clamp {
 
     pub fn apply_elements_inplace<T>(&self, elements: &mut [T]) -> Result<(), FilterError>
     where
-        T: Pod + Copy + Send + Sync + PartialOrd,
+        T: bytemuck::Pod + Copy + Send + Sync + PartialOrd,
         f64: AsPrimitive<T>,
     {
         let min: T = self.min.as_();

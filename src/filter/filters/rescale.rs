@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -72,8 +71,8 @@ impl Rescale {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: Pod + Send + Sync + AsPrimitive<f64>,
-        TOut: Pod + Copy + Send + Sync + 'static,
+        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<f64>,
+        TOut: bytemuck::Pod + Copy + Send + Sync + 'static,
         f64: AsPrimitive<TOut>,
     {
         // Determine the input and output subset

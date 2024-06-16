@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -55,8 +54,8 @@ impl GradientMagnitude {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: Pod + AsPrimitive<f32>,
-        TOut: Pod,
+        TIn: bytemuck::Pod + AsPrimitive<f32>,
+        TOut: bytemuck::Pod,
         f32: AsPrimitive<TOut>,
     {
         // Determine the input and output subset

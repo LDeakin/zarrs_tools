@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
  - Switch to `opendal` for async benchmark
+ - Bump `zarrs` to 0.15.0
 
 ## [0.4.2] - 2024-05-16
 

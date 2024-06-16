@@ -15,7 +15,7 @@ use zarrs::{
     metadata::Metadata,
     storage::{
         store::{FilesystemStore, MemoryStore},
-        ReadableWritableStorage, ReadableWritableStorageTraits, StorePrefix,
+        ReadableWritableListableStorage, ReadableWritableStorageTraits, StorePrefix,
     },
 };
 
@@ -249,7 +249,7 @@ fn main() {
 
     // Create storage
     let path_out = cli.out.as_path();
-    let store: ReadableWritableStorage = if cli.memory_test {
+    let store: ReadableWritableListableStorage = if cli.memory_test {
         Arc::new(MemoryStore::default())
     } else {
         Arc::new(FilesystemStore::new(path_out).unwrap())

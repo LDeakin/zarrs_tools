@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -78,8 +77,8 @@ impl GuidedFilter {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: Pod + Send + Sync + AsPrimitive<f32>,
-        TOut: Pod + Send + Sync,
+        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<f32>,
+        TOut: bytemuck::Pod + Send + Sync,
         f32: AsPrimitive<TOut>,
     {
         let subset_output = output.chunk_subset_bounded(chunk_indices).unwrap();
