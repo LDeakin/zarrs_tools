@@ -10,13 +10,17 @@ def clear_cache():
 
 implementation_to_args = {
     "zarrs_rust": ["/usr/bin/time", "-v", "zarrs_benchmark_read_sync", "--concurrent-chunks"],
-    # "zarrs_rust_async": ["/usr/bin/time", "-v", "zarrs_benchmark_read_async", "--concurrent-chunks"],
+    "zarrs_rust_async": ["/usr/bin/time", "-v", "zarrs_benchmark_read_async", "--concurrent-chunks"],
     "tensorstore_python": ["/usr/bin/time", "-v", "./scripts/tensorstore_python_benchmark_read_async.py", "--concurrent_chunks"],
     "zarr_python": ["/usr/bin/time", "-v", "./scripts/zarr_python_benchmark_read_async.py", "--concurrent_chunks"],
 }
 
-# implementations = ["zarrs_rust", "tensorstore_python", "zarr_python"]
-implementations = ["zarrs_rust"]
+implementations = [
+    "zarrs_rust",
+    # "zarrs_rust_async", # reenable with async_spawning branch
+    "tensorstore_python",
+    "zarr_python",
+]
 
 images = [
     "data/benchmark.zarr",

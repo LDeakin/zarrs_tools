@@ -52,9 +52,9 @@ python3 ./scripts/run_benchmark_read_all.py
 
 | Image                              |   Time (s)<br>zarrs<br>rust |   <br>tensorstore<br>python |   <br>zarr<br>python |   Memory (GB)<br>zarrs<br>rust |   <br>tensorstore<br>python |   <br>zarr<br>python |
 |:-----------------------------------|----------------------------:|----------------------------:|---------------------:|-------------------------------:|----------------------------:|---------------------:|
-| data/benchmark.zarr                |                        2.95 |                        3.17 |                51.53 |                           8.42 |                        8.59 |                15.28 |
-| data/benchmark_compress.zarr       |                        3    |                        2.83 |                74.82 |                           8.44 |                        8.53 |                19.14 |
-| data/benchmark_compress_shard.zarr |                        1.47 |                        2.18 |                36.37 |                           8.63 |                        8.94 |                27.42 |
+| data/benchmark.zarr                |                        3.06 |                        3.11 |                52.99 |                           8.42 |                        8.59 |                15.49 |
+| data/benchmark_compress.zarr       |                        2.87 |                        2.94 |                74.58 |                           8.44 |                        8.55 |                19.17 |
+| data/benchmark_compress_shard.zarr |                        1.51 |                        2.17 |                39.97 |                           8.63 |                        8.88 |                27.22 |
 
 ### Chunk-By-Chunk
 <details>
@@ -68,26 +68,26 @@ This benchmark measures the the minimum time and memory to read a dataset chunk-
 python3 ./scripts/run_benchmark_read_chunks.py
 ```
 
-| Image                              |   Concurrency |   Time (s)<br>zarrs<br>rust |   Memory (GB)<br>zarrs<br>rust |
-|:-----------------------------------|--------------:|----------------------------:|-------------------------------:|
-| data/benchmark.zarr                |             1 |                       27.12 |                           0.03 |
-| data/benchmark.zarr                |             2 |                       15.15 |                           0.03 |
-| data/benchmark.zarr                |             4 |                        8.58 |                           0.02 |
-| data/benchmark.zarr                |             8 |                        4.74 |                           0.03 |
-| data/benchmark.zarr                |            16 |                        2.84 |                           0.02 |
-| data/benchmark.zarr                |            32 |                        2.8  |                           0.02 |
-| data/benchmark_compress.zarr       |             1 |                       22.15 |                           0.02 |
-| data/benchmark_compress.zarr       |             2 |                       13.47 |                           0.03 |
-| data/benchmark_compress.zarr       |             4 |                        7.68 |                           0.03 |
-| data/benchmark_compress.zarr       |             8 |                        4.16 |                           0.03 |
-| data/benchmark_compress.zarr       |            16 |                        2.44 |                           0.03 |
-| data/benchmark_compress.zarr       |            32 |                        2.42 |                           0.04 |
-| data/benchmark_compress_shard.zarr |             1 |                        2.53 |                           0.36 |
-| data/benchmark_compress_shard.zarr |             2 |                        1.58 |                           0.7  |
-| data/benchmark_compress_shard.zarr |             4 |                        1.42 |                           1.29 |
-| data/benchmark_compress_shard.zarr |             8 |                        1.5  |                           2.21 |
-| data/benchmark_compress_shard.zarr |            16 |                        1.38 |                           4.46 |
-| data/benchmark_compress_shard.zarr |            32 |                        1.5  |                           6.69 |
+| Image                              |   Concurrency |   Time (s)<br>zarrs<br>rust |   <br>tensorstore<br>python |   <br>zarr<br>python |   Memory (GB)<br>zarrs<br>rust |   <br>tensorstore<br>python |   <br>zarr<br>python |
+|:-----------------------------------|--------------:|----------------------------:|----------------------------:|---------------------:|-------------------------------:|----------------------------:|---------------------:|
+| data/benchmark.zarr                |             1 |                       27.8  |                       54.49 |                71.26 |                           0.03 |                        0.31 |                 0.31 |
+| data/benchmark.zarr                |             2 |                       15.43 |                       31.12 |                69.41 |                           0.03 |                        0.3  |                 0.32 |
+| data/benchmark.zarr                |             4 |                        8.27 |                       24.18 |                70.76 |                           0.02 |                        0.31 |                 0.32 |
+| data/benchmark.zarr                |             8 |                        4.75 |                       21.51 |                67.68 |                           0.02 |                        0.32 |                 0.31 |
+| data/benchmark.zarr                |            16 |                        2.76 |                       20.17 |                62.85 |                           0.02 |                        0.33 |                 0.32 |
+| data/benchmark.zarr                |            32 |                        2.77 |                       17.86 |                56.93 |                           0.02 |                        0.34 |                 0.32 |
+| data/benchmark_compress.zarr       |             1 |                       21.88 |                       49.23 |                83.36 |                           0.02 |                        0.31 |                 0.33 |
+| data/benchmark_compress.zarr       |             2 |                       13.39 |                       27.82 |                88.61 |                           0.03 |                        0.3  |                 0.33 |
+| data/benchmark_compress.zarr       |             4 |                        7.54 |                       23.41 |                90.04 |                           0.03 |                        0.32 |                 0.34 |
+| data/benchmark_compress.zarr       |             8 |                        4.07 |                       20.48 |                82.76 |                           0.03 |                        0.31 |                 0.34 |
+| data/benchmark_compress.zarr       |            16 |                        2.45 |                       19.37 |                74.4  |                           0.03 |                        0.34 |                 0.34 |
+| data/benchmark_compress.zarr       |            32 |                        2.42 |                       17.46 |                68.15 |                           0.04 |                        0.35 |                 0.34 |
+| data/benchmark_compress_shard.zarr |             1 |                        2.61 |                        3.14 |                25.93 |                           0.36 |                        0.58 |                 1.22 |
+| data/benchmark_compress_shard.zarr |             2 |                        1.53 |                        2.29 |                30.23 |                           0.69 |                        0.89 |                 2.03 |
+| data/benchmark_compress_shard.zarr |             4 |                        1.34 |                        1.98 |                32.54 |                           1.29 |                        1.12 |                 3.61 |
+| data/benchmark_compress_shard.zarr |             8 |                        1.31 |                        1.85 |                34.62 |                           2.28 |                        1.2  |                 7.01 |
+| data/benchmark_compress_shard.zarr |            16 |                        1.36 |                        1.77 |                36.18 |                           4.27 |                        2.13 |                13.77 |
+| data/benchmark_compress_shard.zarr |            32 |                        1.38 |                        2.12 |                45.37 |                           6.91 |                        2.49 |                27.29 |
 
 </details>
 
