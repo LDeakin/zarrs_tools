@@ -13,7 +13,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::Serialize;
 use zarrs::{
-    array::{Array, ArrayCodecTraits, ChunkRepresentation},
+    array::{Array, ArrayCodecTraits, ArrayMetadata, ArrayMetadataV3, ChunkRepresentation},
     array_subset::ArraySubset,
     group::Group,
     storage::{store::FilesystemStore, StorePrefix, WritableStorageTraits},
@@ -298,8 +298,10 @@ fn run() -> Result<(), Box<dyn Error>> {
         let output_0_path = cli.output.join("0");
         let progress_callback = |stats: ProgressStats| progress_callback(stats, bar);
         let progress_callback = ProgressCallback::new(&progress_callback);
-        if let ZarrReEncodingChangeType::None = cli.reencoding.change_type() {
-            // Copy full res input to output
+        if let (ZarrReEncodingChangeType::None, ArrayMetadata::V3(_)) =
+            (cli.reencoding.change_type(), array_in.metadata())
+        {
+            // Copy full res input to output if it is Zarr V3 and does not need any changes
             let dir_count = count_dir(&cli.input)?;
             let progress = Progress::new(dir_count, &progress_callback);
             copy_dir(&cli.input, &output_0_path, &progress)?;
