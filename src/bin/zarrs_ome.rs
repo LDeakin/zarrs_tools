@@ -29,10 +29,12 @@ use zarrs_tools::{
 
 #[derive(clap::ValueEnum, Debug, Clone)]
 enum OutputExists {
-    /// Overwrite existing files. Useful if the output includes additional non-zarr files to be preserved.
-    Overwrite,
     /// Erase the output
     Erase,
+    /// Overwrite existing files.
+    /// Useful if the output includes additional non-zarr files to be preserved.
+    /// May fail if changing the encoding.
+    Overwrite,
     /// Exit if the output already exists
     Exit,
 }
@@ -78,7 +80,7 @@ struct Cli {
 
     /// Behaviour if the output exists.
     #[arg(long)]
-    #[clap(value_enum, default_value_t=OutputExists::Overwrite)]
+    #[clap(value_enum, default_value_t=OutputExists::Erase)]
     exists: OutputExists,
 
     /// Attributes (optional).
