@@ -11,24 +11,21 @@ Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data wit
 [Changelog (CHANGELOG.md)](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md)
 
 ## Tools
-- [zarrs_reencode](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array.
-  - Can change the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
+All tools support input and output [Zarr V3](https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html) data.
+Some tools additionally support input of a [V3 compatible subset](https://docs.rs/zarrs/latest/zarrs/#arrays-zarr-v3-and-zarr-v2) of [Zarr V2](https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html).
+
+- [zarrs_reencode](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and ttributes.
+- [zarrs_filter](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
+- [zarrs_ome](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) `0.5-dev` as Zarr V3. Recognised by [Neuroglancer](https://github.com/google/neuroglancer) for Zarr V3.
 - [zarrs_binary2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
 - [zarrs_ncvar2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ncvar2zarr.md) (feature `ncvar2zarr`): convert a netCDF variable to an array.
-  - Supports multi-file datasets where a variable has been split along a single dimension.
-
-The following tools are highly experimental and have had limited production testing:
-
-- [zarrs_filter](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
-- [zarrs_ome](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html).
-  - Outputs OME-Zarr `0.5-dev`. This revision is currently recognised by [Neuroglancer](https://github.com/google/neuroglancer) for Zarr V3.
 
 See [docs/](https://github.com/LDeakin/zarrs_tools/blob/main/docs/) for tool documentation.
 
 ## `zarrs` Benchmarking
-- `zarrs_reencode`: suitable for round trip benchmarking.
-- `zarrs_benchmark_read_sync` (feature `benchmark`): benchmark the zarrs sync API.
-- `zarrs_benchmark_read_async` (feature `benchmark`): benchmark the zarrs async API.
+- zarrs_reencode: suitable for round trip benchmarking.
+- zarrs_benchmark_read_sync (feature `benchmark`): benchmark the zarrs sync API.
+- zarrs_benchmark_read_async (feature `benchmark`): benchmark the zarrs async API.
 
 See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/benchmarks.md) for some benchmark measurements.
 
