@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let storage = Arc::new(zarrs::storage::store::FilesystemStore::new(
         args.path.clone(),
     )?);
-    let array = zarrs::array::Array::new(storage.clone(), "/")?;
+    let array = zarrs::array::Array::open(storage.clone(), "/")?;
     // println!("{:#?}", array.metadata());
 
     zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);

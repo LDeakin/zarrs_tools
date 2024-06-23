@@ -74,7 +74,7 @@ fn bar_style_finish() -> ProgressStyle {
 fn load_array<P: Into<PathBuf>>(path: P) -> Result<Array<FilesystemStore>, ArrayCreateError> {
     let store = FilesystemStore::new(path.into())
         .map_err(|err| ArrayCreateError::StorageError(StorageError::Other(err.to_string())))?;
-    Array::new(store.into(), "/")
+    Array::open(store.into(), "/")
 }
 
 /// Removes array if it exists
