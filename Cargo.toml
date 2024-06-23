@@ -42,7 +42,7 @@ sysinfo = "0.30.6"
 tempfile = "3.10.1"
 thiserror = "1.0.57"
 tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
-zarrs = { version = "0.15.0-beta.0", features = [] }
+zarrs = { version = "0.15.0-beta.1", features = [] }
 
 [[bin]]
 name = "zarrs_benchmark_read_sync"

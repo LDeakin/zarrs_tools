@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     builder.root(&args.path);
     let operator = opendal::Operator::new(builder)?.finish();
     let storage = Arc::new(AsyncOpendalStore::new(operator));
-    let array = Arc::new(zarrs::array::Array::async_new(storage.clone(), "/").await?);
+    let array = Arc::new(zarrs::array::Array::async_open(storage.clone(), "/").await?);
     // println!("{:#?}", array.metadata());
 
     let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());

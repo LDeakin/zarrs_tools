@@ -13,9 +13,9 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::Serialize;
 use zarrs::{
-    array::{Array, ArrayCodecTraits, ArrayMetadata, ArrayMetadataV3, ChunkRepresentation},
+    array::{Array, ArrayCodecTraits, ArrayMetadata, ChunkRepresentation},
     array_subset::ArraySubset,
-    group::Group,
+    group::{Group, GroupMetadata, GroupMetadataV3},
     storage::{store::FilesystemStore, StorePrefix, WritableStorageTraits},
 };
 use zarrs_tools::{
@@ -247,7 +247,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let start = std::time::Instant::now();
 
     let store_in = FilesystemStore::new(&cli.input)?;
-    let array_in = Array::new(store_in.into(), "/")?;
+    let array_in = Array::open(store_in.into(), "/")?;
 
     let multi_progress = MultiProgress::new();
     let bars = (0..=cli.max_levels)
@@ -271,7 +271,11 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     // Create group
     let store = std::sync::Arc::new(FilesystemStore::new(&cli.output)?);
-    let mut group = Group::new(store.clone(), "/")?;
+    let mut group = Group::new_with_metadata(
+        store.clone(),
+        "/",
+        GroupMetadata::V3(GroupMetadataV3::default()),
+    )?;
     if let Some(attributes) = &cli.group_attributes {
         let mut group_attributes: serde_json::Map<String, serde_json::Value> =
             serde_json::from_str(attributes).expect("Group attributes are invalid.");
@@ -321,7 +325,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     // Setup attributes
     let store = std::sync::Arc::new(FilesystemStore::new(&cli.output)?);
     // store.erase_prefix(&StorePrefix::root()).unwrap();
-    let mut array0 = Array::new(store.clone(), "/0")?;
+    let mut array0 = Array::open(store.clone(), "/0")?;
     {
         // Move array0 attributes to group
         group.attributes_mut().append(array0.attributes_mut()); // this clears array0 attributes
@@ -413,7 +417,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
         // Input
         let store = FilesystemStore::new(&cli.output)?;
-        let array_input = Array::new(store.into(), &format!("/{}", i - 1))?;
+        let array_input = Array::open(store.into(), &format!("/{}", i - 1))?;
 
         // Filters
         let gaussian_filter = Gaussian::new(sigma.clone(), kernel_half_size.clone(), None);

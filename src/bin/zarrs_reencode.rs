@@ -85,7 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let storage_in =
         Arc::new(zarrs::storage::store::FilesystemStore::new(args.path_in.clone()).unwrap());
-    let array_in = zarrs::array::Array::new(storage_in.clone(), "/").unwrap();
+    let array_in = zarrs::array::Array::open(storage_in.clone(), "/").unwrap();
     if args.verbose {
         println!(
             "{}",
