@@ -4,7 +4,7 @@ use std::{
 };
 
 use clap::Parser;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use zarrs::{
     array::{
         codec::{ArrayCodecTraits, CodecOptionsBuilder},
@@ -12,7 +12,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::ReadableStorageTraits,
+    storage::ListableStorageTraits,
 };
 
 /// Benchmark zarrs read throughput with the sync API.
@@ -86,19 +86,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let n_chunks = usize::try_from(chunks.shape().iter().product::<u64>()).unwrap();
         // NOTE: Could init memory per split with for_each_init and then reuse it with retrieve_chunk_into_array_view_opt.
         //       But that might be cheating against tensorstore.
-        rayon_iter_concurrent_limit::iter_concurrent_limit!(
-            chunks_concurrent_limit,
-            0..n_chunks,
-            for_each,
-            |chunk_index: usize| {
+        (0..n_chunks)
+            .into_par_iter()
+            .by_uniform_blocks(n_chunks.div_ceil(chunks_concurrent_limit).max(1))
+            .for_each(|chunk_index: usize| {
                 let chunk_indices = zarrs::array::unravel_index(chunk_index as u64, chunks.shape());
                 // println!("Chunk/shard: {:?}", chunk_indices);
                 let bytes = array
                     .retrieve_chunk_opt(&chunk_indices, &codec_options)
                     .unwrap();
                 *bytes_decoded.lock().unwrap() += bytes.len();
-            }
-        );
+            });
     }
     let bytes_decoded = bytes_decoded.into_inner()?;
     let duration = SystemTime::now().duration_since(start)?.as_secs_f32();

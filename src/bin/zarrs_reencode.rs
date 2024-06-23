@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use zarrs::storage::{ReadableStorageTraits, StorePrefix, WritableStorageTraits};
+use zarrs::storage::{ListableStorageTraits, StorePrefix, WritableStorageTraits};
 use zarrs_tools::{
     do_reencode, get_array_builder_reencode,
     progress::{ProgressCallback, ProgressStats},

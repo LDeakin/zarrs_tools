@@ -1,11 +1,12 @@
 use clap::Parser;
 use num_traits::AsPrimitive;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
+};
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -72,8 +73,8 @@ impl Rescale {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: Pod + Send + Sync + AsPrimitive<f64>,
-        TOut: Pod + Copy + Send + Sync + 'static,
+        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<f64>,
+        TOut: bytemuck::Pod + Copy + Send + Sync + 'static,
         f64: AsPrimitive<TOut>,
     {
         // Determine the input and output subset
@@ -177,10 +178,10 @@ impl FilterTraits for Rescale {
         };
 
         let indices = chunks.indices();
-        rayon_iter_concurrent_limit::iter_concurrent_limit!(
-            chunk_limit,
-            indices,
-            try_for_each,
+        indices
+        .into_par_iter()
+        .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
+        .try_for_each(
             |chunk_indices: Vec<u64>| {
                 macro_rules! apply_input {
                     ( $t_out:ty, [$( ( $data_type:ident, $t_in:ty ) ),* ]) => {

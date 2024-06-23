@@ -1,11 +1,12 @@
 use clap::Parser;
 use num_traits::AsPrimitive;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
+};
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -64,8 +65,8 @@ impl Reencode {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: Pod + Send + Sync + AsPrimitive<TOut>,
-        TOut: Pod + Send + Sync,
+        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<TOut>,
+        TOut: bytemuck::Pod + Send + Sync,
     {
         let input_output_subset = output.chunk_subset_bounded(chunk_indices).unwrap();
 
@@ -146,19 +147,17 @@ impl FilterTraits for Reencode {
 
         let indices = chunks.indices();
         if output.data_type() == input.data_type() {
-            rayon_iter_concurrent_limit::iter_concurrent_limit!(
-                chunk_limit,
-                indices,
-                try_for_each,
-                |chunk_indices: Vec<u64>| {
+            indices
+                .into_par_iter()
+                .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
+                .try_for_each(|chunk_indices: Vec<u64>| {
                     self.apply_chunk(input, output, &chunk_indices, &progress)
-                }
-            )?;
+                })?;
         } else {
-            rayon_iter_concurrent_limit::iter_concurrent_limit!(
-                chunk_limit,
-                indices,
-                try_for_each,
+            indices
+            .into_par_iter()
+            .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
+            .try_for_each(
                 |chunk_indices: Vec<u64>| {
                     macro_rules! apply_output {
                         ( $type_in:ty, [$( ( $data_type_out:ident, $type_out:ty ) ),* ]) => {

@@ -1,11 +1,10 @@
 use clap::Parser;
 use num_traits::AsPrimitive;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType, FillValue, FillValueMetadata},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -65,8 +64,8 @@ impl Equal {
         equal: &TIn,
     ) -> Result<Vec<TOut>, FilterError>
     where
-        TIn: Pod + Copy + Send + Sync + PartialEq,
-        TOut: Pod + Send + Sync,
+        TIn: bytemuck::Pod + Copy + Send + Sync + PartialEq,
+        TOut: bytemuck::Pod + Send + Sync,
         bool: AsPrimitive<TOut>,
     {
         let output_elements = input_elements
@@ -148,10 +147,10 @@ impl FilterTraits for Equal {
         };
 
         let indices = chunks.indices();
-        rayon_iter_concurrent_limit::iter_concurrent_limit!(
-            chunk_limit,
-            indices,
-            try_for_each,
+        indices
+        .into_par_iter()
+        .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
+        .try_for_each(
             |chunk_indices: Vec<u64>| {
                 let input_output_subset = output.chunk_subset_bounded(&chunk_indices).unwrap();
                 macro_rules! apply_input {
@@ -206,7 +205,7 @@ impl FilterTraits for Equal {
                         };
                     }
                 apply_output!([
-                    (Bool, u8), // bool != Pod, but apply_chunk only stores 0 or 1, so can store as u8
+                    (Bool, u8), // bool != bytemuck::Pod, but apply_chunk only stores 0 or 1, so can store as u8
                     (UInt8, u8)
                 ])
             }

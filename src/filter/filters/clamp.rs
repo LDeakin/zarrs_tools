@@ -1,11 +1,12 @@
 use clap::Parser;
 use num_traits::AsPrimitive;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator,
+};
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -59,7 +60,7 @@ impl Clamp {
 
     pub fn apply_elements_inplace<T>(&self, elements: &mut [T]) -> Result<(), FilterError>
     where
-        T: Pod + Copy + Send + Sync + PartialOrd,
+        T: bytemuck::Pod + Copy + Send + Sync + PartialOrd,
         f64: AsPrimitive<T>,
     {
         let min: T = self.min.as_();
@@ -127,10 +128,10 @@ impl FilterTraits for Clamp {
         };
 
         let indices = chunks.indices();
-        rayon_iter_concurrent_limit::iter_concurrent_limit!(
-            chunk_limit,
-            indices,
-            try_for_each,
+        indices
+            .into_par_iter()
+            .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
+            .try_for_each(
             |chunk_indices: Vec<u64>| {
                 macro_rules! apply_input {
                     ( $t_out:ty, [$( ( $data_type_in:ident, $t_in:ty ) ),* ]) => {

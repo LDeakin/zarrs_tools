@@ -14,7 +14,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::{store::AsyncOpendalStore, AsyncReadableStorageTraits},
+    storage::{store::AsyncOpendalStore, AsyncListableStorageTraits},
 };
 
 /// Benchmark zarrs read throughput with the async API.

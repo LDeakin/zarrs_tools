@@ -2,12 +2,11 @@ use clap::Parser;
 use itertools::Itertools;
 use ndarray::ArrayD;
 use num_traits::AsPrimitive;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -78,8 +77,8 @@ impl Gaussian {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: Pod + Send + Sync + AsPrimitive<f32>,
-        TOut: Pod + Send + Sync,
+        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<f32>,
+        TOut: bytemuck::Pod + Send + Sync,
         f32: AsPrimitive<TOut>,
     {
         let subset_output = output.chunk_subset_bounded(chunk_indices).unwrap();
@@ -186,10 +185,10 @@ impl FilterTraits for Gaussian {
         };
 
         let indices = chunks.indices();
-        rayon_iter_concurrent_limit::iter_concurrent_limit!(
-            chunk_limit,
-            indices,
-            try_for_each,
+        indices
+        .into_par_iter()
+        .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
+        .try_for_each(
             |chunk_indices: Vec<u64>| {
                 macro_rules! apply_output {
                     ( $type_in:ty, [$( ( $data_type_out:ident, $type_out:ty ) ),* ]) => {

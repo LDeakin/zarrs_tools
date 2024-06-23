@@ -1,10 +1,10 @@
 use std::sync::{Arc, Mutex};
 
-use zarrs::{array::{Array, ArrayError}, array_subset::ArraySubset, bytemuck::Pod, storage::store::FilesystemStore};
+use zarrs::{array::{Array, ArrayError}, array_subset::ArraySubset, storage::store::FilesystemStore};
 
 pub type ChunkCache = lru::LruCache<Vec<u64>, Arc<Vec<u8>>>;
 
-pub fn retrieve_array_subset_ndarray_cached<T: Pod + Default + std::fmt::Debug>(
+pub fn retrieve_array_subset_ndarray_cached<T: bytemuck::Pod + Default + std::fmt::Debug>(
     array: &Array<FilesystemStore>,
     cache: Arc<Mutex<ChunkCache>>,
     subset: &ArraySubset,

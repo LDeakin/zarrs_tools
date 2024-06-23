@@ -1,11 +1,12 @@
 use clap::Parser;
 use num_traits::AsPrimitive;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
+};
 use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType},
     array_subset::ArraySubset,
-    bytemuck::Pod,
     storage::store::FilesystemStore,
 };
 
@@ -98,8 +99,8 @@ impl Crop {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: Pod + Send + Sync + AsPrimitive<TOut>,
-        TOut: Pod + Send + Sync,
+        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<TOut>,
+        TOut: bytemuck::Pod + Send + Sync,
     {
         let (input_subset, output_subset) = self.get_input_output_subset(output, chunk_indices);
 
@@ -183,11 +184,10 @@ impl FilterTraits for Crop {
         };
 
         let indices = chunks.indices();
-        rayon_iter_concurrent_limit::iter_concurrent_limit!(
-            chunk_limit,
-            indices,
-            try_for_each,
-            |chunk_indices: Vec<u64>| {
+        indices
+        .into_par_iter()
+        .by_uniform_blocks(indices.len().div_ceil(chunk_limit).max(1))
+        .try_for_each(|chunk_indices: Vec<u64>| {
                 if input.data_type() == output.data_type() {
                     self.apply_chunk(input, output, &chunk_indices, &progress)
                 } else {
