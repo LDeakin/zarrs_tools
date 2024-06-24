@@ -637,6 +637,9 @@ fn run() -> Result<(), Box<dyn Error>> {
 
         // Stop when for all axis the output shape is 1 or stride is 1
         if std::iter::zip(&downsample_factor, &output_shape).all(|(df, s)| *df == 1 || *s == 1) {
+            bars[i + 1..=cli.max_levels]
+                .iter()
+                .for_each(|bar| bar.finish_and_clear());
             break;
         }
     }
