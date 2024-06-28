@@ -58,6 +58,10 @@ async def main(path, concurrent_chunks, read_all):
         async with asyncio.TaskGroup() as tg:
             for chunk_index in np.ndindex(*num_chunks):
                 tg.create_task(chunk_read(chunk_index))
+    elif concurrent_chunks == 1:
+        for chunk_index in np.ndindex(*num_chunks):
+            chunk_slice = [ts.Dim(inclusive_min=index*cshape, exclusive_max=min(index * cshape + cshape, dshape)) for (index, cshape, dshape) in zip(chunk_index, chunk_shape, domain_shape)]
+            await dataset[ts.IndexDomain(chunk_slice)].read()
     else:
         semaphore = asyncio.Semaphore(concurrent_chunks)
         async def chunk_read_concurrent_limit(chunk_index):
