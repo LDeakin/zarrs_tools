@@ -61,8 +61,8 @@ for image in images:
                 memory_usage_kb = int(memory_usage.group(1))
                 memory_usage_gb = float(memory_usage_kb) / 1.0e6
                 print(wall_time_s, memory_usage_gb)
-                wall_times.append(f"{wall_time_s:.02f}")
-                memory_usages.append(f"{memory_usage_gb:.02f}")
+                wall_times.append(wall_time_s)
+                memory_usages.append(memory_usage_gb)
             else:
                 wall_times.append(math.nan)
                 memory_usages.append(math.nan)
@@ -106,4 +106,4 @@ print(df)
 print()
 df.columns = columns_markdown
 df.reset_index(inplace=True)
-print(df.to_markdown(index=False))
+print(df.to_markdown(index=False, floatfmt=".02f"))

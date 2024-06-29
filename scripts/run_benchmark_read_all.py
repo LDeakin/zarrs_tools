@@ -70,8 +70,8 @@ for image in images:
 
         wall_time_best = np.nanmin(wall_time_measurements)
         memory_usages_best = np.nanmin(memory_usage_measurements)
-        wall_times.append(f"{wall_time_best:.02f}")
-        memory_usages.append(f"{memory_usages_best:.02f}")
+        wall_times.append(wall_time_best)
+        memory_usages.append(memory_usages_best)
 
     row = wall_times + memory_usages
     rows.append(row)
@@ -112,4 +112,4 @@ df = pd.DataFrame.from_dict(data, orient="tight")
 print(df)
 print()
 df.columns = columns_markdown
-print(df.to_markdown())
+print(df.to_markdown(floatfmt=".02f"))
