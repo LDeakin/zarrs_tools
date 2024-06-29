@@ -147,10 +147,10 @@ impl FilterTraits for Clamp {
                                 //         })?;
                                 //     }}
                                 //     ($t_in, $t_out) => {{
-                                        let elements_out = elements_in.iter().map(|v| v.as_()).collect();
+                                        let elements_out = elements_in.iter().map(|v| v.as_()).collect::<Vec<_>>();
                                         drop(elements_in);
                                         progress.write(|| {
-                                            output.store_array_subset_elements::<$t_out>(&input_output_subset, elements_out)
+                                            output.store_array_subset_elements::<$t_out>(&input_output_subset, &elements_out)
                                         })?;
                                 //     }}
                                 // }

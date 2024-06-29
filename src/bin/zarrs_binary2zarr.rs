@@ -159,7 +159,7 @@ fn stdin_to_array(
         }
 
         array
-            .store_array_subset_opt(&array_subset, subset_bytes, &codec_options)
+            .store_array_subset_opt(&array_subset, &subset_bytes, &codec_options)
             .unwrap();
     };
     iter_concurrent_limit!(concurrent_chunks, 0..n_blocks, for_each, op);

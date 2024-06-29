@@ -183,7 +183,7 @@ impl FilterTraits for ReplaceValue {
                                 drop(input_elements);
 
                                 progress.write(|| {
-                                    output.store_array_subset_elements::<$t_out>(&input_output_subset, output_elements)
+                                    output.store_array_subset_elements::<$t_out>(&input_output_subset, &output_elements)
                                 })?;
 
                                 progress.next();

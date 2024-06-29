@@ -629,7 +629,7 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
 
                 if validate {
                     progress.write(|| {
-                        array_out.store_chunk_opt(&chunk_indices, bytes.clone(), &codec_options)
+                        array_out.store_chunk_opt(&chunk_indices, &bytes, &codec_options)
                     })?;
                     let bytes_out = array_out
                         .retrieve_chunk_opt(&chunk_indices, &codec_options)
@@ -637,7 +637,7 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
                     assert!(bytes == bytes_out);
                 } else {
                     progress.write(|| {
-                        array_out.store_chunk_opt(&chunk_indices, bytes, &codec_options)
+                        array_out.store_chunk_opt(&chunk_indices, &bytes, &codec_options)
                     })?;
                 }
                 progress.next();

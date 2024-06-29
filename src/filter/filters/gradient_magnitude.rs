@@ -262,7 +262,7 @@ mod tests {
         let array_subset = ArraySubset::new_with_shape(array.shape().to_vec());
         array.store_array_subset_elements(
             &array_subset,
-            (0..array_subset.num_elements_usize())
+            &(0..array_subset.num_elements_usize())
                 .map(|u| ((u / array.shape()[1] as usize) + u % array.shape()[1] as usize) as f32)
                 .collect::<Vec<f32>>(),
         )?;

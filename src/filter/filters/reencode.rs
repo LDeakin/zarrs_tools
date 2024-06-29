@@ -50,7 +50,7 @@ impl Reencode {
     ) -> Result<(), FilterError> {
         let input_output_subset = output.chunk_subset_bounded(chunk_indices).unwrap();
         let subset_bytes = progress.read(|| input.retrieve_array_subset(&input_output_subset))?;
-        progress.write(|| output.store_array_subset(&input_output_subset, subset_bytes))?;
+        progress.write(|| output.store_array_subset(&input_output_subset, &subset_bytes))?;
         progress.next();
         Ok(())
     }
@@ -80,7 +80,7 @@ impl Reencode {
         drop(input_elements);
 
         progress.write(|| {
-            output.store_array_subset_elements::<TOut>(&input_output_subset, output_elements)
+            output.store_array_subset_elements::<TOut>(&input_output_subset, &output_elements)
         })?;
 
         progress.next();

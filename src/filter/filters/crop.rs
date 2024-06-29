@@ -84,7 +84,7 @@ impl Crop {
     ) -> Result<(), FilterError> {
         let (input_subset, output_subset) = self.get_input_output_subset(output, chunk_indices);
         let output_bytes = progress.read(|| input.retrieve_array_subset(&input_subset))?;
-        progress.write(|| output.store_array_subset(&output_subset, output_bytes))?;
+        progress.write(|| output.store_array_subset(&output_subset, &output_bytes))?;
         progress.next();
         Ok(())
     }
@@ -114,7 +114,7 @@ impl Crop {
         drop(input_elements);
 
         progress.write(|| {
-            output.store_array_subset_elements::<TOut>(&output_subset, output_elements)
+            output.store_array_subset_elements::<TOut>(&output_subset, &output_elements)
         })?;
 
         progress.next();

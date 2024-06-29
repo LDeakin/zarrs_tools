@@ -110,7 +110,7 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
 
         if validate {
             array
-                .store_array_subset_opt(&array_subset, buf.clone(), &codec_options)
+                .store_array_subset_opt(&array_subset, &buf, &codec_options)
                 .unwrap();
             let buf_validate = array
                 .retrieve_array_subset_opt(&array_subset, &codec_options)
@@ -118,7 +118,7 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
             assert!(buf == buf_validate);
         } else {
             array
-                .store_array_subset_opt(&array_subset, buf, &codec_options)
+                .store_array_subset_opt(&array_subset, &buf, &codec_options)
                 .unwrap();
         }
     };

@@ -97,7 +97,7 @@ impl Rescale {
         drop(elements_in);
 
         progress.write(|| {
-            output.store_array_subset_elements::<TOut>(&input_output_subset, elements_out)
+            output.store_array_subset_elements::<TOut>(&input_output_subset, &elements_out)
         })?;
 
         progress.next();
