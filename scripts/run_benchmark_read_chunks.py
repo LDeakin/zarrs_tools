@@ -17,7 +17,7 @@ implementation_to_args = {
 
 implementations = [
     "zarrs_rust",
-    # "zarrs_rust_async", # reenable with async_spawning branch
+    "zarrs_rust_async",
     "tensorstore_python",
     "zarr_python",
 ]
