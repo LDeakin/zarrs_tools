@@ -628,9 +628,8 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
                 *bytes_decoded.lock().unwrap() += bytes.len();
 
                 if validate {
-                    let bytes_clone = bytes.clone();
                     progress.write(|| {
-                        array_out.store_chunk_opt(&chunk_indices, bytes_clone, &codec_options)
+                        array_out.store_chunk_opt(&chunk_indices, bytes.clone(), &codec_options)
                     })?;
                     let bytes_out = array_out
                         .retrieve_chunk_opt(&chunk_indices, &codec_options)

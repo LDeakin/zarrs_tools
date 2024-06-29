@@ -14,7 +14,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::{store::AsyncOpendalStore, AsyncListableStorageTraits},
+    storage::{store::AsyncObjectStore, AsyncListableStorageTraits},
 };
 
 /// Benchmark zarrs read throughput with the async API.
@@ -47,10 +47,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
 
-    let mut builder = opendal::services::Fs::default();
-    builder.root(&args.path);
-    let operator = opendal::Operator::new(builder)?.finish();
-    let storage = Arc::new(AsyncOpendalStore::new(operator));
+    // let mut builder = opendal::services::Fs::default();
+    // builder.root(&args.path);
+    // let operator = opendal::Operator::new(builder)?.finish();
+    // let storage = Arc::new(AsyncOpendalStore::new(operator));
+
+    let store = object_store::local::LocalFileSystem::new_with_prefix(&args.path)?;
+    let storage = Arc::new(AsyncObjectStore::new(store));
+
     let array = Arc::new(zarrs::array::Array::async_open(storage.clone(), "/").await?);
     // println!("{:#?}", array.metadata());
 
