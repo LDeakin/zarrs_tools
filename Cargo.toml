@@ -96,6 +96,6 @@ strip = true
 # aarch64-apple-darwin = "macos-14"
 # x86_64-apple-darwin = "macos-12"
 
-[patch.crates-io]
-zarrs = { path = "../zarrs" }
+# [patch.crates-io]
+# zarrs = { path = "../zarrs" }
 # zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
