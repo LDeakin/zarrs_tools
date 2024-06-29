@@ -1,16 +1,14 @@
 // TODO: Use an io_uring filesystem store
 // https://github.com/apache/opendal/issues/4520
 
-use std::{cell::UnsafeCell, sync::Arc, time::SystemTime};
+use std::{sync::Arc, time::SystemTime};
 
-use async_scoped::spawner::Spawner;
 use clap::Parser;
 use futures::{FutureExt, StreamExt};
 use zarrs::{
     array::{
         codec::{ArrayCodecTraits, CodecOptionsBuilder},
         concurrency::RecommendedConcurrency,
-        ArrayView,
     },
     array_subset::ArraySubset,
     config::global_config,
@@ -62,72 +60,73 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let start = SystemTime::now();
     let mut bytes_decoded = 0;
-    let element_size = array.data_type().size();
     let chunk_indices = chunks.indices().into_iter().collect::<Vec<_>>();
     if args.read_all {
         let array_shape = array.shape().to_vec();
         let array_subset = ArraySubset::new_with_shape(array_shape.to_vec());
         // -------------------------------------- SLOW --------------------------------------
         // See https://docs.rs/zarrs/latest/zarrs/array/struct.Array.html#async-api
-        // let array_data = array.async_retrieve_array_subset(&array_subset).await?;
+        let array_data = array.async_retrieve_array_subset(&array_subset).await?;
         // ----------------------------------------------------------------------------------
 
         // -------------------------------------- FAST --------------------------------------
         // This might get integrated into zarrs itself as Array::async_retrieve_array_subset_tokio in the future
-        let array_data = {
-            // Calculate chunk/codec concurrency
-            let chunk_representation =
-                array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
-            let concurrent_target = std::thread::available_parallelism().unwrap().get();
-            let (chunk_concurrent_limit, codec_concurrent_target) =
-                zarrs::array::concurrency::calc_concurrency_outer_inner(
-                    concurrent_target,
-                    {
-                        let concurrent_chunks =
-                            std::cmp::min(chunks.num_elements_usize(), concurrent_target);
-                        &RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
-                    },
-                    &array
-                        .codecs()
-                        .recommended_concurrency(&chunk_representation)?,
-                );
-            let codec_options = CodecOptionsBuilder::new()
-                .concurrent_target(codec_concurrent_target)
-                .build();
+        // let element_size = array.data_type().size();
+        // let array_data = {
+        //     // Calculate chunk/codec concurrency
+        //     let chunk_representation =
+        //         array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
+        //     let concurrent_target = std::thread::available_parallelism().unwrap().get();
+        //     let (chunk_concurrent_limit, codec_concurrent_target) =
+        //         zarrs::array::concurrency::calc_concurrency_outer_inner(
+        //             concurrent_target,
+        //             {
+        //                 let concurrent_chunks =
+        //                     std::cmp::min(chunks.num_elements_usize(), concurrent_target);
+        //                 &RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
+        //             },
+        //             &array
+        //                 .codecs()
+        //                 .recommended_concurrency(&chunk_representation)?,
+        //         );
+        //     let codec_options = CodecOptionsBuilder::new()
+        //         .concurrent_target(codec_concurrent_target)
+        //         .build();
 
-            // Allocate output and decode into it
-            let array_data =
-                UnsafeCell::new(vec![0u8; array_subset.num_elements_usize() * element_size]);
-            {
-                let decode_chunk_into_array = |chunk_indices: Vec<u64>| {
-                    let chunk_subset = array.chunk_subset(&chunk_indices).unwrap();
-                    let codec_options = codec_options.clone();
-                    let array = array.clone();
-                    let data = unsafe { array_data.get().as_mut() }.unwrap().as_mut_slice();
-                    async move {
-                        let array_shape = array.shape().to_vec();
-                        let array_subset = ArraySubset::new_with_shape(array_shape.clone());
-                        let array_view = ArrayView::new(data, &array_shape, array_subset).unwrap();
-                        array
-                            .async_retrieve_array_subset_into_array_view_opt(
-                                &chunk_subset,
-                                &unsafe { array_view.subset_view(&chunk_subset).unwrap() },
-                                &codec_options,
-                            )
-                            .await
-                    }
-                };
-                let spawner = async_scoped::spawner::use_tokio::Tokio;
-                let futures = chunk_indices.into_iter().map(decode_chunk_into_array);
-                let mut stream = futures::stream::iter(futures)
-                    .map(|future| spawner.spawn(future))
-                    .buffer_unordered(chunk_concurrent_limit);
-                while let Some(item) = stream.next().await {
-                    item??;
-                }
-            }
-            array_data.into_inner()
-        };
+        //     // Allocate output and decode into it
+        //     let array_data =
+        //         std::cell::UnsafeCell::new(vec![0u8; array_subset.num_elements_usize() * element_size]);
+        //     {
+        //         use async_scoped::spawner::Spawner;
+        //         let decode_chunk_into_array = |chunk_indices: Vec<u64>| {
+        //             let chunk_subset = array.chunk_subset(&chunk_indices).unwrap();
+        //             let codec_options = codec_options.clone();
+        //             let array = array.clone();
+        //             let data = unsafe { array_data.get().as_mut() }.unwrap().as_mut_slice();
+        //             async move {
+        //                 let array_shape = array.shape().to_vec();
+        //                 let array_subset = ArraySubset::new_with_shape(array_shape.clone());
+        //                 let array_view = zarrs::array::ArrayView::new(data, &array_shape, array_subset).unwrap();
+        //                 array
+        //                     .async_retrieve_array_subset_into_array_view_opt(
+        //                         &chunk_subset,
+        //                         &unsafe { array_view.subset_view(&chunk_subset).unwrap() },
+        //                         &codec_options,
+        //                     )
+        //                     .await
+        //             }
+        //         };
+        //         let spawner = async_scoped::spawner::use_tokio::Tokio;
+        //         let futures = chunk_indices.into_iter().map(decode_chunk_into_array);
+        //         let mut stream = futures::stream::iter(futures)
+        //             .map(|future| spawner.spawn(future))
+        //             .buffer_unordered(chunk_concurrent_limit);
+        //         while let Some(item) = stream.next().await {
+        //             item??;
+        //         }
+        //     }
+        //     array_data.into_inner()
+        // };
         // ----------------------------------------------------------------------------------
         bytes_decoded += array_data.len();
     } else {
