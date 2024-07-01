@@ -16,6 +16,7 @@ async = ["zarrs/async", "zarrs/object_store", "dep:object_store"]
 benchmark = []
 binary2zarr = []
 filter = []
+info = []
 ncvar2zarr = ["dep:netcdf"]
 ome = []
 
@@ -59,6 +60,10 @@ required-features = ["binary2zarr"]
 [[bin]]
 name = "zarrs_filter"
 required-features = ["filter"]
+
+[[bin]]
+name = "zarrs_info"
+required-features = ["info"]
 
 [[bin]]
 name = "zarrs_ncvar2zarr"
