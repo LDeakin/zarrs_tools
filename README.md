@@ -6,17 +6,16 @@
 
 Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data with the [zarrs](https://github.com/LDeakin/zarrs) rust crate.
 
-**zarrs_tools is experimental and in limited production use. Correctness issues with zarrs affecting past versions of zarrs_tools are [detailed here](https://docs.rs/zarrs/latest/zarrs/#correctness-issues-with-past-versions).**
-
-[Changelog (CHANGELOG.md)](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md)
+A changelog can be found [here](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md).
 
 ## Tools
 All tools support input and output [Zarr V3](https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html) data.
 Some tools additionally support input of a [V3 compatible subset](https://docs.rs/zarrs/latest/zarrs/#arrays-zarr-v3-and-zarr-v2) of [Zarr V2](https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html).
 
-- [zarrs_reencode](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and ttributes.
+- [zarrs_reencode](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
 - [zarrs_filter](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
-- [zarrs_ome](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) `0.5-dev` as Zarr V3. Recognised by [Neuroglancer](https://github.com/google/neuroglancer) for Zarr V3.
+- [zarrs_ome](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to an [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) multi-scale image.
+  - Supports OME-Zarr `0.5-dev` (as Zarr V3) and `0.5-dev1`. The first is recognised by [Neuroglancer](https://github.com/google/neuroglancer).
 - zarrs_info (feature `info`): return metadata related info or the range/histogram of an array.
 - [zarrs_binary2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
 - [zarrs_ncvar2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ncvar2zarr.md) (feature `ncvar2zarr`): convert a netCDF variable to an array.
