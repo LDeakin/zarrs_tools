@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2024-07-02
+
 ### Added
- - Add `zarrs_info`: returns information about a Zarr array to stdout (JSON encoded)
+ - Add `zarrs_info` (requires `info` feature): returns information about a Zarr array to stdout (JSON encoded)
     - Metadata
     - Array shape, data type, fill value, dimension names, attributes, etc.
     - Value range
@@ -18,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Bump `zarrs` to 0.15.0-beta.1
  - Bump `rayon` to 1.10.0
  - Bump `itertools` to 0.13
- - `zarrs_ome`: add `--version` arg, supproting `0.5-dev` or `0.5-dev1`
+ - `zarrs_ome`: add `--version` arg, supporting `0.5-dev` or `0.5-dev1`
+ - Change `zarrs_ome` default output behaviour to erase
+ - Update benchmarks to use `zarrs` 0.15.0-beta.1
 
 ## [0.4.2] - 2024-05-16
 
@@ -115,7 +119,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Initial public release
 
-[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.4.2...HEAD
+[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.0
 [0.4.2]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.2
 [0.4.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.1
 [0.4.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.4.0
