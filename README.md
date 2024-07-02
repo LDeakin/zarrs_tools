@@ -17,6 +17,7 @@ Some tools additionally support input of a [V3 compatible subset](https://docs.r
 - [zarrs_reencode](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and ttributes.
 - [zarrs_filter](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
 - [zarrs_ome](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) `0.5-dev` as Zarr V3. Recognised by [Neuroglancer](https://github.com/google/neuroglancer) for Zarr V3.
+- zarrs_info (feature `info`): return metadata related info or the range/histogram of an array.
 - [zarrs_binary2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
 - [zarrs_ncvar2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ncvar2zarr.md) (feature `ncvar2zarr`): convert a netCDF variable to an array.
 
