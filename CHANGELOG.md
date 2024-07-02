@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - Add `zarrs_info`: returns information about a Zarr array to stdout (JSON encoded)
+    - Metadata
+    - Array shape, data type, fill value, dimension names, attributes, etc.
+    - Value range
+    - Histogram
+
 ### Changed
  - Bump `zarrs` to 0.15.0-beta.1
  - Bump `rayon` to 1.10.0

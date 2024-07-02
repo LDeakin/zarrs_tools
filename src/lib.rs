@@ -25,6 +25,7 @@ use zarrs::{
 };
 
 pub mod filter;
+pub mod info;
 pub mod progress;
 
 #[derive(Parser)]
