@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Bump `zarrs` to 0.15.0-beta.1
  - Bump `rayon` to 1.10.0
  - Bump `itertools` to 0.13
+ - `zarrs_ome`: add `--version` arg, supproting `0.5-dev` or `0.5-dev1`
 
 ## [0.4.2] - 2024-05-16
 

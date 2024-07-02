@@ -39,6 +39,28 @@ enum OutputExists {
     Exit,
 }
 
+#[allow(non_camel_case_types)]
+#[derive(clap::ValueEnum, Debug, Clone)]
+enum OMEZarrVersion {
+    /// 0.5-dev (Zarr V3 version of Editor's Draft 12 June 2024).
+    ///
+    /// Supported by Neuroglancer since v2.37.
+    #[value(name = "0.5-dev")]
+    V0_5_dev,
+    /// 0.5-dev1 (Identical to 0.5-dev aside from the "version").
+    #[value(name = "0.5-dev1")]
+    V0_5_dev1,
+}
+
+impl std::fmt::Display for OMEZarrVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OMEZarrVersion::V0_5_dev => write!(f, "0.5-dev"),
+            OMEZarrVersion::V0_5_dev1 => write!(f, "0.5-dev1"),
+        }
+    }
+}
+
 /// Convert a Zarr V3 array to OME-Zarr (0.5-dev).
 #[derive(Parser, Debug)]
 #[command(author, version)]
@@ -47,6 +69,10 @@ struct Cli {
     input: PathBuf,
     /// The output group path.
     output: PathBuf,
+
+    // The OME-Zarr version.
+    #[arg(long, default_value_t = OMEZarrVersion::V0_5_dev)]
+    version: OMEZarrVersion,
 
     /// The downsample factor.
     ///
@@ -375,8 +401,13 @@ fn run() -> Result<(), Box<dyn Error>> {
         repository: env!("CARGO_PKG_REPOSITORY").to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
     };
+    let version_str = match cli.version {
+        OMEZarrVersion::V0_5_dev => "0.5-dev",
+        OMEZarrVersion::V0_5_dev1 => "0.5-dev1",
+    };
+
     let mut multiscales = Multiscales {
-        version: "0.5-dev".to_string(),
+        version: version_str.to_string(),
         name: cli.name,
         axes,
         datasets: Vec::with_capacity(cli.max_levels),
