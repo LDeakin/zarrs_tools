@@ -95,7 +95,7 @@ fn stdin_to_array(
 
     let bar = ProgressBar::new(n_blocks);
     let style =
-        ProgressStyle::with_template("[{elapsed_precise}] [{bar}] ({pos}/{len} blocks, ETA {eta})")
+        ProgressStyle::with_template("[{elapsed_precise}] [{bar}] ({pos}/{len}, ETA {eta})")
             .unwrap();
     bar.set_style(style);
 
