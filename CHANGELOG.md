@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - `zarrs_info`: add group metadata support
+
 ## [0.5.0] - 2024-07-02
 
 ### Added

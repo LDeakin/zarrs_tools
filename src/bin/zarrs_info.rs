@@ -6,6 +6,7 @@ use serde::Serialize;
 use serde_json::Number;
 use zarrs::{
     array::{Array, ArrayMetadataOptions, DimensionName, FillValueMetadata},
+    group::{Group, GroupMetadataOptions},
     metadata::Metadata,
     storage::store::FilesystemStore,
 };
@@ -31,32 +32,32 @@ struct Cli {
     command: InfoCommand,
 }
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 struct HistogramParams {
     n_bins: usize,
     min: f64,
     max: f64,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 enum InfoCommand {
-    /// The metadata.
+    /// The array/group metadata.
     Metadata,
-    /// The metadata (interpreted as V3).
+    /// The array/group metadata (interpreted as V3).
     MetadataV3,
+    /// The array/group attributes.
+    Attributes,
     /// The array shape.
     Shape,
     /// The array data type.
     DataType,
     /// The array fill value.
     FillValue,
-    /// The array attributes.
-    Attributes,
-    /// The dimension names.
+    /// The array dimension names.
     DimensionNames,
-    /// Range.
+    /// The array range.
     Range,
-    /// Histogram.
+    /// The array histogram.
     Histogram(HistogramParams),
 }
 
@@ -69,28 +70,59 @@ fn main() -> std::process::ExitCode {
     }
 }
 
+fn group_metadata_options_v3() -> GroupMetadataOptions {
+    let mut metadata_options = GroupMetadataOptions::default();
+    metadata_options.set_metadata_convert_version(zarrs::metadata::MetadataConvertVersion::V3);
+    metadata_options
+}
+
+fn array_metadata_options_v3() -> ArrayMetadataOptions {
+    let mut metadata_options = ArrayMetadataOptions::default();
+    metadata_options.set_metadata_convert_version(zarrs::metadata::MetadataConvertVersion::V3);
+    metadata_options.set_include_zarrs_metadata(false);
+    metadata_options
+}
+
 fn run() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
     let start = std::time::Instant::now();
 
-    let storage = Arc::new(FilesystemStore::new(&cli.path).unwrap());
-    let array = Array::open(storage, "/").unwrap();
+    let storage = Arc::new(FilesystemStore::new(&cli.path)?);
 
+    // Group handling
+    let group = Group::open(storage.clone(), "/");
+    if let Ok(group) = group {
+        match cli.command {
+            InfoCommand::Metadata => {
+                println!("{}", serde_json::to_string_pretty(group.metadata())?);
+            }
+            InfoCommand::MetadataV3 => {
+                let metadata = group.metadata_opt(&group_metadata_options_v3());
+                println!("{}", serde_json::to_string_pretty(&metadata)?);
+            }
+            InfoCommand::Attributes => {
+                println!("{}", serde_json::to_string_pretty(group.attributes())?);
+            }
+            _ => {
+                println!("The {:?} command is not supported for a group", cli.command)
+            }
+        }
+        return Ok(());
+    }
+
+    // Array handling
+    let array = Array::open(storage.clone(), "/")?;
     match cli.command {
         InfoCommand::Metadata => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(array.metadata()).unwrap()
-            );
+            println!("{}", serde_json::to_string_pretty(array.metadata())?);
         }
         InfoCommand::MetadataV3 => {
-            let mut metadata_options = ArrayMetadataOptions::default();
-            metadata_options
-                .set_metadata_convert_version(zarrs::metadata::MetadataConvertVersion::V3);
-            metadata_options.set_include_zarrs_metadata(false);
-            let metadata = array.metadata_opt(&metadata_options);
-            println!("{}", serde_json::to_string_pretty(&metadata).unwrap());
+            let metadata = array.metadata_opt(&array_metadata_options_v3());
+            println!("{}", serde_json::to_string_pretty(&metadata)?);
+        }
+        InfoCommand::Attributes => {
+            println!("{}", serde_json::to_string_pretty(array.attributes())?);
         }
         InfoCommand::Shape => {
             #[derive(Serialize)]
@@ -101,8 +133,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 "{}",
                 serde_json::to_string_pretty(&Shape {
                     shape: array.shape().to_vec()
-                })
-                .unwrap()
+                })?
             );
         }
         InfoCommand::DataType => {
@@ -114,8 +145,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 "{}",
                 serde_json::to_string_pretty(&DataType {
                     data_type: array.data_type().metadata()
-                })
-                .unwrap()
+                })?
             );
         }
         InfoCommand::FillValue => {
@@ -127,8 +157,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 "{}",
                 serde_json::to_string_pretty(&FillValue {
                     fill_value: array.data_type().metadata_fill_value(array.fill_value())
-                })
-                .unwrap()
+                })?
             );
         }
         InfoCommand::DimensionNames => {
@@ -140,21 +169,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 "{}",
                 serde_json::to_string_pretty(&DimensionNames {
                     dimension_names: array.dimension_names().clone()
-                })
-                .unwrap()
-            );
-        }
-        InfoCommand::Attributes => {
-            #[derive(Serialize)]
-            struct Attributes {
-                attributes: serde_json::Map<String, serde_json::Value>,
-            }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&Attributes {
-                    attributes: array.attributes().clone()
-                })
-                .unwrap()
+                })?
             );
         }
         InfoCommand::Range => {
@@ -164,10 +179,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 min: Number,
                 max: Number,
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&MinMax { min, max }).unwrap()
-            );
+            println!("{}", serde_json::to_string_pretty(&MinMax { min, max })?);
         }
         InfoCommand::Histogram(histogram_params) => {
             let (bin_edges, hist) = zarrs_tools::info::calculate_histogram(
@@ -184,7 +196,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             println!(
                 "{}",
-                serde_json::to_string_pretty(&Histogram { bin_edges, hist }).unwrap()
+                serde_json::to_string_pretty(&Histogram { bin_edges, hist })?
             );
         }
     }
