@@ -12,7 +12,10 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::{store, ReadableStorage},
+    storage::{
+        storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
+        store, AsyncReadableStorage, ReadableStorage,
+    },
 };
 
 /// Benchmark zarrs read throughput with the sync API.
@@ -39,17 +42,45 @@ struct Args {
     ignore_checksums: bool,
 }
 
+struct TokioBlockOn(tokio::runtime::Runtime);
+
+impl AsyncToSyncBlockOn for TokioBlockOn {
+    fn block_on<F: core::future::Future>(&self, future: F) -> F::Output {
+        self.0.block_on(future)
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    // opendal
-    // let mut builder = opendal::services::Fs::default();
-    // builder.root(&args.path);
-    // let operator = opendal::Operator::new(builder)?.finish().blocking();
-    // let storage: ReadableStorage = Arc::new(store::OpendalStore::new(operator));
+    let storage: AsyncReadableStorage = if args.path.starts_with("http") {
+        // opendal
+        let mut builder = opendal::services::Http::default();
+        builder.endpoint(&args.path);
+        let operator = opendal::Operator::new(builder)?.finish();
+        Arc::new(store::AsyncOpendalStore::new(operator))
 
-    // Default filesystem store
-    let storage: ReadableStorage = Arc::new(store::FilesystemStore::new(args.path.clone())?);
+        // object_store
+        // let options = object_store::ClientOptions::new().with_allow_http(true);
+        // let store = object_store::http::HttpBuilder::new()
+        //     .with_url(&args.path)
+        //     .with_client_options(options)
+        //     .build()?;
+        // Arc::new(store::AsyncObjectStore::new(store))
+    } else {
+        // opendal
+        let mut builder = opendal::services::Fs::default();
+        builder.root(&args.path);
+        let operator = opendal::Operator::new(builder)?.finish();
+        Arc::new(store::AsyncOpendalStore::new(operator))
+
+        // object_store
+        // let store = object_store::local::LocalFileSystem::new_with_prefix(&args.path)?;
+        // Arc::new(store::AsyncObjectStore::new(store))
+    };
+
+    let block_on = TokioBlockOn(tokio::runtime::Runtime::new()?);
+    let storage: ReadableStorage = Arc::new(AsyncToSyncStorageAdapter::new(storage, block_on));
 
     let array = zarrs::array::Array::open(storage.clone(), "/")?;
     // println!("{:#?}", array.metadata());

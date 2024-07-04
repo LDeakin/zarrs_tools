@@ -12,7 +12,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::{store::AsyncObjectStore, AsyncListableStorageTraits},
+    storage::{store, AsyncReadableStorage},
 };
 
 /// Benchmark zarrs read throughput with the async API.
@@ -45,13 +45,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
 
-    // let mut builder = opendal::services::Fs::default();
-    // builder.root(&args.path);
-    // let operator = opendal::Operator::new(builder)?.finish();
-    // let storage = Arc::new(AsyncOpendalStore::new(operator));
+    let storage: AsyncReadableStorage = if args.path.starts_with("http") {
+        // opendal
+        let mut builder = opendal::services::Http::default();
+        builder.endpoint(&args.path);
+        let operator = opendal::Operator::new(builder)?.finish();
+        Arc::new(store::AsyncOpendalStore::new(operator))
 
-    let store = object_store::local::LocalFileSystem::new_with_prefix(&args.path)?;
-    let storage = Arc::new(AsyncObjectStore::new(store));
+        // object_store
+        // let options = object_store::ClientOptions::new().with_allow_http(true);
+        // let store = object_store::http::HttpBuilder::new()
+        //     .with_url(&args.path)
+        //     .with_client_options(options)
+        //     .build()?;
+        // Arc::new(store::AsyncObjectStore::new(store))
+    } else {
+        // opendal
+        let mut builder = opendal::services::Fs::default();
+        builder.root(&args.path);
+        let operator = opendal::Operator::new(builder)?.finish();
+        Arc::new(store::AsyncOpendalStore::new(operator))
+
+        // object_store
+        // let store = object_store::local::LocalFileSystem::new_with_prefix(&args.path)?;
+        // Arc::new(store::AsyncObjectStore::new(store))
+    };
 
     let array = Arc::new(zarrs::array::Array::async_open(storage.clone(), "/").await?);
     // println!("{:#?}", array.metadata());
@@ -64,70 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.read_all {
         let array_shape = array.shape().to_vec();
         let array_subset = ArraySubset::new_with_shape(array_shape.to_vec());
-        // -------------------------------------- SLOW --------------------------------------
-        // See https://docs.rs/zarrs/latest/zarrs/array/struct.Array.html#async-api
         let array_data = array.async_retrieve_array_subset(&array_subset).await?;
-        // ----------------------------------------------------------------------------------
-
-        // -------------------------------------- FAST --------------------------------------
-        // This might get integrated into zarrs itself as Array::async_retrieve_array_subset_tokio in the future
-        // let element_size = array.data_type().size();
-        // let array_data = {
-        //     // Calculate chunk/codec concurrency
-        //     let chunk_representation =
-        //         array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
-        //     let concurrent_target = std::thread::available_parallelism().unwrap().get();
-        //     let (chunk_concurrent_limit, codec_concurrent_target) =
-        //         zarrs::array::concurrency::calc_concurrency_outer_inner(
-        //             concurrent_target,
-        //             {
-        //                 let concurrent_chunks =
-        //                     std::cmp::min(chunks.num_elements_usize(), concurrent_target);
-        //                 &RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
-        //             },
-        //             &array
-        //                 .codecs()
-        //                 .recommended_concurrency(&chunk_representation)?,
-        //         );
-        //     let codec_options = CodecOptionsBuilder::new()
-        //         .concurrent_target(codec_concurrent_target)
-        //         .build();
-
-        //     // Allocate output and decode into it
-        //     let array_data =
-        //         std::cell::UnsafeCell::new(vec![0u8; array_subset.num_elements_usize() * element_size]);
-        //     {
-        //         use async_scoped::spawner::Spawner;
-        //         let decode_chunk_into_array = |chunk_indices: Vec<u64>| {
-        //             let chunk_subset = array.chunk_subset(&chunk_indices).unwrap();
-        //             let codec_options = codec_options.clone();
-        //             let array = array.clone();
-        //             let data = unsafe { array_data.get().as_mut() }.unwrap().as_mut_slice();
-        //             async move {
-        //                 let array_shape = array.shape().to_vec();
-        //                 let array_subset = ArraySubset::new_with_shape(array_shape.clone());
-        //                 let array_view = zarrs::array::ArrayView::new(data, &array_shape, array_subset).unwrap();
-        //                 array
-        //                     .async_retrieve_array_subset_into_array_view_opt(
-        //                         &chunk_subset,
-        //                         &unsafe { array_view.subset_view(&chunk_subset).unwrap() },
-        //                         &codec_options,
-        //                     )
-        //                     .await
-        //             }
-        //         };
-        //         let spawner = async_scoped::spawner::use_tokio::Tokio;
-        //         let futures = chunk_indices.into_iter().map(decode_chunk_into_array);
-        //         let mut stream = futures::stream::iter(futures)
-        //             .map(|future| spawner.spawn(future))
-        //             .buffer_unordered(chunk_concurrent_limit);
-        //         while let Some(item) = stream.next().await {
-        //             item??;
-        //         }
-        //     }
-        //     array_data.into_inner()
-        // };
-        // ----------------------------------------------------------------------------------
         bytes_decoded += array_data.len();
     } else {
         // Calculate chunk/codec concurrency
@@ -177,9 +132,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let duration = SystemTime::now().duration_since(start)?.as_secs_f32();
     println!(
-        "Decoded {} ({:.2}MB) in {:.2}ms ({:.2}MB decoded @ {:.2}GB/s)",
+        "Decoded {} in {:.2}ms ({:.2}MB decoded @ {:.2}GB/s)",
         args.path,
-        storage.size().await? as f32 / 1e6,
         duration * 1e3,
         bytes_decoded as f32 / 1e6,
         (/* GB */bytes_decoded as f32 * 1e-9) / duration,

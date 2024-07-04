@@ -17,16 +17,24 @@ def coro(f):
 
 @click.command()
 @coro
-@click.argument('path')
+@click.argument('path', type=str)
 @click.option('--concurrent_chunks', type=int, default=None, help='Number of concurrent async chunk reads. Ignored if --read-all is set')
 @click.option('--read_all', is_flag=True, show_default=True, default=False, help='Read the entire array in one operation.')
 async def main(path, concurrent_chunks, read_all):
-    dataset_future = ts.open({
-        'driver': 'zarr3',
-        'kvstore': {
+    if path.startswith("http"):
+        kvstore = {
+            'driver': 'http',
+            'base_url': path,
+        }
+    else:
+        kvstore = {
             'driver': 'file',
             'path': path,
-        },
+        }
+
+    dataset_future = ts.open({
+        'driver': 'zarr3',
+        'kvstore': kvstore,
         # 'context': {
         #     'cache_pool': {
         #         'total_bytes_limit': 100_000_000

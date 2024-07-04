@@ -7,7 +7,7 @@ import click
 from functools import wraps
 
 import zarr
-from zarr.store import LocalStore
+from zarr.store import LocalStore, RemoteStore
 from zarr.array import BlockIndexer
 from zarr.buffer import default_buffer_prototype
 
@@ -20,11 +20,15 @@ def coro(f):
 
 @click.command()
 @coro
-@click.argument('path')
+@click.argument('path', type=str)
 @click.option('--concurrent_chunks', type=int, default=None, help='Number of concurrent async chunk reads. Ignored if --read-all is set')
 @click.option('--read_all', is_flag=True, show_default=True, default=False, help='Read the entire array in one operation.')
 async def main(path, concurrent_chunks, read_all):
-    store = LocalStore(path)
+    if path.startswith("http"):
+        store = RemoteStore(url=path) # broken with zarr-python 3.0.0a0
+    else:
+        store = LocalStore(path)
+
     dataset = zarr.open(store=store)
 
     domain_shape = dataset.shape
