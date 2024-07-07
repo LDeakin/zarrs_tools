@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - `zarrs_info`: add group metadata support
 
+### Changed
+ - Bump `zarrs` to 0.15.0
+
 ## [0.5.0] - 2024-07-02
 
 ### Added
