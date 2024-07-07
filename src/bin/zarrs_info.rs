@@ -8,6 +8,7 @@ use zarrs::{
     array::{Array, ArrayMetadataOptions, DimensionName, FillValueMetadata},
     group::{Group, GroupMetadataOptions},
     metadata::Metadata,
+    node::{Node, NodeMetadata},
     storage::store::FilesystemStore,
 };
 
@@ -90,9 +91,10 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let storage = Arc::new(FilesystemStore::new(&cli.path)?);
 
-    // Group handling
-    let group = Group::open(storage.clone(), "/");
-    if let Ok(group) = group {
+    let node = Node::open(&storage, "/")?;
+    if let NodeMetadata::Group(_) = node.metadata() {
+        // Group handling
+        let group = Group::open(storage.clone(), "/")?;
         match cli.command {
             InfoCommand::Metadata => {
                 println!("{}", serde_json::to_string_pretty(group.metadata())?);
@@ -108,96 +110,95 @@ fn run() -> Result<(), Box<dyn Error>> {
                 println!("The {:?} command is not supported for a group", cli.command)
             }
         }
-        return Ok(());
-    }
-
-    // Array handling
-    let array = Array::open(storage.clone(), "/")?;
-    match cli.command {
-        InfoCommand::Metadata => {
-            println!("{}", serde_json::to_string_pretty(array.metadata())?);
-        }
-        InfoCommand::MetadataV3 => {
-            let metadata = array.metadata_opt(&array_metadata_options_v3());
-            println!("{}", serde_json::to_string_pretty(&metadata)?);
-        }
-        InfoCommand::Attributes => {
-            println!("{}", serde_json::to_string_pretty(array.attributes())?);
-        }
-        InfoCommand::Shape => {
-            #[derive(Serialize)]
-            struct Shape {
-                shape: Vec<u64>,
+    } else {
+        // Array handling
+        let array = Array::open(storage.clone(), "/")?;
+        match cli.command {
+            InfoCommand::Metadata => {
+                println!("{}", serde_json::to_string_pretty(array.metadata())?);
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&Shape {
-                    shape: array.shape().to_vec()
-                })?
-            );
-        }
-        InfoCommand::DataType => {
-            #[derive(Serialize)]
-            struct DataType {
-                data_type: Metadata,
+            InfoCommand::MetadataV3 => {
+                let metadata = array.metadata_opt(&array_metadata_options_v3());
+                println!("{}", serde_json::to_string_pretty(&metadata)?);
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&DataType {
-                    data_type: array.data_type().metadata()
-                })?
-            );
-        }
-        InfoCommand::FillValue => {
-            #[derive(Serialize)]
-            struct FillValue {
-                fill_value: FillValueMetadata,
+            InfoCommand::Attributes => {
+                println!("{}", serde_json::to_string_pretty(array.attributes())?);
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&FillValue {
-                    fill_value: array.data_type().metadata_fill_value(array.fill_value())
-                })?
-            );
-        }
-        InfoCommand::DimensionNames => {
-            #[derive(Serialize)]
-            struct DimensionNames {
-                dimension_names: Option<Vec<DimensionName>>,
+            InfoCommand::Shape => {
+                #[derive(Serialize)]
+                struct Shape {
+                    shape: Vec<u64>,
+                }
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&Shape {
+                        shape: array.shape().to_vec()
+                    })?
+                );
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&DimensionNames {
-                    dimension_names: array.dimension_names().clone()
-                })?
-            );
-        }
-        InfoCommand::Range => {
-            let (min, max) = zarrs_tools::info::calculate_range(&array, cli.chunk_limit)?;
-            #[derive(Serialize)]
-            struct MinMax {
-                min: Number,
-                max: Number,
+            InfoCommand::DataType => {
+                #[derive(Serialize)]
+                struct DataType {
+                    data_type: Metadata,
+                }
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&DataType {
+                        data_type: array.data_type().metadata()
+                    })?
+                );
             }
-            println!("{}", serde_json::to_string_pretty(&MinMax { min, max })?);
-        }
-        InfoCommand::Histogram(histogram_params) => {
-            let (bin_edges, hist) = zarrs_tools::info::calculate_histogram(
-                &array,
-                histogram_params.n_bins,
-                histogram_params.min,
-                histogram_params.max,
-                cli.chunk_limit,
-            )?;
-            #[derive(Serialize)]
-            struct Histogram {
-                bin_edges: Vec<f64>,
-                hist: Vec<u64>,
+            InfoCommand::FillValue => {
+                #[derive(Serialize)]
+                struct FillValue {
+                    fill_value: FillValueMetadata,
+                }
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&FillValue {
+                        fill_value: array.data_type().metadata_fill_value(array.fill_value())
+                    })?
+                );
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&Histogram { bin_edges, hist })?
-            );
+            InfoCommand::DimensionNames => {
+                #[derive(Serialize)]
+                struct DimensionNames {
+                    dimension_names: Option<Vec<DimensionName>>,
+                }
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&DimensionNames {
+                        dimension_names: array.dimension_names().clone()
+                    })?
+                );
+            }
+            InfoCommand::Range => {
+                let (min, max) = zarrs_tools::info::calculate_range(&array, cli.chunk_limit)?;
+                #[derive(Serialize)]
+                struct MinMax {
+                    min: Number,
+                    max: Number,
+                }
+                println!("{}", serde_json::to_string_pretty(&MinMax { min, max })?);
+            }
+            InfoCommand::Histogram(histogram_params) => {
+                let (bin_edges, hist) = zarrs_tools::info::calculate_histogram(
+                    &array,
+                    histogram_params.n_bins,
+                    histogram_params.min,
+                    histogram_params.max,
+                    cli.chunk_limit,
+                )?;
+                #[derive(Serialize)]
+                struct Histogram {
+                    bin_edges: Vec<f64>,
+                    hist: Vec<u64>,
+                }
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&Histogram { bin_edges, hist })?
+                );
+            }
         }
     }
 
