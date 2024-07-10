@@ -323,6 +323,10 @@ pub struct ZarrReencodingArgs {
     #[arg(long, verbatim_doc_comment)]
     pub bytes_to_bytes_codecs: Option<String>,
 
+    /// Dimension names (optional). Comma separated.
+    #[arg(long, verbatim_doc_comment, value_delimiter = ',')]
+    pub dimension_names: Option<Vec<String>>,
+
     /// Attributes (optional).
     ///
     /// JSON holding array attributes.
@@ -356,7 +360,10 @@ impl ZarrReencodingArgs {
             || self.bytes_to_bytes_codecs.is_some()
         {
             ZarrReEncodingChangeType::MetadataAndChunks
-        } else if self.attributes.is_some() || self.attributes_append.is_some() {
+        } else if self.dimension_names.is_some()
+            || self.attributes.is_some()
+            || self.attributes_append.is_some()
+        {
             ZarrReEncodingChangeType::Metadata
         } else {
             ZarrReEncodingChangeType::None
@@ -529,6 +536,11 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
     if let Some(data_type) = &encoding_args.data_type {
         let data_type = DataType::from_metadata(data_type).unwrap();
         array_builder.data_type(data_type.clone());
+    }
+
+    if let Some(dimension_names) = encoding_args.dimension_names.clone() {
+        // TODO: Remove clone with zarrs 0.15.1+
+        array_builder.dimension_names(dimension_names.into());
     }
 
     if let Some(fill_value) = &encoding_args.fill_value {

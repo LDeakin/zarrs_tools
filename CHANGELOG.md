@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+ - Add `--dimension-names` arg to `zarrs_filter`, `zarrs_ome`, `zarrs_reencode` to change dimension names
+
 ### Fixed
  - Remove unused `http` feature from `zarrs` dependency
 
