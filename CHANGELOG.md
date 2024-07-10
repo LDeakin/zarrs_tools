@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+ - Remove unused `http` feature from `zarrs` dependency
+
 ## [0.5.1] - 2024-07-07
 
 ### Added
