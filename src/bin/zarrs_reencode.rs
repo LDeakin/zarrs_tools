@@ -114,20 +114,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     bar.set_style(bar_style_finish());
     bar.finish_and_clear();
-    let bytes_decoded_gb = /* GB */bytes_decoded as f32 * 1e-9;
+    let size_in = storage_in.size().unwrap() as f32;
+    let size_out = storage_out.size().unwrap() as f32;
+    let bytes_decoded = bytes_decoded as f32;
     println!(
-        "Reencode {} ({:2}MB) to {} ({:2}MB) in {:.2}ms\n\tread in ~{:.2}ms ({:.2}MB decoded @ {:.2}GB/s)\n\twrite in ~{:.2}ms ({:.2}MB encoded @ {:.2}GB/s)",
+        "Reencode {} to {}\n\tread:  ~{:.2}ms @ {:.2}GB/s\n\twrite: ~{:.2}ms @ {:.2}GB/s\n\ttotal: {:.2}ms\n\tsize:  {:.2}MB to {:.2}MB ({:.2}MB uncompressed)",
         args.path_in,
-        storage_in.size().unwrap() as f32 / 1e6,
         args.path_out,
-        storage_out.size().unwrap() as f32 / 1e6,
-        duration * 1e3,
-        duration_read * 1e3,
-        bytes_decoded as f32 / 1e6,
-        bytes_decoded_gb / duration_read,
-        duration_write * 1e3,
-        bytes_decoded as f32 / 1e6,
-        bytes_decoded_gb / duration_write,
+        duration_read * 1e3, // ms
+        size_in / 1e9 / duration_read, // GB/s
+        duration_write * 1e3, // ms
+        size_out / 1e9 / duration_write, // GB/s
+        duration * 1e3, // ms
+        size_in / 1e6, // MB
+        size_out / 1e6, // MB
+        bytes_decoded / 1e6, // MB
     );
     Ok(())
 }

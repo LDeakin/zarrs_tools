@@ -1,6 +1,6 @@
 # zarrs_reencode
 
-Reencode/rechunk a Zarr v3 array.
+Reencode/rechunk a Zarr V2/V3 to a Zarr v3 array.
 
 ## Installation
 `zarrs_reencode` packaged by default with `zarrs_tools` and requires no extra features.
@@ -10,19 +10,16 @@ cargo install zarrs_tools
 ```
 
 ## Example
-`array.zarr` is a zarr array with the following encoding parameters:
- - data type `int16`
- - shape `[1243, 1403, 1510]`
- - chunk (shard) shape of `[120, 1408, 1536]`
- - array to bytes codec: `sharding_indexed` with `crc32c` on index
-   - inner chunk shape `[30, 32, 32]`
-   - `blosclz` compression (level 9) with shuffling on linux, without on windows
+Reencode `array.zarr` (`uint16`) with:
+ - a chunk shape of [32, 32, 32],
+ - a shard shape of [128, 128, 0]
+   - the last dimension of the shard shape will match the array shape to the nearest multiple of the chunk shape
+ - level 9 blosclz compression with bitshuffling
 
 ```bash
-# Reencode with a chunk shape of [32, 32, 32], shard shape of [128, 1408, 1536], and zlib compression.
 zarrs_reencode \
 --chunk-shape 32,32,32 \
---shard-shape 128,0,0 \
---bytes-to-bytes-codecs '[ { "name": "blosc", "configuration": { "cname": "zlib", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]' \
+--shard-shape 128,128,0 \
+--bytes-to-bytes-codecs '[ { "name": "blosc", "configuration": { "cname": "blosclz", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]' \
 array.zarr array_reencode.zarr
 ```
