@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
  - `zarrs_reencode`: revise output and update docs
+ - Update benchmarks and add plots
 
 ## [0.5.2] - 2024-07-10
 

@@ -10,6 +10,10 @@ repository = "https://github.com/LDeakin/zarrs_tools"
 license = "MIT OR Apache-2.0"
 keywords = ["zarr"]
 categories = ["command-line-utilities", "encoding"]
+excludes = [
+    "docs/*.pdf",
+    "docs/*.csv"
+]
 
 [features]
 async = ["zarrs/async", "zarrs/object_store", "zarrs/opendal", "dep:object_store", "dep:opendal"]

@@ -18,7 +18,7 @@ implementation_to_args = {
 
 implementations = [
     "zarrs_rust",
-    "zarrs_rust_async",
+    # "zarrs_rust_async",
     "tensorstore_python",
     "zarr_python",
 ]
@@ -108,8 +108,15 @@ data = {
 
 # print(data)
 
+# Print and save as CSV
 df = pd.DataFrame.from_dict(data, orient="tight")
 print(df)
 print()
-df.columns = columns_markdown
-print(df.to_markdown(floatfmt=".02f"))
+df.to_csv("docs/benchmark_read_all.csv")
+
+# Print and save markdown
+df_markdown = df.copy()
+df_markdown.columns = columns_markdown
+print(df_markdown.to_markdown(floatfmt=".02f"))
+df_markdown.to_markdown("docs/benchmark_read_all.md", floatfmt=".02f")
+
