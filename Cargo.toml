@@ -10,7 +10,7 @@ repository = "https://github.com/LDeakin/zarrs_tools"
 license = "MIT OR Apache-2.0"
 keywords = ["zarr"]
 categories = ["command-line-utilities", "encoding"]
-excludes = [
+exclude = [
     "docs/*.pdf",
     "docs/*.csv"
 ]
