@@ -103,7 +103,7 @@ Options:
             r*: "[0, 255]"
 
       --separator <SEPARATOR>
-          The chunk key encoding separator. Either `/`. or `.`
+          The chunk key encoding separator. Either . or /
 
   -c, --chunk-shape <CHUNK_SHAPE>
           Chunk shape. A comma separated list of the chunk size along each array dimension.

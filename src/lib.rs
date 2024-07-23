@@ -42,7 +42,7 @@ pub struct ZarrEncodingArgs {
     #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true), value_parser = parse_fill_value)]
     pub fill_value: FillValueMetadata,
 
-    /// The chunk key encoding separator. Either `/`. or `.`.
+    /// The chunk key encoding separator. Either . or /.
     #[arg(long, default_value_t = '/')]
     pub separator: char,
 
@@ -266,7 +266,7 @@ pub struct ZarrReencodingArgs {
     #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true), value_parser = parse_fill_value)]
     pub fill_value: Option<FillValueMetadata>,
 
-    /// The chunk key encoding separator. Either `/`. or `.`.
+    /// The chunk key encoding separator. Either . or /.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long)]
     pub separator: Option<char>,
