@@ -5,6 +5,7 @@ import timeit
 import asyncio
 import click
 from functools import wraps
+from multiprocessing.pool import ThreadPool
 
 import zarr
 from zarr.store import LocalStore, RemoteStore
@@ -56,13 +57,19 @@ async def main(path, concurrent_chunks, read_all):
         for chunk_index in np.ndindex(*num_chunks):
             dataset.get_block_selection(chunk_index)
     else:
-        semaphore = asyncio.Semaphore(concurrent_chunks)
-        async def chunk_read_concurrent_limit(chunk_index):
-            async with semaphore:
-                return await chunk_read(chunk_index)
-        async with asyncio.TaskGroup() as tg:
-            for chunk_index in np.ndindex(*num_chunks):
-                tg.create_task(chunk_read_concurrent_limit(chunk_index))
+        chunk_indexes = list(np.ndindex(*num_chunks))
+        def process_chunks_strided(process_id):
+            for chunk_index in chunk_indexes[process_id::concurrent_chunks]:
+                dataset.get_block_selection(chunk_index)
+        with ThreadPool(concurrent_chunks) as p:
+            p.map(process_chunks_strided, range(concurrent_chunks))
+        # semaphore = asyncio.Semaphore(concurrent_chunks)
+        # async def chunk_read_concurrent_limit(chunk_index):
+        #     async with semaphore:
+        #         return await chunk_read(chunk_index)
+        # async with asyncio.TaskGroup() as tg:
+        #     for chunk_index in np.ndindex(*num_chunks):
+        #         tg.create_task(chunk_read_concurrent_limit(chunk_index))
 
     elapsed = timeit.default_timer() - start_time
     elapsed_ms = elapsed * 1000.0
