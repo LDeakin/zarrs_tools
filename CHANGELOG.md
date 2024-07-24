@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - Add `ome_zarr_metadata` dependency for OME-Zarr metadata serialisation
+
 ### Changed
  - `zarrs_reencode`: revise output and update docs
  - Update benchmarks and add plots

@@ -10,8 +10,11 @@ use half::{bf16, f16};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use num_traits::AsPrimitive;
+use ome_zarr_metadata::v0_5_dev::{
+    Axis, AxisUnit, CoordinateTransform, CoordinateTransformScale, CoordinateTransformTranslation,
+    MultiscaleImageDataset, MultiscaleImageMetadata,
+};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use serde::Serialize;
 use zarrs::{
     array::{Array, ArrayCodecTraits, ArrayMetadata, ChunkRepresentation},
     array_subset::ArraySubset,
@@ -363,9 +366,15 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     // Initialise multiscales metadata
     let mut axes: Vec<Axis> = Vec::with_capacity(array0.dimensionality());
+    let to_unit = |physical_unit: String| {
+        Some(
+            serde_json::from_str::<AxisUnit>(&physical_unit)
+                .expect("Not a recognised physical unit"),
+        )
+    };
     let physical_units = cli
         .physical_units
-        .map(|physical_units| physical_units.into_iter().map(Some).collect_vec())
+        .map(|physical_units| physical_units.into_iter().map(to_unit).collect_vec())
         .unwrap_or_else(|| vec![None; array0.dimensionality()]);
     if let Some(dimension_names) = array0.dimension_names() {
         for (i, (dimension_name, unit)) in
@@ -376,7 +385,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                     .as_str()
                     .map(|s| s.to_string())
                     .unwrap_or_else(|| i.to_string()),
-                r#type: Some("space".to_string()),
+                r#type: Some(ome_zarr_metadata::v0_5_dev::AxisType::Space),
                 unit,
             })
         }
@@ -384,47 +393,49 @@ fn run() -> Result<(), Box<dyn Error>> {
         for (i, unit) in physical_units.into_iter().enumerate() {
             axes.push(Axis {
                 name: i.to_string(),
-                r#type: Some("space".to_string()),
+                r#type: Some(ome_zarr_metadata::v0_5_dev::AxisType::Space),
                 unit,
             })
         }
     }
 
     let base_transform = cli.physical_size.map(|physical_size| {
-        vec![CoordinateTransform::Scale {
-            scale: physical_size,
-        }]
+        vec![CoordinateTransform::Scale(CoordinateTransformScale::from(
+            physical_size,
+        ))]
     });
 
-    let multiscales_metadata = Metadata {
-        description: "Created with zarrs_ome".to_string(),
-        repository: env!("CARGO_PKG_REPOSITORY").to_string(),
-        version: env!("CARGO_PKG_VERSION").to_string(),
+    // let mut multiscales_metadata = serde_json::Map::with_capacity(3);
+    let serde_json::Value::Object(multiscales_metadata) = serde_json::json!({
+        "description": "Created with zarrs_ome",
+        "repository": env!("CARGO_PKG_REPOSITORY"),
+        "version": env!("CARGO_PKG_VERSION"),
+    }) else {
+        unreachable!()
     };
-    let version_str = match cli.version {
-        OMEZarrVersion::V0_5_dev => "0.5-dev",
-        OMEZarrVersion::V0_5_dev1 => "0.5-dev1",
-    };
+    let multiscales_metadata: MultiscaleImageMetadata =
+        MultiscaleImageMetadata(multiscales_metadata);
 
-    let mut multiscales = Multiscales {
-        version: version_str.to_string(),
-        name: cli.name,
-        axes,
-        datasets: Vec::with_capacity(cli.max_levels),
-        coordinate_transformations: base_transform,
-        r#type: Some(if cli.discrete { "mode" } else { "gaussian" }.to_string()),
-        metadata: Some(multiscales_metadata),
-    };
+    let downsample_type = if cli.discrete {
+        "mode"
+    } else if cli.no_gaussian {
+        "average"
+    } else {
+        "gaussian"
+    }
+    .to_string();
+
+    let mut datasets = Vec::with_capacity(cli.max_levels);
 
     let mut relative_scale = vec![1.0; array0.dimensionality()];
     {
-        let dataset = Dataset {
+        let dataset = MultiscaleImageDataset {
             path: "0".to_string(),
-            coordinate_transformations: vec![CoordinateTransform::Scale {
-                scale: relative_scale.clone(),
-            }],
+            coordinate_transformations: vec![CoordinateTransform::Scale(
+                CoordinateTransformScale::from(relative_scale.clone()),
+            )],
         };
-        multiscales.datasets.push(dataset);
+        datasets.push(dataset);
     }
 
     // Calculate gaussian sigma/kernel size for each axis
@@ -650,18 +661,16 @@ fn run() -> Result<(), Box<dyn Error>> {
         )?;
 
         // Append multiscales dataset metadata
-        let dataset = Dataset {
+        let dataset = MultiscaleImageDataset {
             path: format!("{i}"),
             coordinate_transformations: vec![
-                CoordinateTransform::Scale {
-                    scale: relative_scale.clone(),
-                },
-                CoordinateTransform::Translation {
-                    translation: relative_scale.iter().map(|s| (s - 1.0) * 0.5).collect_vec(),
-                },
+                CoordinateTransform::Scale(CoordinateTransformScale::from(relative_scale.clone())),
+                CoordinateTransform::Translation(CoordinateTransformTranslation::from(
+                    relative_scale.iter().map(|s| (s - 1.0) * 0.5).collect_vec(),
+                )),
             ],
         };
-        multiscales.datasets.push(dataset);
+        datasets.push(dataset);
 
         array_output.store_metadata()?;
         finish_step(bar, &output_path);
@@ -675,71 +684,46 @@ fn run() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    // Add multiscales metadata
-    let multiscales = vec![serde_json::from_str(&serde_json::to_string(&multiscales)?)?];
-    group.attributes_mut().insert(
-        "multiscales".to_string(),
-        serde_json::Value::Array(multiscales),
-    );
+    match cli.version {
+        OMEZarrVersion::V0_5_dev => {
+            let multiscales = [ome_zarr_metadata::v0_5_dev::MultiscaleImage {
+                version: Default::default(),
+                name: cli.name,
+                axes,
+                datasets,
+                coordinate_transformations: base_transform,
+                r#type: Some(downsample_type),
+                metadata: Some(multiscales_metadata),
+            }];
+            group.attributes_mut().insert(
+                "multiscales".to_string(),
+                serde_json::to_value(multiscales).unwrap(),
+            );
+        }
+        OMEZarrVersion::V0_5_dev1 => {
+            let multiscales = [ome_zarr_metadata::v0_5_dev1::MultiscaleImage {
+                version: Default::default(),
+                name: cli.name,
+                axes,
+                datasets,
+                coordinate_transformations: base_transform,
+                r#type: Some(downsample_type),
+                metadata: Some(multiscales_metadata),
+            }];
+            group.attributes_mut().insert(
+                "multiscales".to_string(),
+                serde_json::to_value(multiscales).unwrap(),
+            );
+        }
+    }
+
+    // Store metadata
     group.store_metadata()?;
 
     let duration_s = start.elapsed().as_secs_f32();
     println!("Output {:?} in {duration_s:.2}s", cli.output);
 
     Ok(())
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct Multiscales {
-    version: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
-    axes: Vec<Axis>,
-    datasets: Vec<Dataset>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    coordinate_transformations: Option<Vec<CoordinateTransform>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    r#type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    metadata: Option<Metadata>,
-}
-
-#[derive(Serialize)]
-struct Metadata {
-    description: String,
-    repository: String,
-    version: String,
-}
-
-#[derive(Serialize)]
-struct Axis {
-    name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    r#type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    unit: Option<String>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct Dataset {
-    path: String,
-    coordinate_transformations: Vec<CoordinateTransform>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "lowercase")]
-#[serde(tag = "type")]
-enum CoordinateTransform {
-    #[allow(dead_code)]
-    Identity,
-    Translation {
-        translation: Vec<f32>,
-    },
-    Scale {
-        scale: Vec<f32>,
-    },
 }
 
 fn main() -> std::process::ExitCode {
