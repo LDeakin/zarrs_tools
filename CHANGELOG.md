@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2024-07-24
+
 ### Added
  - Add `ome_zarr_metadata` dependency for OME-Zarr metadata serialisation
 
@@ -144,7 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Initial public release
 
-[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.5.2...HEAD
+[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.3
 [0.5.2]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.2
 [0.5.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.1
 [0.5.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.0
