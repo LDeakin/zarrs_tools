@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bytes_decoded = Mutex::new(0);
     if args.read_all {
         let subset = ArraySubset::new_with_shape(array.shape().to_vec());
-        *bytes_decoded.lock().unwrap() += array.retrieve_array_subset(&subset)?.len();
+        *bytes_decoded.lock().unwrap() += array.retrieve_array_subset(&subset)?.size();
     } else {
         let chunk_representation =
             array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
@@ -103,7 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let bytes = array
                     .retrieve_chunk_opt(&chunk_indices, &codec_options)
                     .unwrap();
-                *bytes_decoded.lock().unwrap() += bytes.len();
+                *bytes_decoded.lock().unwrap() += bytes.size();
             }
         );
     }

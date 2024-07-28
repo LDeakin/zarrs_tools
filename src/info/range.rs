@@ -1,9 +1,8 @@
-use bytemuck::Pod;
 use half::{bf16, f16};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rayon_iter_concurrent_limit::iter_concurrent_limit;
 use zarrs::{
-    array::{Array, ArrayError, DataType},
+    array::{Array, ArrayError, DataType, ElementOwned},
     array_subset::ArraySubset,
     storage::ReadableStorageTraits,
 };
@@ -99,7 +98,7 @@ pub fn calculate_range<TStorage: ReadableStorageTraits + 'static>(
 
 pub fn calculate_range_t<
     TStorage: ReadableStorageTraits + 'static,
-    T: Pod + PartialOrd + Send + Sync,
+    T: ElementOwned + PartialOrd + Send + Sync,
 >(
     array: &Array<TStorage>,
     t_min: T,
@@ -111,10 +110,10 @@ pub fn calculate_range_t<
     let chunk_min_max = |chunk_indices: Vec<u64>| {
         // TODO: Codec concurrent limit
         let elements = array.retrieve_chunk_elements::<T>(&chunk_indices)?;
-        let (mut min, mut max) = (t_min, t_max);
-        for element in elements {
-            min = if element < min { element } else { min };
-            max = if element > max { element } else { max };
+        let (mut min, mut max) = (t_min.clone(), t_max.clone());
+        for element in &elements {
+            min = if element < &min { element.clone() } else { min };
+            max = if element > &max { element.clone() } else { max };
         }
         Ok::<_, ArrayError>((min, max))
     };

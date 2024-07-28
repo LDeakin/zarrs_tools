@@ -3,7 +3,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType},
+    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -50,7 +50,7 @@ impl Reencode {
     ) -> Result<(), FilterError> {
         let input_output_subset = output.chunk_subset_bounded(chunk_indices).unwrap();
         let subset_bytes = progress.read(|| input.retrieve_array_subset(&input_output_subset))?;
-        progress.write(|| output.store_array_subset(&input_output_subset, &subset_bytes))?;
+        progress.write(|| output.store_array_subset(&input_output_subset, subset_bytes))?;
         progress.next();
         Ok(())
     }
@@ -63,8 +63,8 @@ impl Reencode {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<TOut>,
-        TOut: bytemuck::Pod + Send + Sync,
+        TIn: ElementOwned + Send + Sync + AsPrimitive<TOut>,
+        TOut: Element + Send + Sync + Copy + 'static,
     {
         let input_output_subset = output.chunk_subset_bounded(chunk_indices).unwrap();
 
@@ -120,7 +120,7 @@ impl FilterTraits for Reencode {
         _chunk_input: &zarrs::array::ChunkRepresentation,
         chunk_output: &zarrs::array::ChunkRepresentation,
     ) -> usize {
-        chunk_output.size_usize()
+        chunk_output.fixed_element_size().unwrap()
     }
 
     fn apply(

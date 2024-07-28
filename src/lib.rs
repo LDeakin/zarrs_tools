@@ -556,10 +556,6 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
         let fill_value = convert_fill_value(array.data_type(), array.fill_value(), &data_type);
         array_builder.fill_value(fill_value);
     }
-    assert_eq!(
-        array_builder.data_type.size(),
-        array_builder.fill_value.size()
-    );
 
     if let Some(shard_shape) = shard_shape {
         array_builder.chunk_grid(shard_shape.try_into().unwrap());
@@ -638,11 +634,11 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
                 let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
                 let bytes = progress
                     .read(|| array_in.retrieve_array_subset_opt(&chunk_subset, &codec_options))?;
-                *bytes_decoded.lock().unwrap() += bytes.len();
+                *bytes_decoded.lock().unwrap() += bytes.size();
 
                 if validate {
                     progress.write(|| {
-                        array_out.store_chunk_opt(&chunk_indices, &bytes, &codec_options)
+                        array_out.store_chunk_opt(&chunk_indices, bytes.clone(), &codec_options)
                     })?;
                     let bytes_out = array_out
                         .retrieve_chunk_opt(&chunk_indices, &codec_options)
@@ -650,7 +646,7 @@ pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
                     assert!(bytes == bytes_out);
                 } else {
                     progress.write(|| {
-                        array_out.store_chunk_opt(&chunk_indices, &bytes, &codec_options)
+                        array_out.store_chunk_opt(&chunk_indices, bytes, &codec_options)
                     })?;
                 }
                 progress.next();

@@ -9,8 +9,8 @@ Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data wit
 A changelog can be found [here](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md).
 
 ## Tools
-All tools support input and output [Zarr V3](https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html) data.
-Some tools additionally support input of a [V3 compatible subset](https://docs.rs/zarrs/latest/zarrs/#arrays-zarr-v3-and-zarr-v2) of [Zarr V2](https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html).
+All tools support input and output of [Zarr V3](https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html) data.
+Some tools additionally support input of a [V3 compatible subset](https://docs.rs/zarrs/latest/zarrs/#implementation-status) of [Zarr V2](https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html).
 
 - [zarrs_reencode](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
 - [zarrs_filter](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.

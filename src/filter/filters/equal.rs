@@ -3,7 +3,10 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType, FillValue, FillValueMetadata},
+    array::{
+        data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned, FillValue,
+        FillValueMetadata,
+    },
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -64,8 +67,8 @@ impl Equal {
         equal: &TIn,
     ) -> Result<Vec<TOut>, FilterError>
     where
-        TIn: bytemuck::Pod + Copy + Send + Sync + PartialEq,
-        TOut: bytemuck::Pod + Send + Sync,
+        TIn: ElementOwned + Copy + Send + Sync + PartialEq,
+        TOut: Element + Send + Sync + Copy + 'static,
         bool: AsPrimitive<TOut>,
     {
         let output_elements = input_elements
@@ -114,7 +117,7 @@ impl FilterTraits for Equal {
         chunk_input: &zarrs::array::ChunkRepresentation,
         chunk_output: &zarrs::array::ChunkRepresentation,
     ) -> usize {
-        chunk_input.size_usize() + chunk_output.size_usize()
+        chunk_input.fixed_element_size().unwrap() + chunk_output.fixed_element_size().unwrap()
     }
 
     fn output_data_type(&self, _input: &Array<FilesystemStore>) -> Option<(DataType, FillValue)> {

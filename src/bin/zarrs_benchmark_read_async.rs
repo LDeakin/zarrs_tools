@@ -83,7 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let array_shape = array.shape().to_vec();
         let array_subset = ArraySubset::new_with_shape(array_shape.to_vec());
         let array_data = array.async_retrieve_array_subset(&array_subset).await?;
-        bytes_decoded += array_data.len();
+        bytes_decoded += array_data.size();
     } else {
         // Calculate chunk/codec concurrency
         let chunk_representation =
@@ -120,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 async move {
                     array
                         .async_retrieve_chunk_opt(&chunk_indices, &codec_options)
-                        .map(|bytes| bytes.map(|bytes| bytes.len()))
+                        .map(|bytes| bytes.map(|bytes| bytes.size()))
                         .await
                 }
             })

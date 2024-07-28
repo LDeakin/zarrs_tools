@@ -3,7 +3,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType},
+    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -19,8 +19,10 @@ use crate::{
 #[derive(Debug, Clone, Parser, Serialize, Deserialize)]
 pub struct RescaleArguments {
     /// Multiplier term.
+    #[arg(allow_hyphen_values(true))]
     pub multiply: f64,
     /// Addition term.
+    #[arg(allow_hyphen_values(true))]
     pub add: f64,
     /// Perform the addition before multiplication.
     #[arg(long)]
@@ -71,8 +73,8 @@ impl Rescale {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<f64>,
-        TOut: bytemuck::Pod + Copy + Send + Sync + 'static,
+        TIn: ElementOwned + Send + Sync + AsPrimitive<f64>,
+        TOut: Element + Send + Sync + Copy + 'static,
         f64: AsPrimitive<TOut>,
     {
         // Determine the input and output subset
@@ -152,7 +154,7 @@ impl FilterTraits for Rescale {
         chunk_input: &zarrs::array::ChunkRepresentation,
         chunk_output: &zarrs::array::ChunkRepresentation,
     ) -> usize {
-        chunk_input.size_usize() + chunk_output.size_usize()
+        chunk_input.fixed_element_size().unwrap() + chunk_output.fixed_element_size().unwrap()
     }
 
     fn apply(

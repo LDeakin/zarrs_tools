@@ -128,7 +128,7 @@ impl FilterTraits for ReplaceValue {
         chunk_input: &zarrs::array::ChunkRepresentation,
         chunk_output: &zarrs::array::ChunkRepresentation,
     ) -> usize {
-        chunk_input.size_usize() + chunk_output.size_usize()
+        chunk_input.fixed_element_size().unwrap() + chunk_output.fixed_element_size().unwrap()
     }
 
     fn apply(
