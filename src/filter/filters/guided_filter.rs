@@ -5,7 +5,7 @@ use rayon::iter::{
 };
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType},
+    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -77,8 +77,8 @@ impl GuidedFilter {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<f32>,
-        TOut: bytemuck::Pod + Send + Sync,
+        TIn: ElementOwned + Send + Sync + AsPrimitive<f32>,
+        TOut: Element + Send + Sync + Copy + 'static,
         f32: AsPrimitive<TOut>,
     {
         let subset_output = output.chunk_subset_bounded(chunk_indices).unwrap();
@@ -102,7 +102,7 @@ impl GuidedFilter {
 
         progress.write(|| {
             output
-                .store_array_subset_ndarray::<TOut, _, _>(subset_output.start(), output_array)
+                .store_array_subset_ndarray::<TOut, _>(subset_output.start(), output_array)
                 .unwrap()
         });
 
@@ -227,8 +227,8 @@ impl FilterTraits for GuidedFilter {
         chunk_input: &zarrs::array::ChunkRepresentation,
         chunk_output: &zarrs::array::ChunkRepresentation,
     ) -> usize {
-        chunk_input.size_usize()
-            + chunk_output.size_usize()
+        chunk_input.fixed_element_size().unwrap()
+            + chunk_output.fixed_element_size().unwrap()
             + chunk_output.num_elements_usize()
                 * (core::mem::size_of::<f64>() + core::mem::size_of::<f32>() * 2)
     }

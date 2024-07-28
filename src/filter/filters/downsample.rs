@@ -153,9 +153,9 @@ impl FilterTraits for Downsample {
         chunk_output: &zarrs::array::ChunkRepresentation,
     ) -> usize {
         debug_assert_eq!(_chunk_input.data_type(), chunk_output.data_type());
-        let input = chunk_output.size_usize()
+        let input = chunk_output.fixed_element_size().unwrap()
             * usize::try_from(self.stride.iter().product::<u64>()).unwrap();
-        let output = chunk_output.size_usize();
+        let output = chunk_output.fixed_element_size().unwrap();
         input + output
     }
 
@@ -207,7 +207,7 @@ impl FilterTraits for Downsample {
                             self.apply_ndarray_continuous(input_array, &progress)
                         };
                         progress.write(|| {
-                            output.store_array_subset_ndarray::<$t_out, _, _>(
+                            output.store_array_subset_ndarray::<$t_out, _>(
                                 output_subset.start(),
                                 output_array,
                             )
@@ -220,7 +220,7 @@ impl FilterTraits for Downsample {
                             .read(|| input.retrieve_array_subset_ndarray::<$t_in>(&input_subset))?;
                         let output_array = self.apply_ndarray_continuous(input_array, &progress);
                         progress.write(|| {
-                            output.store_array_subset_ndarray::<$t_out, _, _>(
+                            output.store_array_subset_ndarray::<$t_out, _>(
                                 output_subset.start(),
                                 output_array,
                             )

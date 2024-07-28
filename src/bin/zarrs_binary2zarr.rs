@@ -81,7 +81,10 @@ fn stdin_to_array(
     endianness: Option<Endianness>,
     concurrent_chunks: Option<usize>,
 ) -> usize {
-    let data_type_size = array.data_type().size();
+    let data_type_size = array
+        .data_type()
+        .fixed_size()
+        .expect("data type should be fixed size");
     let dimensionality = array.chunk_grid().dimensionality();
     let array_shape = array.shape();
     let array_shape_n = *array_shape.first().unwrap();
@@ -159,7 +162,7 @@ fn stdin_to_array(
         }
 
         array
-            .store_array_subset_opt(&array_subset, &subset_bytes, &codec_options)
+            .store_array_subset_opt(&array_subset, subset_bytes, &codec_options)
             .unwrap();
     };
     iter_concurrent_limit!(concurrent_chunks, 0..n_blocks, for_each, op);

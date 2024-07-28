@@ -5,7 +5,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType},
+    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -77,8 +77,8 @@ impl Gaussian {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<f32>,
-        TOut: bytemuck::Pod + Send + Sync,
+        TIn: ElementOwned + Send + Sync + AsPrimitive<f32>,
+        TOut: Element + Send + Sync + Copy + 'static,
         f32: AsPrimitive<TOut>,
     {
         let subset_output = output.chunk_subset_bounded(chunk_indices).unwrap();
@@ -98,7 +98,7 @@ impl Gaussian {
 
         progress.write(|| {
             output
-                .store_array_subset_ndarray::<TOut, _, _>(subset_output.start(), output_array)
+                .store_array_subset_ndarray::<TOut, _>(subset_output.start(), output_array)
                 .unwrap()
         });
 
@@ -160,8 +160,10 @@ impl FilterTraits for Gaussian {
         )
         .unwrap();
         let num_output_elements = chunk_output.num_elements_usize();
-        num_input_elements * (chunk_input.data_type().size() + core::mem::size_of::<f32>() * 2)
-            + num_output_elements * (core::mem::size_of::<f32>() + chunk_output.data_type().size())
+        num_input_elements
+            * (chunk_input.data_type().fixed_size().unwrap() + core::mem::size_of::<f32>() * 2)
+            + num_output_elements
+                * (core::mem::size_of::<f32>() + chunk_output.data_type().fixed_size().unwrap())
     }
 
     fn apply(

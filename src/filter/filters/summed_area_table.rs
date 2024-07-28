@@ -6,7 +6,7 @@ use num_traits::{AsPrimitive, Zero};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType},
+    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -54,8 +54,8 @@ impl SummedAreaTable {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: bytemuck::Pod + Send + Sync,
-        TOut: bytemuck::Pod + Send + Sync + Zero + AddAssign,
+        TIn: ElementOwned + Send + Sync,
+        TOut: Element + ElementOwned + Send + Sync + Zero + AddAssign + Copy + 'static,
         TIn: AsPrimitive<TOut>,
     {
         let dimensionality = chunk_start_dim.len();
@@ -138,7 +138,7 @@ impl FilterTraits for SummedAreaTable {
         chunk_input: &zarrs::array::ChunkRepresentation,
         chunk_output: &zarrs::array::ChunkRepresentation,
     ) -> usize {
-        chunk_input.size_usize() + chunk_output.size_usize()
+        chunk_input.fixed_element_size().unwrap() + chunk_output.fixed_element_size().unwrap()
     }
 
     fn apply(

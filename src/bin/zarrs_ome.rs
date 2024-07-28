@@ -16,7 +16,7 @@ use ome_zarr_metadata::v0_5_dev::{
 };
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use zarrs::{
-    array::{Array, ArrayCodecTraits, ArrayMetadata, ChunkRepresentation},
+    array::{Array, ArrayCodecTraits, ArrayMetadata, ChunkRepresentation, Element, ElementOwned},
     array_subset::ArraySubset,
     group::{Group, GroupMetadata, GroupMetadataV3},
     storage::{store::FilesystemStore, StorePrefix, WritableStorageTraits},
@@ -180,7 +180,7 @@ fn apply_chunk_discrete<T>(
     progress: &Progress,
 ) -> Result<(), FilterError>
 where
-    T: bytemuck::Pod + Copy + Send + Sync + Eq + PartialEq + Hash + AsPrimitive<T>,
+    T: Element + ElementOwned + Copy + Send + Sync + Eq + PartialEq + Hash + AsPrimitive<T>,
 {
     let output_subset = array_output.chunk_subset_bounded(chunk_indices).unwrap();
     let downsample_input_subset =
@@ -191,7 +191,7 @@ where
         downsample_filter.apply_ndarray_discrete(input_chunk, progress)
     };
     progress.write(|| {
-        array_output.store_array_subset_ndarray::<T, _, _>(output_subset.start(), output_chunk)
+        array_output.store_array_subset_ndarray::<T, _>(output_subset.start(), output_chunk)
     })?;
     Ok(())
 }
@@ -204,7 +204,7 @@ fn apply_chunk_continuous<T>(
     progress: &Progress,
 ) -> Result<(), FilterError>
 where
-    T: bytemuck::Pod + Copy + Send + Sync + AsPrimitive<f64> + std::iter::Sum,
+    T: Element + ElementOwned + Copy + Send + Sync + AsPrimitive<f64> + std::iter::Sum,
     f64: AsPrimitive<T>,
 {
     let output_subset = array_output.chunk_subset_bounded(chunk_indices).unwrap();
@@ -216,7 +216,7 @@ where
         downsample_filter.apply_ndarray_continuous(input_chunk, progress)
     };
     progress.write(|| {
-        array_output.store_array_subset_ndarray::<T, _, _>(output_subset.start(), output_chunk)
+        array_output.store_array_subset_ndarray::<T, _>(output_subset.start(), output_chunk)
     })?;
     Ok(())
 }
@@ -230,7 +230,7 @@ fn apply_chunk_continuous_gaussian<T>(
     progress: &Progress,
 ) -> Result<(), FilterError>
 where
-    T: bytemuck::Pod + Copy + Send + Sync + AsPrimitive<f32> + std::iter::Sum,
+    T: Element + ElementOwned + Copy + Send + Sync + AsPrimitive<f32> + std::iter::Sum,
     f64: AsPrimitive<T>,
 {
     let output_subset = array_output.chunk_subset_bounded(chunk_indices).unwrap();
@@ -253,7 +253,7 @@ where
     };
     let output_chunk = downsample_filter.apply_ndarray_continuous(gaussian_chunk, progress);
     progress.write(|| {
-        array_output.store_array_subset_ndarray::<T, _, _>(output_subset.start(), output_chunk)
+        array_output.store_array_subset_ndarray::<T, _>(output_subset.start(), output_chunk)
     })?;
     Ok(())
 }

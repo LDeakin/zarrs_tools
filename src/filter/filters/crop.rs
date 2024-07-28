@@ -3,7 +3,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType},
+    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -84,7 +84,7 @@ impl Crop {
     ) -> Result<(), FilterError> {
         let (input_subset, output_subset) = self.get_input_output_subset(output, chunk_indices);
         let output_bytes = progress.read(|| input.retrieve_array_subset(&input_subset))?;
-        progress.write(|| output.store_array_subset(&output_subset, &output_bytes))?;
+        progress.write(|| output.store_array_subset(&output_subset, output_bytes))?;
         progress.next();
         Ok(())
     }
@@ -97,8 +97,8 @@ impl Crop {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: bytemuck::Pod + Send + Sync + AsPrimitive<TOut>,
-        TOut: bytemuck::Pod + Send + Sync,
+        TIn: ElementOwned + Send + Sync + AsPrimitive<TOut>,
+        TOut: Element + Send + Sync + Copy + 'static,
     {
         let (input_subset, output_subset) = self.get_input_output_subset(output, chunk_indices);
 
@@ -154,7 +154,7 @@ impl FilterTraits for Crop {
         _chunk_input: &zarrs::array::ChunkRepresentation,
         chunk_output: &zarrs::array::ChunkRepresentation,
     ) -> usize {
-        chunk_output.size_usize()
+        chunk_output.fixed_element_size().unwrap()
     }
 
     fn output_shape(&self, _input: &Array<FilesystemStore>) -> Option<Vec<u64>> {

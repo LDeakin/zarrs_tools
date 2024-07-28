@@ -1,9 +1,8 @@
-use bytemuck::Pod;
 use half::{bf16, f16};
 use num_traits::AsPrimitive;
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use zarrs::{
-    array::{Array, ArrayError, DataType},
+    array::{Array, ArrayError, DataType, ElementOwned},
     array_subset::ArraySubset,
     storage::ReadableStorageTraits,
 };
@@ -39,7 +38,7 @@ pub fn calculate_histogram<TStorage: ReadableStorageTraits + 'static>(
 
 pub fn calculate_histogram_t<
     TStorage: ReadableStorageTraits + 'static,
-    T: Pod + PartialOrd + Send + Sync + AsPrimitive<f64>,
+    T: ElementOwned + PartialOrd + Send + Sync + AsPrimitive<f64>,
 >(
     array: &Array<TStorage>,
     n_bins: usize,

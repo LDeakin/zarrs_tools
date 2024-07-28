@@ -1254,6 +1254,7 @@ version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
 dependencies = [
+ "bytemuck",
  "num-traits",
 ]
 
@@ -2649,9 +2650,9 @@ dependencies = [
 
 [[package]]
 name = "zarrs"
-version = "0.15.1"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff909141506bec11500efe57b0874627d36dc50fc05c96aa57cd841071b15ba6"
+checksum = "d3e13209785de81409deb78dce3bf405cb7725fba163b2817c2615ce78e2a273"
 dependencies = [
  "async-lock",
  "async-recursion",
@@ -2670,6 +2671,7 @@ dependencies = [
  "monostate",
  "ndarray",
  "num",
+ "num-complex",
  "object_store",
  "opendal",
  "parking_lot",
@@ -2686,7 +2688,7 @@ dependencies = [
 
 [[package]]
 name = "zarrs_tools"
-version = "0.5.3"
+version = "0.5.4"
 dependencies = [
  "approx",
  "async-scoped",

@@ -94,7 +94,14 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
         let mut start = vec![0u64; array.chunk_grid().dimensionality()];
         start[concat_dim] = offsets[idx];
         let array_subset = ArraySubset::new_with_start_shape(start, dim_sizes_u64.clone()).unwrap();
-        let mut buf = vec![0u8; array.data_type().size() * array_subset.num_elements_usize()];
+        let mut buf = vec![
+            0u8;
+            array
+                .data_type()
+                .fixed_size()
+                .expect("data type should be fixed size")
+                * array_subset.num_elements_usize()
+        ];
         // println!("{array_subset:?} {dim_sizes:?} {}", buf.len());
         nc_var
             .get_raw_values(
@@ -110,15 +117,15 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
 
         if validate {
             array
-                .store_array_subset_opt(&array_subset, &buf, &codec_options)
+                .store_array_subset_opt(&array_subset, buf.clone(), &codec_options)
                 .unwrap();
             let buf_validate = array
                 .retrieve_array_subset_opt(&array_subset, &codec_options)
                 .unwrap();
-            assert!(buf == buf_validate);
+            assert!(buf == buf_validate.into_fixed().unwrap().into_owned());
         } else {
             array
-                .store_array_subset_opt(&array_subset, &buf, &codec_options)
+                .store_array_subset_opt(&array_subset, buf, &codec_options)
                 .unwrap();
         }
     };

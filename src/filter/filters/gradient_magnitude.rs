@@ -4,7 +4,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType},
+    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -54,8 +54,8 @@ impl GradientMagnitude {
         progress: &Progress,
     ) -> Result<(), FilterError>
     where
-        TIn: bytemuck::Pod + AsPrimitive<f32>,
-        TOut: bytemuck::Pod,
+        TIn: ElementOwned + AsPrimitive<f32>,
+        TOut: Element + Copy + 'static,
         f32: AsPrimitive<TOut>,
     {
         // Determine the input and output subset
@@ -79,7 +79,7 @@ impl GradientMagnitude {
 
         progress.write(|| {
             output
-                .store_array_subset_ndarray::<TOut, _, _>(subset_output.start(), gradient_magnitude)
+                .store_array_subset_ndarray::<TOut, _>(subset_output.start(), gradient_magnitude)
                 .unwrap()
         });
 
@@ -156,8 +156,10 @@ impl FilterTraits for GradientMagnitude {
         )
         .unwrap();
         let num_output_elements = chunk_input.num_elements_usize();
-        num_input_elements * (chunk_input.data_type().size() + core::mem::size_of::<f32>() * 4)
-            + num_output_elements * (core::mem::size_of::<f32>() + chunk_output.data_type().size())
+        num_input_elements
+            * (chunk_input.data_type().fixed_size().unwrap() + core::mem::size_of::<f32>() * 4)
+            + num_output_elements
+                * (core::mem::size_of::<f32>() + chunk_output.data_type().fixed_size().unwrap())
     }
 
     fn apply(
