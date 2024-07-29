@@ -569,12 +569,14 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
             array_to_bytes_codec,
             bytes_to_bytes_codecs,
         );
+        array_builder.array_to_array_codecs(vec![]);
         array_builder.array_to_bytes_codec(Box::new(ShardingCodec::new(
             chunk_shape.try_into().unwrap(),
             inner_codecs,
             index_codecs,
             sharding::ShardingIndexLocation::End,
         )));
+        array_builder.bytes_to_bytes_codecs(vec![]);
     } else {
         array_builder.array_to_array_codecs(array_to_array_codecs);
         array_builder.array_to_bytes_codec(array_to_bytes_codec);

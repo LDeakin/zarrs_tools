@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  - Bump `zarrs` to 0.16.0
 
+### Fixed
+ - Fixed `zarrs_reencode` with `--shard-shape` applying existing array-to-array and bytes-to-bytes codecs as both inner and outer codecs
+
 ## [0.5.3] - 2024-07-24
 
 ### Added
