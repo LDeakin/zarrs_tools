@@ -21,7 +21,7 @@ use zarrs::{
     array_subset::ArraySubset,
     config::global_config,
     metadata::Metadata,
-    storage::{store::FilesystemStore, ReadableWritableStorageTraits},
+    storage::{ReadableStorageTraits, ReadableWritableStorageTraits},
 };
 
 pub mod filter;
@@ -586,8 +586,11 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
     array_builder
 }
 
-pub fn do_reencode<TStorageOut: ReadableWritableStorageTraits + 'static>(
-    array_in: &Array<FilesystemStore>,
+pub fn do_reencode<
+    TStorageIn: ReadableStorageTraits + ?Sized + 'static,
+    TStorageOut: ReadableWritableStorageTraits + ?Sized + 'static,
+>(
+    array_in: &Array<TStorageIn>,
     array_out: &Array<TStorageOut>,
     validate: bool,
     concurrent_chunks: Option<usize>,

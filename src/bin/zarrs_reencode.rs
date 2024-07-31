@@ -1,8 +1,14 @@
+use core::f32;
 use std::sync::Arc;
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use zarrs::storage::{ListableStorageTraits, StorePrefix, WritableStorageTraits};
+use zarrs::storage::{
+    storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
+    store::AsyncOpendalStore,
+    AsyncReadableListableStorage, ListableStorageTraits, ReadableListableStorage, StorePrefix,
+    WritableStorageTraits,
+};
 use zarrs_tools::{
     do_reencode, get_array_builder_reencode,
     progress::{ProgressCallback, ProgressStats},
@@ -78,13 +84,45 @@ fn progress_callback(stats: ProgressStats, bar: &ProgressBar) {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+struct TokioBlockOn(tokio::runtime::Runtime);
+
+impl AsyncToSyncBlockOn for TokioBlockOn {
+    fn block_on<F: core::future::Future>(&self, future: F) -> F::Output {
+        self.0.block_on(future)
+    }
+}
+
+fn get_storage(path: &str) -> anyhow::Result<ReadableListableStorage> {
+    if path.starts_with("http://") || path.starts_with("https://") {
+        let builder = opendal::services::Http::default().endpoint(path);
+        let operator = opendal::Operator::new(builder)?.finish();
+        let storage: AsyncReadableListableStorage = Arc::new(AsyncOpendalStore::new(operator));
+        let block_on = TokioBlockOn(tokio::runtime::Runtime::new()?);
+        Ok(Arc::new(AsyncToSyncStorageAdapter::new(storage, block_on)))
+    // } else if path.starts_with("s3://") {
+    //     let endpoint = "";
+    //     let bucket = "";
+    //     let root = "";
+    //     let region = "auto";
+    //     let builder = opendal::services::S3::default()
+    //         .endpoint(&endpoint)
+    //         .region(&region)
+    //         .root(path)
+    //         .allow_anonymous()
+    //         .bucket(&bucket);
+    //     let operator = opendal::Operator::new(builder)?.finish();
+    //     Arc::new(AsyncOpendalStore::new(operator))
+    } else {
+        Ok(Arc::new(zarrs::storage::store::FilesystemStore::new(path)?))
+    }
+}
+
+fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
 
-    let storage_in =
-        Arc::new(zarrs::storage::store::FilesystemStore::new(args.path_in.clone()).unwrap());
+    let storage_in = get_storage(&args.path_in)?;
     let array_in = zarrs::array::Array::open(storage_in.clone(), "/").unwrap();
     if args.verbose {
         println!(
@@ -114,8 +152,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     bar.set_style(bar_style_finish());
     bar.finish_and_clear();
-    let size_in = storage_in.size().unwrap() as f32;
-    let size_out = storage_out.size().unwrap() as f32;
+    let size_in = storage_in
+        .size()
+        .map(|size| size as f32)
+        .unwrap_or(f32::NAN);
+    let size_out = storage_out.size().unwrap_or_default() as f32;
     let bytes_decoded = bytes_decoded as f32;
     println!(
         "Reencode {} to {}\n\tread:  ~{:.2}ms @ {:.2}GB/s\n\twrite: ~{:.2}ms @ {:.2}GB/s\n\ttotal: {:.2}ms\n\tsize:  {:.2}MB to {:.2}MB ({:.2}MB uncompressed)",

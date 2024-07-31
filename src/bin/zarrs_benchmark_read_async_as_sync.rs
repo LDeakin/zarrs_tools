@@ -55,8 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let storage: AsyncReadableStorage = if args.path.starts_with("http") {
         // opendal
-        let mut builder = opendal::services::Http::default();
-        builder.endpoint(&args.path);
+        let builder = opendal::services::Http::default().endpoint(&args.path);
         let operator = opendal::Operator::new(builder)?.finish();
         Arc::new(store::AsyncOpendalStore::new(operator))
 
@@ -69,8 +68,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Arc::new(store::AsyncObjectStore::new(store))
     } else {
         // opendal
-        let mut builder = opendal::services::Fs::default();
-        builder.root(&args.path);
+        let builder = opendal::services::Fs::default().root(&args.path);
         let operator = opendal::Operator::new(builder)?.finish();
         Arc::new(store::AsyncOpendalStore::new(operator))
 
