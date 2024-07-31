@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+## [0.5.5] - 2024-07-31
+
+### Added
  - Add http read support to `zarrs_reencode`
+
+### Changed
  - Bump `opendal` to 0.48
 
 ## [0.5.4] - 2024-07-30
@@ -158,7 +162,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Initial public release
 
-[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.5.4...HEAD
+[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.5.5...HEAD
+[0.5.5]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.5
 [0.5.4]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.4
 [0.5.3]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.3
 [0.5.2]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.2

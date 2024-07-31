@@ -22,10 +22,10 @@ struct Args {
     #[command(flatten)]
     encoding: ZarrReencodingArgs,
 
-    /// The zarr array input directory.
+    /// The zarr array input path or URL.
     path_in: String,
 
-    /// The zarr array output directory. If unspecified, data is written to memory.
+    /// The zarr array output directory.
     path_out: String,
 
     /// Number of concurrent chunks.
