@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+ - Add http read support to `zarrs_reencode`
+ - Bump `opendal` to 0.48
+
 ## [0.5.4] - 2024-07-30
 
 ### Changed
