@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+ - `zarrs_ome` fix axis unit parsing (broken in 0.5.3)
+
 ## [0.5.5] - 2024-07-31
 
 ### Added

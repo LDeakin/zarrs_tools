@@ -368,7 +368,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let mut axes: Vec<Axis> = Vec::with_capacity(array0.dimensionality());
     let to_unit = |physical_unit: String| {
         Some(
-            serde_json::from_str::<AxisUnit>(&physical_unit)
+            serde_json::from_value::<AxisUnit>(serde_json::json!(physical_unit))
                 .expect("Not a recognised physical unit"),
         )
     };
