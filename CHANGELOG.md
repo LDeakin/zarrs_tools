@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
  - `zarrs_ome` fix axis unit parsing (broken in 0.5.3)
+ - [#12](https://github.com/LDeakin/zarrs_tools/pull/12) Bump netcdf to 0.10.2 by [@magnusuMET]
+ - **Breaking**: Bump MSRV to 1.80
 
 ## [0.5.5] - 2024-07-31
 
@@ -182,3 +184,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.2.0
 [0.1.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.1.1
 [0.1.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.1.0
+
+[@magnusuMET]: https://github.com/magnusuMET
