@@ -87,31 +87,24 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
             .expect("Could not find variable in netCDF file");
 
         let dims = nc_var.dimensions();
-        let dim_sizes: Vec<_> = dims.iter().map(|dim| dim.len()).collect();
+        // let dim_sizes: Vec<_> = dims.iter().map(|dim| dim.len()).collect();
         let dim_sizes_u64: Vec<_> = dims.iter().map(|dim| dim.len() as u64).collect();
         // println!("{dim_sizes:?}");
 
         let mut start = vec![0u64; array.chunk_grid().dimensionality()];
         start[concat_dim] = offsets[idx];
         let array_subset = ArraySubset::new_with_start_shape(start, dim_sizes_u64.clone()).unwrap();
-        let mut buf = vec![
-            0u8;
+        // println!("{array_subset:?} {dim_sizes:?} {}", buf.len());
+        let buf = nc_var.get_raw_values(..).unwrap();
+        assert_eq!(
+            buf.len(),
             array
                 .data_type()
                 .fixed_size()
                 .expect("data type should be fixed size")
-                * array_subset.num_elements_usize()
-        ];
-        // println!("{array_subset:?} {dim_sizes:?} {}", buf.len());
-        nc_var
-            .get_raw_values(
-                &mut buf,
-                dim_sizes
-                    .iter()
-                    .map(|l| netcdf::Extent::from(std::ops::RangeTo { end: *l }))
-                    .collect::<Vec<_>>(),
-            )
-            .unwrap();
+                * array_subset.num_elements_usize(),
+            "Size mismatch"
+        );
         // println!("Read netCDF done");
         bytes_read.fetch_add(buf.len(), Ordering::Relaxed);
 
@@ -156,26 +149,27 @@ fn get_netcdf_paths(path: &std::path::Path) -> Result<Vec<std::path::PathBuf>, s
     Ok(nc_files)
 }
 
-fn nc_vartype_to_zarr_datatype(nc_vartype: netcdf::types::VariableType) -> Option<String> {
-    use netcdf::types::{BasicType, VariableType};
-    match nc_vartype {
-        VariableType::Basic(nc_vartype) => Some(
-            match nc_vartype {
-                BasicType::Byte => "int8",
-                BasicType::Ubyte | BasicType::Char => "uint8",
-                BasicType::Short => "int16",
-                BasicType::Ushort => "uint16",
-                BasicType::Int => "int32",
-                BasicType::Uint => "uint32",
-                BasicType::Int64 => "int64",
-                BasicType::Uint64 => "uint64",
-                BasicType::Float => "float32",
-                BasicType::Double => "float64",
-            }
-            .to_string(),
-        ),
-        _ => None,
-    }
+fn nc_vartype_to_zarr_datatype(nc_vartype: netcdf::types::NcVariableType) -> Option<String> {
+    use netcdf::types::{FloatType, IntType, NcVariableType};
+    let typ = match nc_vartype {
+        NcVariableType::Char => "uint8",
+        NcVariableType::Int(x) => match x {
+            IntType::I8 => "int8",
+            IntType::U8 => "uint8",
+            IntType::I16 => "int16",
+            IntType::U16 => "uint16",
+            IntType::I32 => "int32",
+            IntType::U32 => "uint32",
+            IntType::I64 => "int64",
+            IntType::U64 => "uint64",
+        },
+        NcVariableType::Float(x) => match x {
+            FloatType::F32 => "float32",
+            FloatType::F64 => "float64",
+        },
+        _ => return None,
+    };
+    Some(typ.to_string())
 }
 
 fn main() {
