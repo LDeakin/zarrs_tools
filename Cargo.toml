@@ -35,12 +35,12 @@ futures = "0.3.29"
 half = { version = "2.4.0", features = ["num-traits"] }
 indicatif = { version = "0.17.7", features = ["rayon"] }
 itertools = "0.13.0"
-ndarray = { version = "0.15.6", features = ["rayon", "approx-0_5"] }
+ndarray = { version = "0.16.0", features = ["approx", "rayon"] }
 netcdf = { version = "0.10.2", optional = true, features = ["static"] }
 num-traits = "0.2.18"
 object_store = { version = "0.10.1", optional = true, features = ["http"] } # , "aws"
 ome_zarr_metadata = { version = "0.1.0", optional = true }
-opendal = { version = "0.48", default-features = false, features = ["services-fs", "services-http"] } # , "services-s3"
+opendal = { version = "0.49", default-features = false, features = ["services-fs", "services-http"] } # , "services-s3"
 rayon = "1.10.0"
 rayon_iter_concurrent_limit = "0.2.0"
 serde = { version = "1.0.197", features = ["derive"] }
@@ -49,7 +49,7 @@ sysinfo = { version = "0.31.0", default-features = false, features = ["system"] 
 tempfile = "3.10.1"
 thiserror = "1.0.57"
 tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
-zarrs = { version = "0.16.0", features = ["async", "opendal"] }
+zarrs = { version = "0.17.0-dev", features = ["async", "opendal"] }
 
 [[bin]]
 name = "zarrs_benchmark_read_sync"
@@ -111,6 +111,6 @@ strip = true
 # aarch64-apple-darwin = "macos-14"
 # x86_64-apple-darwin = "macos-12"
 
-# [patch.crates-io]
+[patch.crates-io]
 # zarrs = { path = "../zarrs" }
-# zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
+zarrs = { git = "https://github.com/LDeakin/zarrs.git" }

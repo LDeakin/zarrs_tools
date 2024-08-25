@@ -140,6 +140,7 @@ impl GuidedFilter {
 
         summed_area_table(&a_k, &mut sat);
         drop(a_k);
+        #[allow(deprecated)]
         let mut v_i = v_i.into_raw_vec();
         v_i.par_iter_mut()
             .zip(&subset.indices())
