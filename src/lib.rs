@@ -15,8 +15,8 @@ use zarrs::{
             CodecOptionsBuilder, Crc32cCodec, ShardingCodec,
         },
         concurrency::RecommendedConcurrency,
-        Array, ArrayBuilder, ArrayError, CodecChain, DataType, DimensionName, FillValue,
-        FillValueMetadata,
+        Array, ArrayBuilder, ArrayChunkCacheExt, ArrayError, ChunkCache, CodecChain, DataType,
+        DimensionName, FillValue, FillValueMetadata,
     },
     array_subset::ArraySubset,
     config::global_config,
@@ -595,6 +595,7 @@ pub fn do_reencode<
     validate: bool,
     concurrent_chunks: Option<usize>,
     progress_callback: &ProgressCallback,
+    cache: Option<&impl ChunkCache>,
 ) -> Result<(f32, f32, f32, usize), ArrayError> {
     let start = SystemTime::now();
     let bytes_decoded = Mutex::new(0);
@@ -637,8 +638,17 @@ pub fn do_reencode<
             try_for_each,
             |chunk_indices: Vec<u64>| {
                 let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
-                let bytes = progress
-                    .read(|| array_in.retrieve_array_subset_opt(&chunk_subset, &codec_options))?;
+                let bytes = progress.read(|| {
+                    if let Some(cache) = cache {
+                        array_in.retrieve_array_subset_opt_cached(
+                            cache,
+                            &chunk_subset,
+                            &codec_options,
+                        )
+                    } else {
+                        array_in.retrieve_array_subset_opt(&chunk_subset, &codec_options)
+                    }
+                })?;
                 *bytes_decoded.lock().unwrap() += bytes.size();
 
                 if validate {
@@ -649,6 +659,10 @@ pub fn do_reencode<
                         .retrieve_chunk_opt(&chunk_indices, &codec_options)
                         .unwrap();
                     assert!(bytes == bytes_out);
+                    // let bytes_in = array_in
+                    //     .retrieve_array_subset_opt(&chunk_subset, &codec_options)
+                    //     .unwrap();
+                    // assert!(bytes_in == bytes_out);
                 } else {
                     progress.write(|| {
                         array_out.store_chunk_opt(&chunk_indices, bytes, &codec_options)

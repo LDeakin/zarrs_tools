@@ -3,11 +3,14 @@ use std::sync::Arc;
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use zarrs::storage::{
-    storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
-    store::AsyncOpendalStore,
-    AsyncReadableListableStorage, ListableStorageTraits, ReadableListableStorage, StorePrefix,
-    WritableStorageTraits,
+use zarrs::{
+    array::ChunkCacheLruSizeLimit,
+    storage::{
+        storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
+        store::AsyncOpendalStore,
+        AsyncReadableListableStorage, ListableStorageTraits, ReadableListableStorage, StorePrefix,
+        WritableStorageTraits,
+    },
 };
 use zarrs_tools::{
     do_reencode, get_array_builder_reencode,
@@ -45,6 +48,10 @@ struct Args {
     /// Print verbose information, such as the array header.
     #[arg(long, short, default_value_t = false)]
     verbose: bool,
+
+    /// An optional chunk cache size (in bytes).
+    #[arg(long)]
+    cache_size: Option<u64>,
 }
 
 fn bar_style_run() -> ProgressStyle {
@@ -143,12 +150,15 @@ fn main() -> anyhow::Result<()> {
     let array_out = builder.build(storage_out.clone(), "/").unwrap();
     array_out.store_metadata().unwrap();
 
+    let chunk_cache = args.cache_size.map(ChunkCacheLruSizeLimit::new);
+
     let (duration, duration_read, duration_write, bytes_decoded) = do_reencode(
         &array_in,
         &array_out,
         args.validate,
         args.concurrent_chunks,
         &progress_callback,
+        chunk_cache.as_ref(),
     )?;
     bar.set_style(bar_style_finish());
     bar.finish_and_clear();
