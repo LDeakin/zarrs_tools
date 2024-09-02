@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{
         data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned, FillValue,
-        FillValueMetadata,
+        FillValueMetadataV3,
     },
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
@@ -32,7 +32,7 @@ pub struct EqualArguments {
     ///   float: 0.0 "NaN" "Infinity" "-Infinity"
     ///   r*: "[0, 255]"
     #[arg(allow_hyphen_values(true), value_parser = parse_fill_value)]
-    pub value: FillValueMetadata,
+    pub value: FillValueMetadataV3,
 }
 
 impl FilterArguments for EqualArguments {
@@ -52,12 +52,12 @@ impl FilterArguments for EqualArguments {
 }
 
 pub struct Equal {
-    value: FillValueMetadata,
+    value: FillValueMetadataV3,
     chunk_limit: Option<usize>,
 }
 
 impl Equal {
-    pub fn new(value: FillValueMetadata, chunk_limit: Option<usize>) -> Self {
+    pub fn new(value: FillValueMetadataV3, chunk_limit: Option<usize>) -> Self {
         Self { value, chunk_limit }
     }
 

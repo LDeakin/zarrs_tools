@@ -12,7 +12,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::{store, AsyncReadableStorage},
+    storage::AsyncReadableStorage,
 };
 
 /// Benchmark zarrs read throughput with the async API.
@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // opendal
         let builder = opendal::services::Http::default().endpoint(&args.path);
         let operator = opendal::Operator::new(builder)?.finish();
-        Arc::new(store::AsyncOpendalStore::new(operator))
+        Arc::new(zarrs_opendal::AsyncOpendalStore::new(operator))
 
         // object_store
         // let options = object_store::ClientOptions::new().with_allow_http(true);
@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // opendal
         let builder = opendal::services::Fs::default().root(&args.path);
         let operator = opendal::Operator::new(builder)?.finish();
-        Arc::new(store::AsyncOpendalStore::new(operator))
+        Arc::new(zarrs_opendal::AsyncOpendalStore::new(operator))
 
         // object_store
         // let store = object_store::local::LocalFileSystem::new_with_prefix(&args.path)?;

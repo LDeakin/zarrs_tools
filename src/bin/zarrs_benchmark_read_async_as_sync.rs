@@ -14,7 +14,7 @@ use zarrs::{
     config::global_config,
     storage::{
         storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
-        store, AsyncReadableStorage, ReadableStorage,
+        AsyncReadableStorage, ReadableStorage,
     },
 };
 
@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // opendal
         let builder = opendal::services::Http::default().endpoint(&args.path);
         let operator = opendal::Operator::new(builder)?.finish();
-        Arc::new(store::AsyncOpendalStore::new(operator))
+        Arc::new(zarrs_opendal::AsyncOpendalStore::new(operator))
 
         // object_store
         // let options = object_store::ClientOptions::new().with_allow_http(true);
@@ -70,7 +70,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // opendal
         let builder = opendal::services::Fs::default().root(&args.path);
         let operator = opendal::Operator::new(builder)?.finish();
-        Arc::new(store::AsyncOpendalStore::new(operator))
+        Arc::new(zarrs_opendal::AsyncOpendalStore::new(operator))
 
         // object_store
         // let store = object_store::local::LocalFileSystem::new_with_prefix(&args.path)?;

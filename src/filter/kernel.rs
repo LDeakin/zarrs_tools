@@ -1,5 +1,6 @@
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use zarrs::array::{ravel_indices, unravel_index, UnsafeCellSlice};
+use unsafe_cell_slice::UnsafeCellSlice;
+use zarrs::array::{ravel_indices, unravel_index};
 
 pub fn get_axis_start_index(axis: usize, index: usize, shape: &[usize]) -> usize {
     let shape1 = shape
@@ -31,7 +32,7 @@ pub fn apply_1d_kernel(
     if stride == 1 {
         let axis_end_inc = axis_len - 1;
         output_indices.into_par_iter().for_each(|j| {
-            let output_slice = unsafe { output_slice.get() };
+            let output_slice = unsafe { output_slice.as_mut_slice() };
             let axis_start_index = get_axis_start_index(dim, j, shape);
             (0..axis_len).for_each(|k| {
                 let sum = kernel
@@ -50,7 +51,7 @@ pub fn apply_1d_kernel(
         });
     } else {
         output_indices.into_par_iter().for_each(|j| {
-            let output_slice = unsafe { output_slice.get() };
+            let output_slice = unsafe { output_slice.as_mut_slice() };
             let axis_start_index = get_axis_start_index(dim, j, shape);
             let axis_end_inc = (axis_len - 1) * stride;
             (0..axis_len).for_each(|k| {
@@ -84,7 +85,7 @@ pub fn apply_1d_triangle_filter(
     let stride = input.strides()[axis] as usize;
     let axis_len = shape[axis];
     (0..input.len() / axis_len).into_par_iter().for_each(|j| {
-        let output_slice = unsafe { output_slice.get() };
+        let output_slice = unsafe { output_slice.as_mut_slice() };
         let axis_start = get_axis_start_index(axis, j, shape);
         (0..axis_len).for_each(|k| {
             let prev = axis_start + k.saturating_sub(1) * stride;
@@ -114,7 +115,7 @@ pub fn apply_1d_difference_operator(
     let stride = input.strides()[axis] as usize;
     let axis_len = shape[axis];
     (0..input.len() / axis_len).into_par_iter().for_each(|j| {
-        let output_slice = unsafe { output_slice.get() };
+        let output_slice = unsafe { output_slice.as_mut_slice() };
         let axis_start = get_axis_start_index(axis, j, shape);
         (0..axis_len).for_each(|k| {
             let prev = axis_start + k.saturating_sub(1) * stride;

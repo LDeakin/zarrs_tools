@@ -1,7 +1,10 @@
 #![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md"))]
 #![doc(hidden)]
 
-use std::{sync::Mutex, time::SystemTime};
+use std::{
+    sync::{Arc, Mutex},
+    time::SystemTime,
+};
 
 use clap::Parser;
 use progress::{Progress, ProgressCallback};
@@ -15,12 +18,14 @@ use zarrs::{
             CodecOptionsBuilder, Crc32cCodec, ShardingCodec,
         },
         concurrency::RecommendedConcurrency,
-        Array, ArrayBuilder, ArrayChunkCacheExt, ArrayError, ChunkCache, CodecChain, DataType,
-        DimensionName, FillValue, FillValueMetadata,
+        Array, ArrayBuilder, ArrayChunkCacheExt, ArrayError, ChunkCacheDecodedLruChunkLimit,
+        ChunkCacheDecodedLruChunkLimitThreadLocal, ChunkCacheDecodedLruSizeLimit,
+        ChunkCacheDecodedLruSizeLimitThreadLocal, CodecChain, DataType, DimensionName, FillValue,
+        FillValueMetadataV3,
     },
     array_subset::ArraySubset,
     config::global_config,
-    metadata::Metadata,
+    metadata::v3::{array::data_type::DataTypeMetadataV3, MetadataV3},
     storage::{ReadableStorageTraits, ReadableWritableStorageTraits},
 };
 
@@ -40,7 +45,7 @@ pub struct ZarrEncodingArgs {
     ///   float: 0.0 "NaN" "Infinity" "-Infinity"
     ///   r*: "[0, 255]"
     #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true), value_parser = parse_fill_value)]
-    pub fill_value: FillValueMetadata,
+    pub fill_value: FillValueMetadataV3,
 
     /// The chunk key encoding separator. Either . or /.
     #[arg(long, default_value_t = '/')]
@@ -103,11 +108,11 @@ pub struct ZarrEncodingArgs {
     pub attributes: Option<String>,
 }
 
-fn parse_data_type(data_type: &str) -> std::io::Result<Metadata> {
-    Ok(Metadata::new(data_type))
+fn parse_data_type(data_type: &str) -> std::io::Result<MetadataV3> {
+    Ok(MetadataV3::new(data_type))
 }
 
-fn parse_fill_value(fill_value: &str) -> std::io::Result<FillValueMetadata> {
+fn parse_fill_value(fill_value: &str) -> std::io::Result<FillValueMetadataV3> {
     serde_json::from_str(fill_value)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
 }
@@ -148,7 +153,7 @@ pub fn get_array_builder(
     let array_to_array_codecs = encoding_args.array_to_array_codecs.as_ref().map_or_else(
         Vec::new,
         |array_to_array_codecs| {
-            let metadatas: Vec<Metadata> =
+            let metadatas: Vec<MetadataV3> =
                 serde_json::from_str(array_to_array_codecs.as_str()).unwrap();
             let mut codecs = Vec::with_capacity(metadatas.len());
             for metadata in metadatas {
@@ -164,11 +169,11 @@ pub fn get_array_builder(
     // Get array to bytes codec
     let array_to_bytes_codec = encoding_args.array_to_bytes_codec.as_ref().map_or_else(
         || {
-            let codec: Box<dyn ArrayToBytesCodecTraits> = Box::<BytesCodec>::default();
+            let codec: Arc<dyn ArrayToBytesCodecTraits> = Arc::<BytesCodec>::default();
             codec
         },
         |array_codec| {
-            let metadata = Metadata::try_from(array_codec.as_str()).unwrap();
+            let metadata = MetadataV3::try_from(array_codec.as_str()).unwrap();
             match Codec::from_metadata(&metadata).unwrap() {
                 Codec::ArrayToBytes(codec) => codec,
                 _ => panic!("Must be a arrayc to array codec"),
@@ -180,7 +185,7 @@ pub fn get_array_builder(
     let bytes_to_bytes_codecs = encoding_args.bytes_to_bytes_codecs.as_ref().map_or_else(
         Vec::new,
         |bytes_to_bytes_codecs| {
-            let metadatas: Vec<Metadata> =
+            let metadatas: Vec<MetadataV3> =
                 serde_json::from_str(bytes_to_bytes_codecs.as_str()).unwrap();
             let mut codecs = Vec::with_capacity(metadatas.len());
             for metadata in metadatas {
@@ -215,15 +220,15 @@ pub fn get_array_builder(
     if shard_shape.is_some() {
         let index_codecs = CodecChain::new(
             vec![],
-            Box::<BytesCodec>::default(),
-            vec![Box::new(Crc32cCodec::new())],
+            Arc::<BytesCodec>::default(),
+            vec![Arc::new(Crc32cCodec::new())],
         );
         let inner_codecs = CodecChain::new(
             array_to_array_codecs,
             array_to_bytes_codec,
             bytes_to_bytes_codecs,
         );
-        array_builder.array_to_bytes_codec(Box::new(ShardingCodec::new(
+        array_builder.array_to_bytes_codec(Arc::new(ShardingCodec::new(
             chunk_shape.try_into().unwrap(),
             inner_codecs,
             index_codecs,
@@ -252,7 +257,7 @@ pub struct ZarrReencodingArgs {
     ///   - r* (raw bits, where * is a multiple of 8)
     #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(short, long, verbatim_doc_comment, value_parser = parse_data_type)]
-    pub data_type: Option<Metadata>,
+    pub data_type: Option<DataTypeMetadataV3>,
 
     /// Fill value. See <https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#fill-value>
     ///
@@ -264,7 +269,7 @@ pub struct ZarrReencodingArgs {
     ///   r*: "[0, 255]"
     #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(short, long, verbatim_doc_comment, allow_hyphen_values(true), value_parser = parse_fill_value)]
-    pub fill_value: Option<FillValueMetadata>,
+    pub fill_value: Option<FillValueMetadataV3>,
 
     /// The chunk key encoding separator. Either . or /.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -399,7 +404,7 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
             .iter()
             .map(|i| i.get())
             .collect::<Vec<_>>();
-        let codecs: Vec<Metadata> =
+        let codecs: Vec<MetadataV3> =
             serde_json::from_value(sharding_configuration["codecs"].clone()).unwrap();
         let codec_chain = CodecChain::from_metadata(&codecs).unwrap();
         let array_to_array_codecs = codec_chain.array_to_array_codecs().to_vec();
@@ -468,7 +473,7 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
     let array_to_array_codecs = encoding_args.array_to_array_codecs.clone().map_or(
         array_to_array_codecs,
         |array_to_array_codecs| {
-            let metadatas: Vec<Metadata> =
+            let metadatas: Vec<MetadataV3> =
                 serde_json::from_str(array_to_array_codecs.as_str()).unwrap();
             let mut codecs = Vec::with_capacity(metadatas.len());
             for metadata in metadatas {
@@ -485,7 +490,7 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
     let array_to_bytes_codec = encoding_args.array_to_bytes_codec.as_ref().map_or(
         array_array_to_bytes_codec,
         |array_codec| {
-            let metadata = Metadata::try_from(array_codec.as_str()).unwrap();
+            let metadata = MetadataV3::try_from(array_codec.as_str()).unwrap();
             match Codec::from_metadata(&metadata).unwrap() {
                 Codec::ArrayToBytes(codec) => codec,
                 _ => panic!("Must be a arrayc to array codec"),
@@ -497,7 +502,7 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
     let bytes_to_bytes_codecs = encoding_args.bytes_to_bytes_codecs.as_ref().map_or(
         bytes_to_bytes_codecs,
         |bytes_to_bytes_codecs| {
-            let metadatas: Vec<Metadata> =
+            let metadatas: Vec<MetadataV3> =
                 serde_json::from_str(bytes_to_bytes_codecs.as_str()).unwrap();
             let mut codecs = Vec::with_capacity(metadatas.len());
             for metadata in metadatas {
@@ -561,8 +566,8 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
         array_builder.chunk_grid(shard_shape.try_into().unwrap());
         let index_codecs = CodecChain::new(
             vec![],
-            Box::<BytesCodec>::default(),
-            vec![Box::new(Crc32cCodec::new())],
+            Arc::<BytesCodec>::default(),
+            vec![Arc::new(Crc32cCodec::new())],
         );
         let inner_codecs = CodecChain::new(
             array_to_array_codecs,
@@ -570,7 +575,7 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
             bytes_to_bytes_codecs,
         );
         array_builder.array_to_array_codecs(vec![]);
-        array_builder.array_to_bytes_codec(Box::new(ShardingCodec::new(
+        array_builder.array_to_bytes_codec(Arc::new(ShardingCodec::new(
             chunk_shape.try_into().unwrap(),
             inner_codecs,
             index_codecs,
@@ -586,6 +591,21 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
     array_builder
 }
 
+pub enum CacheSize {
+    None,
+    SizeTotal(u64),
+    SizePerThread(u64),
+    ChunksTotal(u64),
+    ChunksPerThread(u64),
+}
+
+pub enum Cache {
+    SizeDefault(ChunkCacheDecodedLruSizeLimit),
+    SizeThreadLocal(ChunkCacheDecodedLruSizeLimitThreadLocal),
+    ChunksDefault(ChunkCacheDecodedLruChunkLimit),
+    ChunksThreadLocal(ChunkCacheDecodedLruChunkLimitThreadLocal),
+}
+
 pub fn do_reencode<
     TStorageIn: ReadableStorageTraits + ?Sized + 'static,
     TStorageOut: ReadableWritableStorageTraits + ?Sized + 'static,
@@ -595,10 +615,26 @@ pub fn do_reencode<
     validate: bool,
     concurrent_chunks: Option<usize>,
     progress_callback: &ProgressCallback,
-    cache: Option<&impl ChunkCache>,
+    cache_size: CacheSize,
 ) -> Result<(f32, f32, f32, usize), ArrayError> {
     let start = SystemTime::now();
     let bytes_decoded = Mutex::new(0);
+
+    let cache = match cache_size {
+        CacheSize::None => None,
+        CacheSize::SizeTotal(size) => {
+            Some(Cache::SizeDefault(ChunkCacheDecodedLruSizeLimit::new(size)))
+        }
+        CacheSize::SizePerThread(size) => Some(Cache::SizeThreadLocal(
+            ChunkCacheDecodedLruSizeLimitThreadLocal::new(size),
+        )),
+        CacheSize::ChunksTotal(chunks) => Some(Cache::ChunksDefault(
+            ChunkCacheDecodedLruChunkLimit::new(chunks),
+        )),
+        CacheSize::ChunksPerThread(chunks) => Some(Cache::ChunksThreadLocal(
+            ChunkCacheDecodedLruChunkLimitThreadLocal::new(chunks),
+        )),
+    };
 
     let chunk_representation = array_out
         .chunk_array_representation(&vec![0; array_out.chunk_grid().dimensionality()])
@@ -639,12 +675,32 @@ pub fn do_reencode<
             |chunk_indices: Vec<u64>| {
                 let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
                 let bytes = progress.read(|| {
-                    if let Some(cache) = cache {
-                        array_in.retrieve_array_subset_opt_cached(
-                            cache,
-                            &chunk_subset,
-                            &codec_options,
-                        )
+                    if let Some(cache) = &cache {
+                        match cache {
+                            Cache::SizeDefault(cache) => array_in.retrieve_array_subset_opt_cached(
+                                cache,
+                                &chunk_subset,
+                                &codec_options,
+                            ),
+                            Cache::SizeThreadLocal(cache) => array_in
+                                .retrieve_array_subset_opt_cached(
+                                    cache,
+                                    &chunk_subset,
+                                    &codec_options,
+                                ),
+                            Cache::ChunksDefault(cache) => array_in
+                                .retrieve_array_subset_opt_cached(
+                                    cache,
+                                    &chunk_subset,
+                                    &codec_options,
+                                ),
+                            Cache::ChunksThreadLocal(cache) => array_in
+                                .retrieve_array_subset_opt_cached(
+                                    cache,
+                                    &chunk_subset,
+                                    &codec_options,
+                                ),
+                        }
                     } else {
                         array_in.retrieve_array_subset_opt(&chunk_subset, &codec_options)
                     }
