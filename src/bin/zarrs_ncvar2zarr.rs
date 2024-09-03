@@ -10,9 +10,8 @@ use std::{
 use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
 use zarrs::{
-    array::{codec::CodecOptionsBuilder, Array, DimensionName},
+    array::{codec::CodecOptionsBuilder, Array, DataType, DimensionName},
     array_subset::ArraySubset,
-    metadata::Metadata,
     storage::{
         store::{FilesystemStore, MemoryStore},
         ReadableWritableListableStorage, ReadableWritableStorageTraits, StorePrefix,
@@ -149,27 +148,27 @@ fn get_netcdf_paths(path: &std::path::Path) -> Result<Vec<std::path::PathBuf>, s
     Ok(nc_files)
 }
 
-fn nc_vartype_to_zarr_datatype(nc_vartype: netcdf::types::NcVariableType) -> Option<String> {
+fn nc_vartype_to_zarr_datatype(nc_vartype: netcdf::types::NcVariableType) -> Option<DataType> {
     use netcdf::types::{FloatType, IntType, NcVariableType};
-    let typ = match nc_vartype {
-        NcVariableType::Char => "uint8",
+    let data_type = match nc_vartype {
+        NcVariableType::Char => DataType::UInt8,
         NcVariableType::Int(x) => match x {
-            IntType::I8 => "int8",
-            IntType::U8 => "uint8",
-            IntType::I16 => "int16",
-            IntType::U16 => "uint16",
-            IntType::I32 => "int32",
-            IntType::U32 => "uint32",
-            IntType::I64 => "int64",
-            IntType::U64 => "uint64",
+            IntType::I8 => DataType::Int8,
+            IntType::U8 => DataType::UInt8,
+            IntType::I16 => DataType::Int16,
+            IntType::U16 => DataType::UInt16,
+            IntType::I32 => DataType::Int32,
+            IntType::U32 => DataType::UInt32,
+            IntType::I64 => DataType::Int64,
+            IntType::U64 => DataType::UInt64,
         },
         NcVariableType::Float(x) => match x {
-            FloatType::F32 => "float32",
-            FloatType::F64 => "float64",
+            FloatType::F32 => DataType::Float32,
+            FloatType::F64 => DataType::Float64,
         },
         _ => return None,
     };
-    Some(typ.to_string())
+    Some(data_type)
 }
 
 fn main() {
@@ -192,7 +191,7 @@ fn main() {
     //  - dimension names
     let mut array_shape: Option<Vec<u64>> = None;
     let mut dimension_names: Option<Vec<String>> = None;
-    let mut datatype: Option<String> = None;
+    let mut datatype: Option<DataType> = None;
     let mut offset: u64 = 0;
     let mut offsets = Vec::with_capacity(nc_paths.len());
     for nc_path in &nc_paths {
@@ -235,7 +234,6 @@ fn main() {
     let dimension_names: Option<Vec<DimensionName>> =
         Some(dimension_names.iter().map(DimensionName::new).collect());
     let datatype = datatype.unwrap();
-    let data_type = zarrs::array::DataType::from_metadata(&Metadata::new(&datatype)).unwrap();
     // println!("Shape: {array_shape:?}");
     // println!("Datatype: {datatype}");
     // println!(
@@ -257,7 +255,7 @@ fn main() {
     };
 
     // Create array
-    let array_builder = get_array_builder(&cli.encoding, &array_shape, data_type, dimension_names);
+    let array_builder = get_array_builder(&cli.encoding, &array_shape, datatype, dimension_names);
     let array = array_builder.build(store.clone(), "/").unwrap();
 
     // Erase existing data/metadata

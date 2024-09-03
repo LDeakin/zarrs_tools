@@ -5,9 +5,9 @@ use rayon::current_num_threads;
 use serde::Serialize;
 use serde_json::Number;
 use zarrs::{
-    array::{Array, ArrayMetadataOptions, DimensionName, FillValueMetadata},
+    array::{Array, ArrayMetadataOptions, DimensionName, FillValueMetadataV3},
     group::{Group, GroupMetadataOptions},
-    metadata::Metadata,
+    metadata::v3::array::data_type::DataTypeMetadataV3,
     node::{Node, NodeMetadata},
     storage::store::FilesystemStore,
 };
@@ -73,13 +73,13 @@ fn main() -> std::process::ExitCode {
 
 fn group_metadata_options_v3() -> GroupMetadataOptions {
     let mut metadata_options = GroupMetadataOptions::default();
-    metadata_options.set_metadata_convert_version(zarrs::metadata::MetadataConvertVersion::V3);
+    metadata_options.set_metadata_convert_version(zarrs::config::MetadataConvertVersion::V3);
     metadata_options
 }
 
 fn array_metadata_options_v3() -> ArrayMetadataOptions {
     let mut metadata_options = ArrayMetadataOptions::default();
-    metadata_options.set_metadata_convert_version(zarrs::metadata::MetadataConvertVersion::V3);
+    metadata_options.set_metadata_convert_version(zarrs::config::MetadataConvertVersion::V3);
     metadata_options.set_include_zarrs_metadata(false);
     metadata_options
 }
@@ -139,7 +139,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             InfoCommand::DataType => {
                 #[derive(Serialize)]
                 struct DataType {
-                    data_type: Metadata,
+                    data_type: DataTypeMetadataV3,
                 }
                 println!(
                     "{}",
@@ -151,7 +151,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             InfoCommand::FillValue => {
                 #[derive(Serialize)]
                 struct FillValue {
-                    fill_value: FillValueMetadata,
+                    fill_value: FillValueMetadataV3,
                 }
                 println!(
                     "{}",

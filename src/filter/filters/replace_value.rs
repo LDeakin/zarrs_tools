@@ -3,7 +3,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType, FillValueMetadata},
+    array::{data_type::UnsupportedDataTypeError, Array, DataType, FillValueMetadataV3},
     array_subset::ArraySubset,
     storage::store::FilesystemStore,
 };
@@ -29,7 +29,7 @@ pub struct ReplaceValueArguments {
     ///   float: 0.0 "NaN" "Infinity" "-Infinity"
     ///   r*: "[0, 255]"
     #[arg(allow_hyphen_values(true), value_parser = parse_fill_value)]
-    pub value: FillValueMetadata,
+    pub value: FillValueMetadataV3,
     /// The replacement value.
     ///
     /// The value must be compatible with the data type.
@@ -39,7 +39,7 @@ pub struct ReplaceValueArguments {
     ///   float: 0.0 "NaN" "Infinity" "-Infinity"
     ///   r*: "[0, 255]"
     #[arg(allow_hyphen_values(true), value_parser = parse_fill_value)]
-    pub replace: FillValueMetadata,
+    pub replace: FillValueMetadataV3,
 }
 
 impl FilterArguments for ReplaceValueArguments {
@@ -60,15 +60,15 @@ impl FilterArguments for ReplaceValueArguments {
 }
 
 pub struct ReplaceValue {
-    value: FillValueMetadata,
-    replace: FillValueMetadata,
+    value: FillValueMetadataV3,
+    replace: FillValueMetadataV3,
     chunk_limit: Option<usize>,
 }
 
 impl ReplaceValue {
     pub fn new(
-        value: FillValueMetadata,
-        replace: FillValueMetadata,
+        value: FillValueMetadataV3,
+        replace: FillValueMetadataV3,
         chunk_limit: Option<usize>,
     ) -> Self {
         Self {

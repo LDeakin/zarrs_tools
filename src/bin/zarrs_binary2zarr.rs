@@ -7,16 +7,13 @@ use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
 use zarrs::{
     array::{
-        codec::{
-            array_to_bytes::bytes::{reverse_endianness, Endianness},
-            ArrayCodecTraits, CodecOptionsBuilder,
-        },
+        codec::{array_to_bytes::bytes::reverse_endianness, ArrayCodecTraits, CodecOptionsBuilder},
         concurrency::RecommendedConcurrency,
-        Array, DimensionName,
+        Array, DimensionName, Endianness,
     },
     array_subset::ArraySubset,
     config::global_config,
-    metadata::Metadata,
+    metadata::v3::{array::data_type::DataTypeMetadataV3, MetadataV3},
     storage::{store::FilesystemStore, ListableStorageTraits},
 };
 
@@ -45,8 +42,8 @@ struct Cli {
     ///   float32 float64 float16 bfloat16
     ///   complex64 complex128
     ///   r8 r16 r24 r32 r64 (r* where * is a multiple of 8)
-    #[arg(short, long, verbatim_doc_comment)]
-    data_type: String,
+    #[arg(short, long, verbatim_doc_comment, value_parser = parse_data_type)]
+    data_type: DataTypeMetadataV3,
 
     /// Array shape. A comma separated list of the sizes of each array dimension.
     #[arg(short, long, required = true, value_delimiter = ',')]
@@ -61,6 +58,10 @@ struct Cli {
     // /// The path to a binary file or a directory of binary files.
     // #[arg(short, long, num_args = 1..)]
     // file: Vec<PathBuf>,
+}
+
+fn parse_data_type(data_type: &str) -> std::io::Result<MetadataV3> {
+    Ok(MetadataV3::new(data_type))
 }
 
 fn parse_endianness(endianness: &str) -> std::io::Result<Endianness> {
@@ -174,7 +175,7 @@ fn main() {
     let cli = Cli::parse();
 
     // Get data type
-    let data_type = zarrs::array::DataType::from_metadata(&Metadata::new(&cli.data_type)).unwrap();
+    let data_type = zarrs::array::DataType::from_metadata(&cli.data_type).unwrap();
 
     // Create storage
     let path_out = cli.out.as_path();

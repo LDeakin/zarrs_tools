@@ -3,19 +3,17 @@ use std::sync::Arc;
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use zarrs::{
-    array::ChunkCacheLruSizeLimit,
-    storage::{
-        storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
-        store::AsyncOpendalStore,
-        AsyncReadableListableStorage, ListableStorageTraits, ReadableListableStorage, StorePrefix,
-        WritableStorageTraits,
-    },
+use zarrs::storage::{
+    storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
+    store::FilesystemStoreOptions,
+    AsyncReadableListableStorage, ListableStorageTraits, ReadableListableStorage, StorePrefix,
+    WritableStorageTraits,
 };
+use zarrs_opendal::AsyncOpendalStore;
 use zarrs_tools::{
     do_reencode, get_array_builder_reencode,
     progress::{ProgressCallback, ProgressStats},
-    ZarrReencodingArgs,
+    CacheSize, ZarrReencodingArgs,
 };
 
 /// Reencode a Zarr V3 array.
@@ -52,6 +50,18 @@ struct Args {
     /// An optional chunk cache size (in bytes).
     #[arg(long)]
     cache_size: Option<u64>,
+
+    /// An optional chunk cache size (in chunks).
+    #[arg(long)]
+    cache_chunks: Option<u64>,
+
+    /// An optional per-thread chunk cache size (in bytes).
+    #[arg(long)]
+    cache_size_thread: Option<u64>,
+
+    /// An optional per-thread chunk cache size (in chunks).
+    #[arg(long)]
+    cache_chunks_thread: Option<u64>,
 }
 
 fn bar_style_run() -> ProgressStyle {
@@ -120,7 +130,12 @@ fn get_storage(path: &str) -> anyhow::Result<ReadableListableStorage> {
     //     let operator = opendal::Operator::new(builder)?.finish();
     //     Arc::new(AsyncOpendalStore::new(operator))
     } else {
-        Ok(Arc::new(zarrs::storage::store::FilesystemStore::new(path)?))
+        Ok(Arc::new(
+            zarrs::storage::store::FilesystemStore::new_with_options(
+                path,
+                FilesystemStoreOptions::default().direct_io(true).clone(),
+            )?,
+        ))
     }
 }
 
@@ -150,7 +165,17 @@ fn main() -> anyhow::Result<()> {
     let array_out = builder.build(storage_out.clone(), "/").unwrap();
     array_out.store_metadata().unwrap();
 
-    let chunk_cache = args.cache_size.map(ChunkCacheLruSizeLimit::new);
+    let cache_size = if let Some(cache_size_thread) = args.cache_size_thread {
+        CacheSize::SizePerThread(cache_size_thread)
+    } else if let Some(cache_size) = args.cache_size {
+        CacheSize::SizeTotal(cache_size)
+    } else if let Some(cache_chunks_thread) = args.cache_chunks_thread {
+        CacheSize::ChunksPerThread(cache_chunks_thread)
+    } else if let Some(cache_chunks) = args.cache_chunks {
+        CacheSize::ChunksTotal(cache_chunks)
+    } else {
+        CacheSize::None
+    };
 
     let (duration, duration_read, duration_write, bytes_decoded) = do_reencode(
         &array_in,
@@ -158,7 +183,7 @@ fn main() -> anyhow::Result<()> {
         args.validate,
         args.concurrent_chunks,
         &progress_callback,
-        chunk_cache.as_ref(),
+        cache_size,
     )?;
     bar.set_style(bar_style_finish());
     bar.finish_and_clear();
