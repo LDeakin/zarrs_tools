@@ -13,10 +13,11 @@ use zarrs::{
     array::{codec::CodecOptionsBuilder, Array, DataType, DimensionName},
     array_subset::ArraySubset,
     storage::{
-        store::{FilesystemStore, MemoryStore},
-        ReadableWritableListableStorage, ReadableWritableStorageTraits, StorePrefix,
+        store::MemoryStore, ReadableWritableListableStorage, ReadableWritableStorageTraits,
+        StorePrefix,
     },
 };
+use zarrs_filesystem::FilesystemStore;
 
 /// Convert a netCDF variable to a Zarr V3 array.
 #[derive(Parser)]

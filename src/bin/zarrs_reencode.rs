@@ -5,10 +5,10 @@ use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use zarrs::storage::{
     storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
-    store::FilesystemStoreOptions,
     AsyncReadableListableStorage, ListableStorageTraits, ReadableListableStorage, StorePrefix,
     WritableStorageTraits,
 };
+use zarrs_filesystem::{FilesystemStore, FilesystemStoreOptions};
 use zarrs_opendal::AsyncOpendalStore;
 use zarrs_tools::{
     do_reencode, get_array_builder_reencode,
@@ -130,12 +130,10 @@ fn get_storage(path: &str) -> anyhow::Result<ReadableListableStorage> {
     //     let operator = opendal::Operator::new(builder)?.finish();
     //     Arc::new(AsyncOpendalStore::new(operator))
     } else {
-        Ok(Arc::new(
-            zarrs::storage::store::FilesystemStore::new_with_options(
-                path,
-                FilesystemStoreOptions::default().direct_io(true).clone(),
-            )?,
-        ))
+        Ok(Arc::new(FilesystemStore::new_with_options(
+            path,
+            FilesystemStoreOptions::default().direct_io(true).clone(),
+        )?))
     }
 }
 
@@ -158,8 +156,7 @@ fn main() -> anyhow::Result<()> {
     let progress_callback = |stats: ProgressStats| progress_callback(stats, &bar);
     let progress_callback = ProgressCallback::new(&progress_callback);
 
-    let storage_out =
-        Arc::new(zarrs::storage::store::FilesystemStore::new(args.path_out.clone()).unwrap());
+    let storage_out = Arc::new(FilesystemStore::new(args.path_out.clone()).unwrap());
     storage_out.erase_prefix(&StorePrefix::root()).unwrap();
     let builder = get_array_builder_reencode(&args.encoding, &array_in, None);
     let array_out = builder.build(storage_out.clone(), "/").unwrap();

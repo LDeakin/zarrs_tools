@@ -9,8 +9,8 @@ use zarrs::{
     group::{Group, GroupMetadataOptions},
     metadata::v3::array::data_type::DataTypeMetadataV3,
     node::{Node, NodeMetadata},
-    storage::store::FilesystemStore,
 };
+use zarrs_filesystem::FilesystemStore;
 
 /// Get information about a Zarr V3 array as JSON.
 #[derive(Parser)]

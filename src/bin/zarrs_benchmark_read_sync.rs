@@ -12,8 +12,9 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    storage::{store, ReadableStorage},
+    storage::ReadableStorage,
 };
+use zarrs_filesystem::FilesystemStore;
 
 /// Benchmark zarrs read throughput with the sync API.
 #[derive(Parser, Debug)]
@@ -49,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let storage: ReadableStorage = Arc::new(store::OpendalStore::new(operator));
 
     // Default filesystem store
-    let storage: ReadableStorage = Arc::new(store::FilesystemStore::new(args.path.clone())?);
+    let storage: ReadableStorage = Arc::new(FilesystemStore::new(args.path.clone())?);
 
     let array = zarrs::array::Array::open(storage.clone(), "/")?;
     // println!("{:#?}", array.metadata());

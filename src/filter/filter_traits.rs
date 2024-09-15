@@ -1,7 +1,5 @@
-use zarrs::{
-    array::{Array, ArrayBuilder, ArrayShape, ChunkRepresentation, DataType, FillValue},
-    storage::store::FilesystemStore,
-};
+use zarrs::array::{Array, ArrayBuilder, ArrayShape, ChunkRepresentation, DataType, FillValue};
+use zarrs_filesystem::FilesystemStore;
 
 use crate::{
     convert_fill_value, get_array_builder_reencode, progress::ProgressCallback, ZarrReencodingArgs,

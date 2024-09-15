@@ -19,8 +19,9 @@ use zarrs::{
     array::{Array, ArrayCodecTraits, ArrayMetadata, ChunkRepresentation, Element, ElementOwned},
     array_subset::ArraySubset,
     group::{Group, GroupMetadata, GroupMetadataV3},
-    storage::{store::FilesystemStore, StorePrefix, WritableStorageTraits},
+    storage::{StorePrefix, WritableStorageTraits},
 };
+use zarrs_filesystem::FilesystemStore;
 use zarrs_tools::{
     filter::{
         filters::{downsample::Downsample, gaussian::Gaussian},

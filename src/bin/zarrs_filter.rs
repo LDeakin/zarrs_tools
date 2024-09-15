@@ -11,8 +11,9 @@ use itertools::Itertools;
 use tempfile::TempDir;
 use zarrs::{
     array::{Array, ArrayBuilder, ArrayCreateError},
-    storage::{store::FilesystemStore, StorageError, StorePrefix, WritableStorageTraits},
+    storage::{StorageError, StorePrefix, WritableStorageTraits},
 };
+use zarrs_filesystem::FilesystemStore;
 use zarrs_tools::{
     filter::{
         FilterCommand, FilterCommandTraits, FilterError, FilterTraits, PathOrIdentifier,

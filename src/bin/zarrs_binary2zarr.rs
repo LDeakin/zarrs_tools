@@ -14,8 +14,9 @@ use zarrs::{
     array_subset::ArraySubset,
     config::global_config,
     metadata::v3::{array::data_type::DataTypeMetadataV3, MetadataV3},
-    storage::{store::FilesystemStore, ListableStorageTraits},
+    storage::ListableStorageTraits,
 };
+use zarrs_filesystem::FilesystemStore;
 
 /// Convert an N-dimensional binary array from standard input to a Zarr V3 array.
 #[derive(Parser)]
