@@ -108,8 +108,9 @@ pub struct ZarrEncodingArgs {
     pub attributes: Option<String>,
 }
 
-fn parse_data_type(data_type: &str) -> std::io::Result<MetadataV3> {
-    Ok(MetadataV3::new(data_type))
+fn parse_data_type(data_type: &str) -> std::io::Result<DataTypeMetadataV3> {
+    serde_json::from_value(serde_json::Value::String(data_type.to_string()))
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
 }
 
 fn parse_fill_value(fill_value: &str) -> std::io::Result<FillValueMetadataV3> {
