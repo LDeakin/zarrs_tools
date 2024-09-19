@@ -164,13 +164,12 @@ checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
 name = "backon"
-version = "0.4.4"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d67782c3f868daa71d3533538e98a8e13713231969def7536e8039606fc46bf0"
+checksum = "e4fa97bb310c33c811334143cf64c5bb2b7b3c06e453db6b095d7061eff8f113"
 dependencies = [
  "fastrand",
- "futures-core",
- "pin-project",
+ "gloo-timers",
  "tokio",
 ]
 
@@ -251,15 +250,15 @@ dependencies = [
 
 [[package]]
 name = "bytes"
-version = "1.7.1"
+version = "1.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8318a53db07bb3f8dca91a600466bdb3f2eaadeedfdbcf02e1accbad9271ba50"
+checksum = "428d9aa8fbc0670b7b8d6030a7fadd0f86151cae55e4dbbece15f3780a3dfaf3"
 
 [[package]]
 name = "cc"
-version = "1.1.19"
+version = "1.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d74707dde2ba56f86ae90effb3b43ddd369504387e718014de010cec7959800"
+checksum = "07b1695e2c7e8fc85310cde85aeaab7e3097f593c91d209d3f9df76c928100f0"
 dependencies = [
  "jobserver",
  "libc",
@@ -668,6 +667,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32085ea23f3234fc7846555e85283ba4de91e21016dc0455a16286d87a292d64"
 
 [[package]]
+name = "gloo-timers"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbb143cf96099802033e0d4f4963b19fd2e0b728bcf076cd9cf7f6634f092994"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "half"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -810,9 +821,9 @@ dependencies = [
 
 [[package]]
 name = "iana-time-zone"
-version = "0.1.60"
+version = "0.1.61"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7ffbb5a1b541ea2561f8c41c087286cc091e21e556a4f09a8f6cbf17b69b141"
+checksum = "235e081f3925a06703c2d0117ea8b91f042756fd6e7a6e5d901e8ca1a996b220"
 dependencies = [
  "android_system_properties",
  "core-foundation-sys",
@@ -1276,15 +1287,15 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.20.0"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33ea5043e58958ee56f3e15a90aee535795cd7dfd319846288d93c5b57d85cbe"
+checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
 name = "opendal"
-version = "0.49.2"
+version = "0.50.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b04d09b9822c2f75a1d2fc513a2c1279c70e91e7407936fffdf6a6976ec530a"
+checksum = "36e44fc43be9ffe18dad3e3ef9d61c1ae01991ee6f1c8c026978c35777a711bf"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1963,9 +1974,9 @@ checksum = "e91b56cd4cadaeb79bbf1a5645f6b4f8dc5bde8834ad5894a8db35fda9efa1fe"
 
 [[package]]
 name = "unicode-normalization"
-version = "0.1.23"
+version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a56d1686db2308d901306f92a263857ef59ea39678a5458e7cb17f01415101f5"
+checksum = "5033c97c4262335cded6d6fc3e5c18ab755e1a3dc96376350f3d8e9f009ad956"
 dependencies = [
  "tinyvec",
 ]
@@ -2426,9 +2437,8 @@ dependencies = [
 
 [[package]]
 name = "zarrs"
-version = "0.17.0-beta.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "036929bc687c4028f6dd18445f445d9650cc21e93d080320b8b3240c32f93a74"
+version = "0.17.0-beta.2"
+source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
 dependencies = [
  "async-recursion",
  "async-trait",
@@ -2462,8 +2472,7 @@ dependencies = [
 [[package]]
 name = "zarrs_filesystem"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42eb0c9e26f053a6a4a5f121165bb1f16291434af06847e1de3545e8cf52fd09"
+source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
 dependencies = [
  "bytes",
  "derive_more",
@@ -2480,8 +2489,7 @@ dependencies = [
 [[package]]
 name = "zarrs_metadata"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "764a3b0ea9943f11b3f8a87782290605adc9f8bb8cd81cae0341acfa98ca7677"
+source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
 dependencies = [
  "derive_more",
  "half",
@@ -2495,9 +2503,8 @@ dependencies = [
 
 [[package]]
 name = "zarrs_opendal"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3eac8bbf09ec83453319e874c8f54cb257e30c0fbdc7ae3d329754d95ddb1987"
+version = "0.3.0"
+source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
 dependencies = [
  "async-trait",
  "futures",
@@ -2508,8 +2515,7 @@ dependencies = [
 [[package]]
 name = "zarrs_storage"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d251ae27d0b8a1bb24d926c34210b9f6af112e35b5397fddb7f170375d361d2a"
+source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
 dependencies = [
  "async-trait",
  "bytes",
