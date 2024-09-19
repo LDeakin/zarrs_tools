@@ -2438,7 +2438,7 @@ dependencies = [
 [[package]]
 name = "zarrs"
 version = "0.17.0-beta.2"
-source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
+source = "git+https://github.com/LDeakin/zarrs.git#26b90dd64b7e56468bc01ed1097e6b1866bb70a7"
 dependencies = [
  "async-recursion",
  "async-trait",
@@ -2472,7 +2472,7 @@ dependencies = [
 [[package]]
 name = "zarrs_filesystem"
 version = "0.1.0"
-source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
+source = "git+https://github.com/LDeakin/zarrs.git#26b90dd64b7e56468bc01ed1097e6b1866bb70a7"
 dependencies = [
  "bytes",
  "derive_more",
@@ -2489,7 +2489,7 @@ dependencies = [
 [[package]]
 name = "zarrs_metadata"
 version = "0.1.0"
-source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
+source = "git+https://github.com/LDeakin/zarrs.git#26b90dd64b7e56468bc01ed1097e6b1866bb70a7"
 dependencies = [
  "derive_more",
  "half",
@@ -2504,7 +2504,7 @@ dependencies = [
 [[package]]
 name = "zarrs_opendal"
 version = "0.3.0"
-source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
+source = "git+https://github.com/LDeakin/zarrs.git#26b90dd64b7e56468bc01ed1097e6b1866bb70a7"
 dependencies = [
  "async-trait",
  "futures",
@@ -2515,7 +2515,7 @@ dependencies = [
 [[package]]
 name = "zarrs_storage"
 version = "0.2.0"
-source = "git+https://github.com/LDeakin/zarrs.git#c7c259a32b2fe42dc414c46abd32ecebd21c84bc"
+source = "git+https://github.com/LDeakin/zarrs.git#26b90dd64b7e56468bc01ed1097e6b1866bb70a7"
 dependencies = [
  "async-trait",
  "bytes",

@@ -28,7 +28,7 @@ Benchmark data is generated with `scripts/generate_benchmark_array.py` as follow
 - Ubuntu 22.04 (in Windows 11 WSL2, swap disabled, 32GB available memory)
 
 ## Implementations Benchmarked
-- [`LDeakin/zarrs`](https://github.com/LDeakin/zarrs) v0.17.0-beta.2 (d5fa6aba) (Rust 1.81.0) via [`LDeakin/zarrs_tools`](https://github.com/LDeakin/zarrs_tools) 0.6.0 (4502667)
+- [`LDeakin/zarrs`](https://github.com/LDeakin/zarrs) v0.17.0-beta.2 (26b90dd6) (Rust 1.81.0) via [`LDeakin/zarrs_tools`](https://github.com/LDeakin/zarrs_tools) 0.6.0 (343d978)
   - Benchmark executable: [zarrs_benchmark_read_sync](https://github.com/LDeakin/zarrs_tools/blob/main/src/bin/zarrs_benchmark_read_sync.rs)
   - ~~Benchmark executable: [zarrs_benchmark_read_async](https://github.com/LDeakin/zarrs_tools/blob/main/src/bin/zarrs_benchmark_read_async.rs)~~
 - [`google/tensorstore`](https://github.com/google/tensorstore) v0.1.65 (Python 3.12.3)
