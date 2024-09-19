@@ -12,9 +12,9 @@ plt.rcParams.update({
 )
 
 implementations = {
-    "zarrs_rust": "LDeakin/zarrs (0.15.0)",
-    "tensorstore_python": "google/tensorstore (0.1.63)",
-    "zarr_python": "zarr-developers/zarr-python (3.0.0a0)"
+    "zarrs_rust": "LDeakin/zarrs (0.17.0-beta.2 26b90dd6)",
+    "tensorstore_python": "google/tensorstore (0.1.65)",
+    "zarr_python": "zarr-developers/zarr-python (3.0.0a4)"
 }
 
 images = {
