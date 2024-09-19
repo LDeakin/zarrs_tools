@@ -8,8 +8,8 @@ from functools import wraps
 
 import zarr
 from zarr.store import LocalStore, RemoteStore
-from zarr.array import BlockIndexer
-from zarr.buffer import default_buffer_prototype
+from zarr.core.indexing import BlockIndexer
+from zarr.core.buffer import default_buffer_prototype
 
 def coro(f):
     @wraps(f)
@@ -42,7 +42,7 @@ async def main(path, concurrent_chunks, read_all):
     async def chunk_read(chunk_index):
         indexer = BlockIndexer(chunk_index, dataset.shape, dataset.metadata.chunk_grid)
         return await dataset._async_array._get_selection(
-            indexer=indexer, prototype=default_buffer_prototype
+            indexer=indexer, prototype=default_buffer_prototype()
         )
 
     start_time = timeit.default_timer()
