@@ -219,16 +219,16 @@ pub fn get_array_builder(
     }
     array_builder.chunk_key_encoding_default_separator(encoding_args.separator.try_into().unwrap());
     if shard_shape.is_some() {
-        let index_codecs = CodecChain::new(
+        let index_codecs = Arc::new(CodecChain::new(
             vec![],
             Arc::<BytesCodec>::default(),
             vec![Arc::new(Crc32cCodec::new())],
-        );
-        let inner_codecs = CodecChain::new(
+        ));
+        let inner_codecs = Arc::new(CodecChain::new(
             array_to_array_codecs,
             array_to_bytes_codec,
             bytes_to_bytes_codecs,
-        );
+        ));
         array_builder.array_to_bytes_codec(Arc::new(ShardingCodec::new(
             chunk_shape.try_into().unwrap(),
             inner_codecs,
@@ -565,16 +565,16 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
 
     if let Some(shard_shape) = shard_shape {
         array_builder.chunk_grid(shard_shape.try_into().unwrap());
-        let index_codecs = CodecChain::new(
+        let index_codecs = Arc::new(CodecChain::new(
             vec![],
             Arc::<BytesCodec>::default(),
             vec![Arc::new(Crc32cCodec::new())],
-        );
-        let inner_codecs = CodecChain::new(
+        ));
+        let inner_codecs = Arc::new(CodecChain::new(
             array_to_array_codecs,
             array_to_bytes_codec,
             bytes_to_bytes_codecs,
-        );
+        ));
         array_builder.array_to_array_codecs(vec![]);
         array_builder.array_to_bytes_codec(Arc::new(ShardingCodec::new(
             chunk_shape.try_into().unwrap(),
