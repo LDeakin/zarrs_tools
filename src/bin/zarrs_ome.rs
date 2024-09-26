@@ -18,10 +18,10 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use zarrs::{
     array::{Array, ArrayCodecTraits, ArrayMetadata, ChunkRepresentation, Element, ElementOwned},
     array_subset::ArraySubset,
+    filesystem::FilesystemStore,
     group::{Group, GroupMetadata, GroupMetadataV3},
     storage::{StorePrefix, WritableStorageTraits},
 };
-use zarrs_filesystem::FilesystemStore;
 use zarrs_tools::{
     filter::{
         filters::{downsample::Downsample, gaussian::Gaussian},

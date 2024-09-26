@@ -8,8 +8,8 @@ use zarrs::{
         FillValueMetadataV3,
     },
     array_subset::ArraySubset,
+    filesystem::FilesystemStore,
 };
-use zarrs_filesystem::FilesystemStore;
 
 use crate::{
     parse_fill_value,

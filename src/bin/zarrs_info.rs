@@ -6,11 +6,11 @@ use serde::Serialize;
 use serde_json::Number;
 use zarrs::{
     array::{Array, ArrayMetadataOptions, DimensionName, FillValueMetadataV3},
+    filesystem::FilesystemStore,
     group::{Group, GroupMetadataOptions},
     metadata::v3::array::data_type::DataTypeMetadataV3,
     node::{Node, NodeMetadata},
 };
-use zarrs_filesystem::FilesystemStore;
 
 /// Get information about a Zarr V3 array as JSON.
 #[derive(Parser)]

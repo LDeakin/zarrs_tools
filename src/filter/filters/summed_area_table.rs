@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
+    filesystem::FilesystemStore,
 };
-use zarrs_filesystem::FilesystemStore;
 
 use crate::{
     filter::{
@@ -259,7 +259,7 @@ mod tests {
 
     use super::*;
     use std::error::Error;
-    use zarrs::{array::ArrayBuilder, array_subset::ArraySubset};
+    use zarrs::array::ArrayBuilder;
 
     #[test]
     fn summed_area_table() -> Result<(), Box<dyn Error>> {
@@ -272,7 +272,7 @@ mod tests {
             0u8.into(),
         )
         .build(store.into(), "/")?;
-        let array_subset = ArraySubset::new_with_shape(array.shape().to_vec());
+        let array_subset = array.subset_all();
         let elements_in: ndarray::ArrayD<u8> = ndarray::array![
             [31, 2, 4, 33, 5, 36],
             [12, 26, 9, 10, 29, 25],

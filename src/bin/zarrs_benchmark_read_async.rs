@@ -78,9 +78,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut bytes_decoded = 0;
     let chunk_indices = chunks.indices().into_iter().collect::<Vec<_>>();
     if args.read_all {
-        let array_shape = array.shape().to_vec();
-        let array_subset = ArraySubset::new_with_shape(array_shape.to_vec());
-        let array_data = array.async_retrieve_array_subset(&array_subset).await?;
+        let array_data = array
+            .async_retrieve_array_subset(&array.subset_all())
+            .await?;
         bytes_decoded += array_data.size();
     } else {
         // Calculate chunk/codec concurrency

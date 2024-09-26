@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
+    filesystem::FilesystemStore,
 };
-use zarrs_filesystem::FilesystemStore;
 
 use crate::{
     filter::{
@@ -271,7 +271,7 @@ mod tests {
 
     use super::*;
     use std::error::Error;
-    use zarrs::{array::ArrayBuilder, array_subset::ArraySubset};
+    use zarrs::array::ArrayBuilder;
 
     #[test]
     fn gaussian() -> Result<(), Box<dyn Error>> {
@@ -284,7 +284,7 @@ mod tests {
             0.0f32.into(),
         )
         .build(store.into(), "/")?;
-        let array_subset = ArraySubset::new_with_shape(array.shape().to_vec());
+        let array_subset = array.subset_all();
         array.store_array_subset_elements(
             &array_subset,
             &(0..array_subset.num_elements_usize())

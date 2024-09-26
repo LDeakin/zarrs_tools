@@ -12,9 +12,9 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
+    filesystem::FilesystemStore,
     storage::ReadableStorage,
 };
-use zarrs_filesystem::FilesystemStore;
 
 /// Benchmark zarrs read throughput with the sync API.
 #[derive(Parser, Debug)]
@@ -62,8 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = SystemTime::now();
     let bytes_decoded = Mutex::new(0);
     if args.read_all {
-        let subset = ArraySubset::new_with_shape(array.shape().to_vec());
-        *bytes_decoded.lock().unwrap() += array.retrieve_array_subset(&subset)?.size();
+        *bytes_decoded.lock().unwrap() += array.retrieve_array_subset(&array.subset_all())?.size();
     } else {
         let chunk_representation =
             array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;

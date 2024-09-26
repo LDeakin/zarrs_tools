@@ -3,12 +3,12 @@ use std::sync::Arc;
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
+use zarrs::filesystem::{FilesystemStore, FilesystemStoreOptions};
 use zarrs::storage::{
     storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
     AsyncReadableListableStorage, ListableStorageTraits, ReadableListableStorage, StorePrefix,
     WritableStorageTraits,
 };
-use zarrs_filesystem::{FilesystemStore, FilesystemStoreOptions};
 use zarrs_opendal::AsyncOpendalStore;
 use zarrs_tools::{
     do_reencode, get_array_builder_reencode,

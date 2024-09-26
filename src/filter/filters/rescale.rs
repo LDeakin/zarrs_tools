@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use zarrs::{
     array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
+    filesystem::FilesystemStore,
 };
-use zarrs_filesystem::FilesystemStore;
 
 use crate::{
     filter::{
