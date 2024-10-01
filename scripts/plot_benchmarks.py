@@ -12,7 +12,7 @@ LOG_SCALE_MEMORY = True
 LOG2_SCALE_CONCURRENCY = True
 
 implementations = {
-    "zarrs_rust": "LDeakin/zarrs (0.17.0-beta.3)",
+    "zarrs_rust": "LDeakin/zarrs (0.17.0)",
     "tensorstore_python": "google/tensorstore (0.1.65)",
     "zarr_python": "zarr-developers/zarr-python (3.0.0a6)",
 }
@@ -74,11 +74,8 @@ def plot_read_all():
         df["Time (s)"].plot(kind='bar', ax=ax_time)
         if LOG_SCALE_TIME:
             ax_time.set_yscale('log')
-        else:
-            ax_time.set_ylim(0, 80)
     fig.legend(loc='outside upper center', ncol=LEGEND_COLS, title="Zarr V3 implementation", borderaxespad=0)
     df["Memory (GB)"].plot(kind='bar', ax=ax_mem)
-    ax_mem.set_ylim(0, 30)
 
     # Styling
     ax_time.set_ylabel("Elapsed time (s)")
@@ -86,10 +83,14 @@ def plot_read_all():
         ax_time.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
         ax_time_h.set_ylabel("Phony", color='none')
         ax_time_l.tick_params(axis='x', labelrotation=0)
+        ax_time_h.grid(True, which='both', axis='y')
+        ax_time_l.grid(True, which='both', axis='y')
     else:
         ax_time.tick_params(axis='x', labelrotation=0)
+        ax_time.grid(True, which='both', axis='y')
     ax_mem.set_ylabel("Peak memory usage (GB)")
     ax_mem.tick_params(axis='x', labelrotation=0)
+    ax_mem.grid(True, which='both', axis='y')
 
     if SPLIT_AXIS:
         ax_time_l.get_legend().remove()
@@ -122,7 +123,7 @@ def plot_read_chunks():
         
     ax_mem = fig.add_subplot(spec[:, 1])
 
-    cmap = plt.rcParams['axes.prop_cycle'].by_key()['color'][:len(implementations)]
+    cmap = plt.rcParams['axes.prop_cycle'].by_key()['color']
     # print(df.groupby("Image"))
     image_ls = {'data/benchmark.zarr': ":", 'data/benchmark_compress.zarr': '--', 'data/benchmark_compress_shard.zarr': '-'}
     for image, row in df.groupby("Image"):
@@ -135,7 +136,6 @@ def plot_read_chunks():
         # print(row)
 
     # Custom legend
-    cmap = plt.rcParams['axes.prop_cycle'].by_key()['color']
     custom_lines = [Line2D([0], [0], color=cmap[i]) for i in range(len(implementations))]
     fig.legend(custom_lines, [implementation.replace(" ", " ") for implementation in implementations.values()], loc="outside upper left", ncol=2, title="Zarr V3 implementation", borderaxespad=0)
     custom_lines = [Line2D([0], [0], color='k', ls=':'),
@@ -150,10 +150,6 @@ def plot_read_chunks():
         ax_time.get_legend().remove()
     ax_mem.get_legend().remove()
 
-    ax_all = fig.add_subplot(spec[1, :], frameon=False)
-    ax_all.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-    ax_all.set_xlabel("Concurrent chunks")
-
     ax_time.set_ylabel("Elapsed time (s)")
 
     xticks = [1, 2, 4, 8, 16, 32]
@@ -166,31 +162,31 @@ def plot_read_chunks():
         ax_time_l.set_xlim(1, 32)
         ax_time_h.set_xticks(xticks)
         ax_time_l.set_xticks(xticks)
-        ax_time_h.set_xlabel(None)
+        ax_time_h.set_xlabel("Concurrent chunks")
         ax_time_l.set_xlabel(None)
+        ax_time_h.grid(True, which='both', axis='y')
+        ax_time_l.grid(True, which='both', axis='y')
     else:
         if LOG_SCALE_TIME:
             ax_time.set_yscale('log')
-        else:
-            ax_time.set_ylim(0, 110)
         if LOG2_SCALE_CONCURRENCY:
             ax_time.set_xscale('log', base=2)
             ax_time.xaxis.set_major_formatter(plt.FuncFormatter("{:.0f}".format))
         ax_time.set_xlim(1, 32) 
         ax_time.set_xticks(xticks)
-        ax_time.set_xlabel(None)
+        ax_time.set_xlabel("Concurrent chunks")
+        ax_time.grid(True, which='both', axis='y')
 
     if LOG_SCALE_MEMORY:
         ax_mem.set_yscale('log')
     if LOG2_SCALE_CONCURRENCY:
         ax_mem.set_xscale('log', base=2)
         ax_mem.xaxis.set_major_formatter(plt.FuncFormatter("{:.0f}".format))
-    else:
-        ax_mem.set_ylim(0, 30)
     ax_mem.set_xlim(1, 32)
     ax_mem.set_xticks(xticks)
-    ax_mem.set_xlabel(None)
+    ax_mem.set_xlabel("Concurrent chunks")
     ax_mem.set_ylabel("Peak memory usage (GB)")
+    ax_mem.grid(True, which='both', axis='y')
 
     fig.savefig("docs/benchmark_read_chunks.svg")
     fig.savefig("docs/benchmark_read_chunks.pdf")
