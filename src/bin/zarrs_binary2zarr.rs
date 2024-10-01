@@ -14,7 +14,7 @@ use zarrs::{
     array_subset::ArraySubset,
     config::global_config,
     filesystem::FilesystemStore,
-    metadata::v3::{array::data_type::DataTypeMetadataV3, MetadataV3},
+    metadata::v3::array::data_type::DataTypeMetadataV3,
     storage::ListableStorageTraits,
 };
 
@@ -61,8 +61,9 @@ struct Cli {
     // file: Vec<PathBuf>,
 }
 
-fn parse_data_type(data_type: &str) -> std::io::Result<MetadataV3> {
-    Ok(MetadataV3::new(data_type))
+fn parse_data_type(data_type: &str) -> std::io::Result<DataTypeMetadataV3> {
+    serde_json::from_value(serde_json::Value::String(data_type.to_string()))
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
 }
 
 fn parse_endianness(endianness: &str) -> std::io::Result<Endianness> {
