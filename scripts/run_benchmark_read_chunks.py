@@ -4,19 +4,19 @@ import subprocess
 import re
 import pandas as pd
 import math
-
-def clear_cache():
-    subprocess.call(['sudo', 'sh', '-c', "sync; echo 3 > /proc/sys/vm/drop_caches"])
+from _run_benchmark import clear_cache, time_args
 
 implementation_to_args = {
-    "zarrs_rust": ["/usr/bin/time", "-v", "zarrs_benchmark_read_sync", "--concurrent-chunks"],
-    "zarrs_rust_async": ["/usr/bin/time", "-v", "zarrs_benchmark_read_async", "--concurrent-chunks"],
-    "tensorstore_python": ["/usr/bin/time", "-v", "./scripts/tensorstore_python_benchmark_read_async.py", "--concurrent_chunks"],
-    "zarr_python": ["/usr/bin/time", "-v", "./scripts/zarr_python_benchmark_read_async.py", "--concurrent_chunks"],
+    "zarrs_rust": ["zarrs_benchmark_read_sync", "--concurrent-chunks"],
+    "zarrs_rust_async_as_sync": ["zarrs_benchmark_read_async_as_sync", "--concurrent-chunks"],
+    "zarrs_rust_async": ["zarrs_benchmark_read_async", "--concurrent-chunks"],
+    "tensorstore_python": ["./scripts/tensorstore_python_benchmark_read_async.py", "--concurrent_chunks"],
+    "zarr_python": ["./scripts/zarr_python_benchmark_read_async.py", "--concurrent_chunks"],
 }
 
 implementations = [
     "zarrs_rust",
+    # "zarrs_rust_async_as_sync",
     # "zarrs_rust_async",
     "tensorstore_python",
     "zarr_python",
@@ -41,7 +41,7 @@ for image in images:
         memory_usages = []
         for implementation in implementations:
             print(implementation, image, concurrent_chunks)
-            args = implementation_to_args[implementation] + [str(concurrent_chunks)] + [image]
+            args = time_args() + implementation_to_args[implementation] + [str(concurrent_chunks)] + [image]
             clear_cache()
             pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             std_out, std_err = pipes.communicate()

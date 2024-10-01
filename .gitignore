@@ -1,2 +1,4 @@
 /target
 data
+
+__pycache__/
