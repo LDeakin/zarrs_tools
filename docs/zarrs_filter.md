@@ -39,7 +39,7 @@ zarrs_filter reencode           array_reenc.zarr array_reenc_float32.zarr       
 zarrs_filter crop               array_reenc.zarr array_crop.zarr                ${ENCODE_ARGS} --data-type float32 256,256,256 768,768,768
 zarrs_filter rescale            array_reenc.zarr array_rescale.zarr             ${ENCODE_ARGS} --data-type float32 2.0 1.0 --fill-value 1.0
 zarrs_filter clamp              array_reenc.zarr array_clamp.zarr               ${ENCODE_ARGS} --data-type float32 5 255 --fill-value 5.0
-zarrs_filter equal              array_reenc.zarr array_equal_bool.zarr          ${ENCODE_ARGS} --data-type bool 1 --fill-value true
+# zarrs_filter equal              array_reenc.zarr array_eq_bool.zarr             ${ENCODE_ARGS} --data-type bool 1 --fill-value true
 zarrs_filter equal              array_reenc.zarr array_eq_u8.zarr               ${ENCODE_ARGS} --data-type uint8 1 --fill-value 1
 zarrs_filter downsample         array_reenc.zarr array_downsample.zarr          ${ENCODE_ARGS} --data-type float32 2,2,2
 zarrs_filter downsample         array_eq_u8.zarr array_downsample_discrete.zarr ${ENCODE_ARGS} --data-type uint8 2,2,2 --discrete
