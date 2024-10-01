@@ -1,5 +1,7 @@
 use clap::Parser;
 use indicatif::{DecimalBytes, ProgressBar, ProgressStyle};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon_iter_concurrent_limit::iter_concurrent_limit;
 use std::{
     path::PathBuf,
     sync::{
@@ -7,11 +9,19 @@ use std::{
         Arc,
     },
 };
-use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
+use zarrs_tools::{
+    get_array_builder,
+    progress::{Progress, ProgressCallback, ProgressStats},
+    ZarrEncodingArgs,
+};
 
 use zarrs::{
-    array::{codec::CodecOptionsBuilder, Array, DataType, DimensionName},
+    array::{
+        codec::CodecOptionsBuilder, Array, ArrayCodecTraits, DataType, DimensionName,
+        RecommendedConcurrency,
+    },
     array_subset::ArraySubset,
+    config::global_config,
     filesystem::FilesystemStore,
     storage::{
         store::MemoryStore, ReadableWritableListableStorage, ReadableWritableStorageTraits,
@@ -26,22 +36,9 @@ struct Cli {
     #[command(flatten)]
     encoding: ZarrEncodingArgs,
 
-    /// Validate written data.
-    #[arg(long, default_value_t = false)]
-    validate: bool,
-
-    /// Sets the number of netCDF blocks processed concurrently. This parameter is currently ignored.
+    /// Number of concurrent chunks.
     #[arg(long)]
-    concurrent_blocks: Option<usize>,
-
-    // /// Array shape. A comma separated list of the sizes of each array dimension.
-    // #[arg(short, long, required = true, value_delimiter = ',')]
-    // array_shape: Vec<u64>,
-    /// The dimension to concatenate the variable if it is spread across multiple files.
-    ///
-    /// Dimension 0 is the outermost (slowest varying) dimension.
-    #[arg(long, default_value_t = 0)]
-    concat_dim: usize,
+    concurrent_chunks: Option<usize>,
 
     /// Write to memory.
     #[arg(long, default_value_t = false)]
@@ -57,81 +54,147 @@ struct Cli {
     out: PathBuf,
 }
 
+fn progress_callback(stats: ProgressStats, bar: &ProgressBar) {
+    bar.set_length(stats.num_steps as u64);
+    bar.set_position(stats.step as u64);
+    if stats.process_steps.is_empty() {
+        bar.set_message(format!(
+            "rw:{:.2}/{:.2} p:{:.2}",
+            stats.read.as_secs_f32(),
+            stats.write.as_secs_f32(),
+            stats.process.as_secs_f32(),
+        ));
+    } else {
+        bar.set_message(format!(
+            "rw:{:.2}/{:.2} p:{:.2} {:.2?}",
+            stats.read.as_secs_f32(),
+            stats.write.as_secs_f32(),
+            stats.process.as_secs_f32(),
+            stats
+                .process_steps
+                .iter()
+                .map(|t| t.as_secs_f32())
+                .collect::<Vec<_>>(),
+        ));
+    }
+}
+
+fn bar_style_run() -> ProgressStyle {
+    ProgressStyle::with_template(
+        "[{elapsed_precise}/{duration_precise}] {bar:40.black/bold} {pos}/{len} ({percent}%) {prefix} {msg}",
+    )
+    .unwrap_or(ProgressStyle::default_bar())
+}
+
+fn bar_style_finish() -> ProgressStyle {
+    ProgressStyle::with_template("[{elapsed_precise}/{elapsed_precise}] {prefix} {msg}")
+        .unwrap_or(ProgressStyle::default_bar())
+}
+
 #[allow(clippy::too_many_arguments)]
 fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
     nc_paths: &[PathBuf],
     offsets: &[u64],
     variable: &str,
-    concat_dim: usize,
     array: &Array<TStore>,
-    // num_concurrent_blocks: Option<usize>,
-    validate: bool,
-) -> usize {
-    let style_all =
-        ProgressStyle::with_template("[{bar}] ({pos}/{len} blocks, {elapsed_precise}, ETA {eta})")
-            .unwrap();
-
+    concurrent_chunks: Option<usize>,
+    progress_callback: &ProgressCallback,
+) -> anyhow::Result<usize> {
     let bytes_read: AtomicUsize = 0.into();
 
+    let chunk_representation = array
+        .chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])
+        .unwrap();
+    let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
+
     let concurrent_target = std::thread::available_parallelism().unwrap().get();
+    let (chunks_concurrent_limit, codec_concurrent_target) =
+        zarrs::array::concurrency::calc_concurrency_outer_inner(
+            concurrent_target,
+            &if let Some(concurrent_chunks) = concurrent_chunks {
+                let concurrent_chunks =
+                    std::cmp::min(chunks.num_elements_usize(), concurrent_chunks);
+                RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
+            } else {
+                let concurrent_chunks = std::cmp::min(
+                    chunks.num_elements_usize(),
+                    global_config().chunk_concurrent_minimum(),
+                );
+                RecommendedConcurrency::new_minimum(concurrent_chunks)
+            },
+            &array
+                .codecs()
+                .recommended_concurrency(&chunk_representation)
+                .unwrap(),
+        );
     let codec_options = CodecOptionsBuilder::new()
-        .concurrent_target(concurrent_target)
+        .concurrent_target(codec_concurrent_target)
         .build();
 
-    let process_path = |idx: usize, nc_path: &PathBuf| {
-        // println!("{nc_path:?}");
-        // println!("Read netCDF");
-        let nc_file = netcdf::open(nc_path).expect("Could not open netCDF file");
-        let nc_var = nc_file
-            .variable(variable)
-            .expect("Could not find variable in netCDF file");
+    let progress = Progress::new(chunks.num_elements_usize(), progress_callback);
+    let write_chunk = |chunk_indices: Vec<u64>| -> anyhow::Result<()> {
+        let chunk_subset = array.chunk_subset_bounded(&chunk_indices).unwrap();
+        let bytes: Vec<u8> = progress.read(|| {
+            // Get all netCDF blocks intersecting the chunk subset
+            let nc_idx0 = offsets
+                .iter()
+                .rposition(|&offset| offset <= chunk_subset.start()[0])
+                .expect("No valid offset found");
+            let nc_idx1_exc = offsets
+                .iter()
+                .position(|&offset| offset >= chunk_subset.end_exc()[0])
+                .unwrap_or(nc_paths.len());
 
-        let dims = nc_var.dimensions();
-        // let dim_sizes: Vec<_> = dims.iter().map(|dim| dim.len()).collect();
-        let dim_sizes_u64: Vec<_> = dims.iter().map(|dim| dim.len() as u64).collect();
-        // println!("{dim_sizes:?}");
+            // Read them and concatenate them into a single buffer
+            let bytes: Vec<u8> = (nc_idx0..nc_idx1_exc)
+                .map(|nc_idx: usize| {
+                    // Open the NetCDF file
+                    let nc_path = &nc_paths[nc_idx];
+                    let nc_file = netcdf::open(nc_path).expect("Could not open netCDF file");
+                    let nc_var = nc_file
+                        .variable(variable)
+                        .expect("Could not find variable in netCDF file");
+                    let dims = nc_var.dimensions();
+                    let dim_sizes: Vec<_> = dims.iter().map(|dim| dim.len() as u64).collect();
 
-        let mut start = vec![0u64; array.chunk_grid().dimensionality()];
-        start[concat_dim] = offsets[idx];
-        let array_subset = ArraySubset::new_with_start_shape(start, dim_sizes_u64.clone()).unwrap();
-        // println!("{array_subset:?} {dim_sizes:?} {}", buf.len());
-        let buf = nc_var.get_raw_values(..).unwrap();
-        assert_eq!(
-            buf.len(),
-            array
-                .data_type()
-                .fixed_size()
-                .expect("data type should be fixed size")
-                * array_subset.num_elements_usize(),
-            "Size mismatch"
-        );
-        // println!("Read netCDF done");
-        bytes_read.fetch_add(buf.len(), Ordering::Relaxed);
+                    // Get the overlapping region of the chunk subset with the netCDF block
+                    let mut start = Vec::with_capacity(dim_sizes.len());
+                    start.push(offsets[nc_idx]);
+                    start.extend(vec![0u64; dim_sizes.len() - 1]);
+                    let nc_subset =
+                        ArraySubset::new_with_start_shape(start, dim_sizes.clone()).unwrap();
+                    let nc_subset_overlap_relative = nc_subset
+                        .overlap(&chunk_subset)?
+                        .relative_to(nc_subset.start())?;
 
-        if validate {
-            array
-                .store_array_subset_opt(&array_subset, buf.clone(), &codec_options)
-                .unwrap();
-            let buf_validate = array
-                .retrieve_array_subset_opt(&array_subset, &codec_options)
-                .unwrap();
-            assert!(buf == buf_validate.into_fixed().unwrap().into_owned());
-        } else {
-            array
-                .store_array_subset_opt(&array_subset, buf, &codec_options)
-                .unwrap();
-        }
+                    // Read the netCDF block subset
+                    let extents: Vec<_> = nc_subset_overlap_relative
+                        .to_ranges()
+                        .iter()
+                        .map(|range| {
+                            usize::try_from(range.start).unwrap()
+                                ..usize::try_from(range.end).unwrap()
+                        })
+                        .collect();
+                    Ok(nc_var.get_raw_values(extents)?)
+                })
+                .collect::<anyhow::Result<Vec<_>>>()?
+                .concat();
+
+            anyhow::Ok(bytes)
+        })?;
+        bytes_read.fetch_add(bytes.len(), Ordering::Relaxed);
+
+        progress
+            .write(|| array.store_array_subset_opt(&chunk_subset, bytes.clone(), &codec_options))?;
+        progress.next();
+        Ok(())
     };
 
-    let pb = ProgressBar::new(nc_paths.len() as u64);
-    pb.set_style(style_all);
-    pb.set_position(0);
-    for (idx, nc_path) in nc_paths.iter().enumerate() {
-        process_path(idx, nc_path);
-        pb.inc(1);
-    }
-    pb.abandon();
-    bytes_read.load(Ordering::Relaxed)
+    let indices = chunks.indices();
+    iter_concurrent_limit!(chunks_concurrent_limit, indices, try_for_each, write_chunk).unwrap();
+
+    Ok(bytes_read.load(Ordering::Relaxed))
 }
 
 fn get_netcdf_paths(path: &std::path::Path) -> Result<Vec<std::path::PathBuf>, std::io::Error> {
@@ -172,13 +235,18 @@ fn nc_vartype_to_zarr_datatype(nc_vartype: netcdf::types::NcVariableType) -> Opt
     Some(data_type)
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     // Parse and validate arguments
     let cli = Cli::parse();
     if let Some(shard_shape) = &cli.encoding.shard_shape {
         assert_eq!(cli.encoding.chunk_shape.len(), shard_shape.len());
     }
     println!("Input {:?}", cli.input);
+
+    let bar = ProgressBar::new(0);
+    bar.set_style(bar_style_run());
+    let progress_callback = |stats: ProgressStats| progress_callback(stats, &bar);
+    let progress_callback = ProgressCallback::new(&progress_callback);
 
     let start = std::time::Instant::now();
 
@@ -195,6 +263,7 @@ fn main() {
     let mut datatype: Option<DataType> = None;
     let mut offset: u64 = 0;
     let mut offsets = Vec::with_capacity(nc_paths.len());
+    const CONCAT_DIM: usize = 0;
     for nc_path in &nc_paths {
         let nc_file = netcdf::open(nc_path).expect("Could not open netCDF file");
         let nc_var = nc_file
@@ -215,7 +284,7 @@ fn main() {
         let dim_sizes: Vec<_> = dims.iter().map(|dim| dim.len() as u64).collect();
 
         offsets.push(offset);
-        offset += dim_sizes[cli.concat_dim];
+        offset += dim_sizes[CONCAT_DIM];
 
         // println!("{dim_names:?}, {dim_sizes:?}");
         if let Some(dimension_names) = &dimension_names {
@@ -225,7 +294,7 @@ fn main() {
         }
         if let Some(array_shape) = &mut array_shape {
             // FIXME: Validate dims which aren't concatenated are the same shape
-            array_shape[cli.concat_dim] += dim_sizes[cli.concat_dim];
+            array_shape[CONCAT_DIM] += dim_sizes[CONCAT_DIM];
         } else {
             array_shape = Some(dim_sizes);
         }
@@ -270,10 +339,12 @@ fn main() {
         &nc_paths,
         &offsets,
         &cli.variable,
-        cli.concat_dim,
         &array,
-        cli.validate,
-    );
+        cli.concurrent_chunks,
+        &progress_callback,
+    )?;
+    bar.set_style(bar_style_finish());
+    bar.finish_and_clear();
     let duration_s = start.elapsed().as_secs_f32();
 
     // Output stats
@@ -286,4 +357,6 @@ fn main() {
         bytes_read = DecimalBytes(bytes_read as u64),
         size_out = DecimalBytes(size_out as u64),
     );
+
+    Ok(())
 }

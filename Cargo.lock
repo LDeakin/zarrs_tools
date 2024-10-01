@@ -2416,8 +2416,7 @@ dependencies = [
 [[package]]
 name = "zarrs"
 version = "0.17.0-beta.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0148cd20cf559ee0d9ded698ed11ec44a9d462f874ccb19a4c0fec692da31642"
+source = "git+https://github.com/LDeakin/zarrs.git#b1edab10202cfd899a34cdbda967f9bdd7892997"
 dependencies = [
  "async-recursion",
  "async-trait",
@@ -2452,8 +2451,7 @@ dependencies = [
 [[package]]
 name = "zarrs_filesystem"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42eb0c9e26f053a6a4a5f121165bb1f16291434af06847e1de3545e8cf52fd09"
+source = "git+https://github.com/LDeakin/zarrs.git#b1edab10202cfd899a34cdbda967f9bdd7892997"
 dependencies = [
  "bytes",
  "derive_more",
@@ -2470,8 +2468,7 @@ dependencies = [
 [[package]]
 name = "zarrs_metadata"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "764a3b0ea9943f11b3f8a87782290605adc9f8bb8cd81cae0341acfa98ca7677"
+source = "git+https://github.com/LDeakin/zarrs.git#b1edab10202cfd899a34cdbda967f9bdd7892997"
 dependencies = [
  "derive_more",
  "half",
@@ -2486,8 +2483,7 @@ dependencies = [
 [[package]]
 name = "zarrs_opendal"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90f1323dd57b4f032b06ff329c97d1e968b9e648a24251e6495b71ff119135ff"
+source = "git+https://github.com/LDeakin/zarrs.git#b1edab10202cfd899a34cdbda967f9bdd7892997"
 dependencies = [
  "async-trait",
  "futures",
@@ -2498,8 +2494,7 @@ dependencies = [
 [[package]]
 name = "zarrs_storage"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9edd30d0781dab48665e309e8097220b1ad9e32ab594f0871856e05291de72c"
+source = "git+https://github.com/LDeakin/zarrs.git#b1edab10202cfd899a34cdbda967f9bdd7892997"
 dependencies = [
  "async-trait",
  "bytes",
