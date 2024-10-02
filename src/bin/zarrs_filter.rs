@@ -243,20 +243,22 @@ fn run() -> Result<(), Box<dyn Error>> {
     // Collect filters/input/outputs and check compatibility
     let filter_input_output: Vec<_> = itertools::izip!(
         &filter_commands,
+        &bars,
         &filters,
         &input_paths,
         &output_paths,
         &exists
     )
     .enumerate()
-    .map(|(i, (filter_command, filter, input, output, exists))| {
-        let (array_input, array_output) = get_array_input_output(
-            filter,
-            input.path(),
-            output.path(),
-            filter_command.common_args().reencode(),
-        )?;
-        println!(
+    .map(
+        |(i, (filter_command, bar, filter, input, output, exists))| {
+            let (array_input, array_output) = get_array_input_output(
+                filter,
+                input.path(),
+                output.path(),
+                filter_command.common_args().reencode(),
+            )?;
+            bar.println(format!(
             "{}{}\n\targs:   {}\n\tencode: {}\n\tinput:  {} {:?} {:?}\n\toutput: {} {:?} {:?}{}",
             if filters.len() == 1 {
                 "".to_string()
@@ -273,21 +275,23 @@ fn run() -> Result<(), Box<dyn Error>> {
             array_output.shape(),
             output.path(),
             if *exists { " (overwrite)" } else { "" },
-        );
-        array_output.store_metadata()?; // erased before filter run
+        ));
+            array_output.store_metadata()?; // erased before filter run
 
-        filter.is_compatible(
-            &array_input.chunk_array_representation(&vec![0; array_input.dimensionality()])?,
-            &array_output.chunk_array_representation(&vec![0; array_output.dimensionality()])?,
-        )?;
-        Ok::<_, FilterError>((
-            filter_command.name(),
-            filter,
-            array_input,
-            array_output,
-            output.path(),
-        ))
-    })
+            filter.is_compatible(
+                &array_input.chunk_array_representation(&vec![0; array_input.dimensionality()])?,
+                &array_output
+                    .chunk_array_representation(&vec![0; array_output.dimensionality()])?,
+            )?;
+            Ok::<_, FilterError>((
+                filter_command.name(),
+                filter,
+                array_input,
+                array_output,
+                output.path(),
+            ))
+        },
+    )
     .try_collect()?;
 
     // Erase output metadata to imply indicating that filter has not run
