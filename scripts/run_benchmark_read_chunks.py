@@ -54,7 +54,7 @@ for image in images:
             memory_usage = re.search(
                 r"Maximum resident set size \(kbytes\): (\d+?)\\n", str(std_err)
             )
-            if wall_time and memory_usage:
+            if wall_time and memory_usage and pipes.returncode == 0:
                 m = int(wall_time.group(1))
                 s = float(wall_time.group(2))
                 wall_time_s = m * 60 + s
