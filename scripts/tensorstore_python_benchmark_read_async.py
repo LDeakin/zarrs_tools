@@ -71,6 +71,7 @@ async def main(path, concurrent_chunks, read_all):
             chunk_slice = [ts.Dim(inclusive_min=index*cshape, exclusive_max=min(index * cshape + cshape, dshape)) for (index, cshape, dshape) in zip(chunk_index, chunk_shape, domain_shape)]
             await dataset[ts.IndexDomain(chunk_slice)].read()
     else:
+        # TODO: Not sure if this is the fastest API for this
         semaphore = asyncio.Semaphore(concurrent_chunks)
         async def chunk_read_concurrent_limit(chunk_index):
             async with semaphore:

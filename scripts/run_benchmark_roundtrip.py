@@ -6,13 +6,14 @@ import pandas as pd
 import math
 import numpy as np
 from _run_benchmark import clear_cache, time_args
+import tempfile
 
 implementation_to_args = {
-    "zarrs_rust": ["zarrs_benchmark_read_sync", "--read-all"],
+    "zarrs_rust": ["zarrs_reencode"],
     # "zarrs_rust_async_as_sync": ["zarrs_benchmark_read_async_as_sync", "--read-all"],
     # "zarrs_rust_async": ["zarrs_benchmark_read_async", "--read-all"],
-    "tensorstore_python": ["./scripts/tensorstore_python_benchmark_read_async.py", "--read_all"],
-    "zarr_python": ["./scripts/zarr_python_benchmark_read_async.py", "--read_all"],
+    "tensorstore_python": ["./scripts/tensorstore_python_benchmark_roundtrip.py"],
+    "zarr_python": ["./scripts/zarr_python_benchmark_roundtrip.py"],
 }
 
 implementations = [
@@ -42,7 +43,8 @@ for image in images:
         memory_usage_measurements = []
         for i in range(best_of):
             print(implementation, image, i)
-            args = time_args() + implementation_to_args[implementation] + [image]
+            output = tempfile.TemporaryDirectory()
+            args = time_args() + implementation_to_args[implementation] + [image] + [output.name]
             clear_cache()
             pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             std_out, std_err = pipes.communicate()
@@ -112,11 +114,11 @@ data = {
 df = pd.DataFrame.from_dict(data, orient="tight")
 print(df)
 print()
-df.to_csv("docs/benchmark_read_all.csv")
+df.to_csv("docs/benchmark_roundtrip.csv")
 
 # Print and save markdown
 df_markdown = df.copy()
 df_markdown.columns = columns_markdown
 print(df_markdown.to_markdown(floatfmt=".02f"))
-df_markdown.to_markdown("docs/benchmark_read_all.md", floatfmt=".02f")
+df_markdown.to_markdown("docs/benchmark_roundtrip.md", floatfmt=".02f")
 

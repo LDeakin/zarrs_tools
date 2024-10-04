@@ -1,5 +1,5 @@
 | Image                              |   Time (s)<br>zarrs<br>rust |   <br>tensorstore<br>python |   <br>zarr<br>python |   Memory (GB)<br>zarrs<br>rust |   <br>tensorstore<br>python |   <br>zarr<br>python |
 |:-----------------------------------|----------------------------:|----------------------------:|---------------------:|-------------------------------:|----------------------------:|---------------------:|
-| data/benchmark.zarr                |                        2.63 |                        3.11 |                55.47 |                           8.42 |                        8.60 |                 8.76 |
-| data/benchmark_compress.zarr       |                        2.51 |                        2.84 |                69.77 |                           8.44 |                        8.54 |                 8.79 |
-| data/benchmark_compress_shard.zarr |                        1.41 |                        1.91 |                27.76 |                           8.63 |                        8.87 |                11.62 |
+| data/benchmark.zarr                |                        2.48 |                        2.80 |                 3.46 |                          12.59 |                       16.39 |                11.10 |
+| data/benchmark_compress.zarr       |                        1.80 |                        2.53 |                 2.69 |                          12.80 |                       13.41 |                11.29 |
+| data/benchmark_compress_shard.zarr |                        1.41 |                        2.13 |               nan    |                           8.64 |                        8.89 |               nan    |

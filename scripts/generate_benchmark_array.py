@@ -22,7 +22,7 @@ def main(output_path, shard, compress):
         '--array-shape',
         '1024,2048,2048',
         '--chunk-shape',
-        '32,32,32',
+        '32,32,32' if shard else '512,512,512',
         '--shard-shape' if shard else None,
         '512,512,512' if shard else None,
         '--bytes-to-bytes-codecs' if compress else None,
