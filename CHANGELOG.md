@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - **Breaking**: Removed `validate` argument
    - **Breaking**: Removed `concat-dim` argument. Concatenation is now only supported along the first (slowest varying) dimension
    - This tool is intended to be replaced by chunk manifests when the specification and `virtualizarr` matures
+ - Move benchmark scripts and measurements to https://github.com/LDeakin/zarr_benchmarks
 
 ### Fixed
  - `zarrs_ome` fix axis unit parsing (broken in 0.5.3)

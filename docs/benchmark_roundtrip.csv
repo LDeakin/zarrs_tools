@@ -1,6 +1,0 @@
-Metric,Time (s),Time (s),Time (s),Memory (GB),Memory (GB),Memory (GB)
-Implementation,zarrs_rust,tensorstore_python,zarr_python,zarrs_rust,tensorstore_python,zarr_python
-Image,,,,,,
-data/benchmark.zarr,2.89,7.54,17.61,4.20052,6.644368,13.454152
-data/benchmark_compress.zarr,1.12,6.67,14.94,4.491776,10.6349,12.385264
-data/benchmark_compress_shard.zarr,2.83,8.86,,1.285176,10.727996,

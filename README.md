@@ -27,7 +27,7 @@ See [docs/](https://github.com/LDeakin/zarrs_tools/blob/main/docs/) for tool doc
 - zarrs_benchmark_read_sync (feature `benchmark`): benchmark the zarrs sync API.
 - zarrs_benchmark_read_async (feature `benchmark`): benchmark the zarrs async API.
 
-See [docs/benchmarks.md](https://github.com/LDeakin/zarrs_tools/blob/main/docs/benchmarks.md) for some benchmark measurements.
+See the [LDeakin/zarr_benchmarks](https://github.com/LDeakin/zarr_benchmarks) repository for benchmarks of `zarrs` against other Zarr V3 implementations.
 
 ## Install
 
