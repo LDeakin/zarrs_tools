@@ -32,7 +32,6 @@ pub fn apply_1d_kernel(
     if stride == 1 {
         let axis_end_inc = axis_len - 1;
         output_indices.into_par_iter().for_each(|j| {
-            let output_slice = unsafe { output_slice.as_mut_slice() };
             let axis_start_index = get_axis_start_index(dim, j, shape);
             (0..axis_len).for_each(|k| {
                 let sum = kernel
@@ -46,12 +45,12 @@ pub fn apply_1d_kernel(
                     })
                     .sum::<f32>();
                 let element: usize = axis_start_index + k;
-                *unsafe { output_slice.get_unchecked_mut(element) } = sum;
+                let output_element = unsafe { output_slice.index_mut(element) };
+                *output_element = sum;
             })
         });
     } else {
         output_indices.into_par_iter().for_each(|j| {
-            let output_slice = unsafe { output_slice.as_mut_slice() };
             let axis_start_index = get_axis_start_index(dim, j, shape);
             let axis_end_inc = (axis_len - 1) * stride;
             (0..axis_len).for_each(|k| {
@@ -66,7 +65,8 @@ pub fn apply_1d_kernel(
                     })
                     .sum::<f32>();
                 let element: usize = axis_start_index + k * stride;
-                *unsafe { output_slice.get_unchecked_mut(element) } = sum;
+                let output_element = unsafe { output_slice.index_mut(element) };
+                *output_element = sum;
             })
         });
     }
@@ -85,7 +85,6 @@ pub fn apply_1d_triangle_filter(
     let stride = input.strides()[axis] as usize;
     let axis_len = shape[axis];
     (0..input.len() / axis_len).into_par_iter().for_each(|j| {
-        let output_slice = unsafe { output_slice.as_mut_slice() };
         let axis_start = get_axis_start_index(axis, j, shape);
         (0..axis_len).for_each(|k| {
             let prev = axis_start + k.saturating_sub(1) * stride;
@@ -94,7 +93,7 @@ pub fn apply_1d_triangle_filter(
             // output_slice[element] = 0.25 * (input_slice[prev]
             //     + 2.0 * input_slice[element]
             //     + input_slice[next]);
-            *unsafe { output_slice.get_unchecked_mut(element) } =
+            *unsafe { output_slice.index_mut(element) } =
                 unsafe { input_slice.get_unchecked(prev) } * 0.25
                     + *unsafe { input_slice.get_unchecked(element) } * 0.5
                     + unsafe { input_slice.get_unchecked(next) } * 0.25;
@@ -115,7 +114,6 @@ pub fn apply_1d_difference_operator(
     let stride = input.strides()[axis] as usize;
     let axis_len = shape[axis];
     (0..input.len() / axis_len).into_par_iter().for_each(|j| {
-        let output_slice = unsafe { output_slice.as_mut_slice() };
         let axis_start = get_axis_start_index(axis, j, shape);
         (0..axis_len).for_each(|k| {
             let prev = axis_start + k.saturating_sub(1) * stride;
@@ -125,7 +123,7 @@ pub fn apply_1d_difference_operator(
             let difference = 0.5
                 * (*unsafe { input_slice.get_unchecked(next) }
                     - *unsafe { input_slice.get_unchecked(prev) });
-            *unsafe { output_slice.get_unchecked_mut(element) } = difference;
+            *unsafe { output_slice.index_mut(element) } = difference;
         })
     });
 }
