@@ -97,7 +97,7 @@ fn stdin_to_array(
         .unwrap()
         .expect("lowest indices should have a chunk shape");
     let block_shape_n = *chunk_shape.first().unwrap();
-    let n_blocks = (array_shape_n + block_shape_n.get() - 1) / block_shape_n.get();
+    let n_blocks = array_shape_n.div_ceil(block_shape_n.get());
 
     let bar = ProgressBar::new(n_blocks);
     let style =

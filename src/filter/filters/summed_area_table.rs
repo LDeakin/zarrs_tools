@@ -229,7 +229,7 @@ impl FilterTraits for SummedAreaTable {
                             }
                         };
                     }
-                    Some(apply_input!([
+                    apply_input!([
                         (Bool, u8),
                         (Int8, i8),
                         (Int16, i16),
@@ -243,7 +243,7 @@ impl FilterTraits for SummedAreaTable {
                         (Float16, half::f16),
                         (Float32, f32),
                         (Float64, f64)
-                    ]));
+                    ]);
                     Ok::<_, FilterError>(())
                 }
             )?;

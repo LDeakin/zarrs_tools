@@ -140,7 +140,7 @@ pub fn get_array_builder(
         std::iter::zip(&shard_shape, &chunk_shape)
             .map(|(s, c)| {
                 // the shard shape must be a multiple of the chunk shape
-                c * ((s + c - 1) / c)
+                s.next_multiple_of(*c)
             })
             .collect()
     });
@@ -462,7 +462,7 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
         let shard_shape = std::iter::zip(shard_shape.as_slice(), chunk_shape.as_slice())
             .map(|(s, c)| {
                 // the shard shape must be a multiple of the chunk shape
-                c * ((s + c - 1) / c)
+                s.next_multiple_of(*c)
             })
             .collect::<Vec<_>>();
         Some(shard_shape)
