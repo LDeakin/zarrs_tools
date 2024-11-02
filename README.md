@@ -12,20 +12,21 @@ A changelog can be found [here](https://github.com/LDeakin/zarrs_tools/blob/main
 All tools support input and output of [Zarr V3](https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html) data.
 Some tools additionally support input of a [V3 compatible subset](https://docs.rs/zarrs/latest/zarrs/#implementation-status) of [Zarr V2](https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html).
 
-- [zarrs_reencode](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
-- [zarrs_filter](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
-- [zarrs_ome](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to an [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) multi-scale image.
+- [`zarrs_reencode`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
+- [`zarrs_filter`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
+- [`zarrs_ome`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to an [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) multi-scale image.
   - Supports OME-Zarr `0.5-dev` (as Zarr V3) and `0.5-dev1`. The first is recognised by [Neuroglancer](https://github.com/google/neuroglancer).
-- zarrs_info (feature `info`): return metadata related info or the range/histogram of an array.
-- [zarrs_binary2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
-- [zarrs_ncvar2zarr](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ncvar2zarr.md) (feature `ncvar2zarr`): convert a netCDF variable to an array.
+- `zarrs_info` (feature `info`): return metadata related info or the range/histogram of an array.
+- `zarrs_validate` (feature `validate`): validate that two arrays are equivalent.
+- [`zarrs_binary2zarr`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
+- [`zarrs_ncvar2zarr`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ncvar2zarr.md) (feature `ncvar2zarr`): convert a netCDF variable to an array.
 
 See [docs/](https://github.com/LDeakin/zarrs_tools/blob/main/docs/) for tool documentation.
 
 ## `zarrs` Benchmarking
-- zarrs_reencode: suitable for round trip benchmarking.
-- zarrs_benchmark_read_sync (feature `benchmark`): benchmark the zarrs sync API.
-- zarrs_benchmark_read_async (feature `benchmark`): benchmark the zarrs async API.
+- `zarrs_reencode`: suitable for round trip benchmarking.
+- `zarrs_benchmark_read_sync` (feature `benchmark`): benchmark the zarrs sync API.
+- `zarrs_benchmark_read_async` (feature `benchmark`): benchmark the zarrs async API.
 
 See the [LDeakin/zarr_benchmarks](https://github.com/LDeakin/zarr_benchmarks) repository for benchmarks of `zarrs` against other Zarr V3 implementations.
 

@@ -23,6 +23,7 @@ filter = []
 info = []
 ncvar2zarr = ["dep:netcdf"]
 ome = ["dep:ome_zarr_metadata"]
+validate = []
 
 [dependencies]
 anyhow = "1.0.86"
@@ -89,6 +90,10 @@ required-features = ["ome"]
 [[bin]]
 name = "zarrs_reencode"
 required-features = []
+
+[[bin]]
+name = "zarrs_validate"
+required-features = ["validate"]
 
 [profile.dist]
 inherits = "release"
