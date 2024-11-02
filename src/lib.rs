@@ -2,6 +2,7 @@
 #![doc(hidden)]
 
 use std::{
+    num::NonZeroU64,
     sync::{Arc, Mutex},
     time::SystemTime,
 };
@@ -18,10 +19,10 @@ use zarrs::{
             CodecOptionsBuilder, Crc32cCodec, ShardingCodec,
         },
         concurrency::RecommendedConcurrency,
-        Array, ArrayBuilder, ArrayChunkCacheExt, ArrayError, ChunkCacheDecodedLruChunkLimit,
-        ChunkCacheDecodedLruChunkLimitThreadLocal, ChunkCacheDecodedLruSizeLimit,
-        ChunkCacheDecodedLruSizeLimitThreadLocal, ChunkRepresentation, CodecChain, DataType,
-        DimensionName, FillValue, FillValueMetadataV3,
+        Array, ArrayBuilder, ArrayChunkCacheExt, ArrayError, ArrayShardedExt,
+        ChunkCacheDecodedLruChunkLimit, ChunkCacheDecodedLruChunkLimitThreadLocal,
+        ChunkCacheDecodedLruSizeLimit, ChunkCacheDecodedLruSizeLimitThreadLocal,
+        ChunkRepresentation, CodecChain, DataType, DimensionName, FillValue, FillValueMetadataV3,
     },
     array_subset::ArraySubset,
     config::global_config,
@@ -617,7 +618,14 @@ pub fn do_reencode<
     concurrent_chunks: Option<usize>,
     progress_callback: &ProgressCallback,
     cache_size: CacheSize,
-) -> Result<(f32, f32, f32, usize), ArrayError> {
+    write_shape: Option<Vec<NonZeroU64>>,
+) -> anyhow::Result<(f32, f32, f32, usize)> {
+    if let Some(write_shape) = &write_shape {
+        if write_shape.len() != array_out.chunk_grid().dimensionality() {
+            anyhow::bail!("Write shape dimensionality does not match chunk grid dimensionality");
+        }
+    }
+
     let start = SystemTime::now();
     let bytes_decoded = Mutex::new(0);
 
@@ -643,30 +651,61 @@ pub fn do_reencode<
     let chunks = ArraySubset::new_with_shape(array_out.chunk_grid_shape().unwrap());
 
     let concurrent_target = std::thread::available_parallelism().unwrap().get();
-    let (chunks_concurrent_limit, codec_concurrent_target) =
-        zarrs::array::concurrency::calc_concurrency_outer_inner(
-            concurrent_target,
-            &if let Some(concurrent_chunks) = concurrent_chunks {
-                let concurrent_chunks =
-                    std::cmp::min(chunks.num_elements_usize(), concurrent_chunks);
-                RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
-            } else {
-                let concurrent_chunks = std::cmp::min(
-                    chunks.num_elements_usize(),
-                    global_config().chunk_concurrent_minimum(),
-                );
-                RecommendedConcurrency::new_minimum(concurrent_chunks)
-            },
-            &array_out
-                .codecs()
-                .recommended_concurrency(&chunk_representation)
-                .unwrap(),
-        );
+    let (chunks_concurrent_limit, codec_concurrent_target) = calculate_chunk_and_codec_concurrency(
+        concurrent_target,
+        concurrent_chunks,
+        array_out.codecs(),
+        chunks.num_elements_usize(),
+        &chunk_representation,
+    );
+
+    let is_sharded = array_out.is_sharded();
+    let write_shape = if is_sharded { write_shape } else { None };
+
     let codec_options = CodecOptionsBuilder::new()
         .concurrent_target(codec_concurrent_target)
+        .experimental_partial_encoding(write_shape.is_some())
         .build();
 
-    let progress = Progress::new(chunks.num_elements_usize(), progress_callback);
+    let num_iterations = if let Some(write_shape) = &write_shape {
+        let indices = chunks.indices();
+        indices
+            .into_par_iter()
+            .map(|chunk_indices| {
+                let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
+                let chunks = chunk_subset
+                    .chunks(write_shape)
+                    .expect("write shape dimensionality has been validated");
+                chunks.len()
+            })
+            .sum::<usize>()
+    } else {
+        chunks.num_elements_usize()
+    };
+
+    let progress = Progress::new(num_iterations, progress_callback);
+
+    let retrieve_array_subset = |subset: &ArraySubset| {
+        if let Some(cache) = &cache {
+            match cache {
+                Cache::SizeDefault(cache) => {
+                    array_in.retrieve_array_subset_opt_cached(cache, subset, &codec_options)
+                }
+                Cache::SizeThreadLocal(cache) => {
+                    array_in.retrieve_array_subset_opt_cached(cache, subset, &codec_options)
+                }
+                Cache::ChunksDefault(cache) => {
+                    array_in.retrieve_array_subset_opt_cached(cache, subset, &codec_options)
+                }
+                Cache::ChunksThreadLocal(cache) => {
+                    array_in.retrieve_array_subset_opt_cached(cache, subset, &codec_options)
+                }
+            }
+        } else {
+            array_in.retrieve_array_subset_opt(subset, &codec_options)
+        }
+    };
+
     let indices = chunks.indices();
     if array_in.data_type() == array_out.data_type() {
         iter_concurrent_limit!(
@@ -675,57 +714,43 @@ pub fn do_reencode<
             try_for_each,
             |chunk_indices: Vec<u64>| {
                 let chunk_subset = array_out.chunk_subset(&chunk_indices).unwrap();
-                let bytes = progress.read(|| {
-                    if let Some(cache) = &cache {
-                        match cache {
-                            Cache::SizeDefault(cache) => array_in.retrieve_array_subset_opt_cached(
-                                cache,
-                                &chunk_subset,
+                if let Some(write_shape) = &write_shape {
+                    for (_, chunk_subset_write) in &chunk_subset.chunks(write_shape)? {
+                        let chunk_subset_write = chunk_subset_write.overlap(&chunk_subset)?;
+                        let bytes = progress.read(|| retrieve_array_subset(&chunk_subset_write))?;
+                        *bytes_decoded.lock().unwrap() += bytes.size();
+                        progress.write(|| {
+                            array_out.store_array_subset_opt(
+                                &chunk_subset_write,
+                                bytes,
                                 &codec_options,
-                            ),
-                            Cache::SizeThreadLocal(cache) => array_in
-                                .retrieve_array_subset_opt_cached(
-                                    cache,
-                                    &chunk_subset,
-                                    &codec_options,
-                                ),
-                            Cache::ChunksDefault(cache) => array_in
-                                .retrieve_array_subset_opt_cached(
-                                    cache,
-                                    &chunk_subset,
-                                    &codec_options,
-                                ),
-                            Cache::ChunksThreadLocal(cache) => array_in
-                                .retrieve_array_subset_opt_cached(
-                                    cache,
-                                    &chunk_subset,
-                                    &codec_options,
-                                ),
-                        }
-                    } else {
-                        array_in.retrieve_array_subset_opt(&chunk_subset, &codec_options)
+                            )
+                        })?;
+                        progress.next();
                     }
-                })?;
-                *bytes_decoded.lock().unwrap() += bytes.size();
-
-                if validate {
-                    progress.write(|| {
-                        array_out.store_chunk_opt(&chunk_indices, bytes.clone(), &codec_options)
-                    })?;
-                    let bytes_out = array_out
-                        .retrieve_chunk_opt(&chunk_indices, &codec_options)
-                        .unwrap();
-                    assert!(bytes == bytes_out);
-                    // let bytes_in = array_in
-                    //     .retrieve_array_subset_opt(&chunk_subset, &codec_options)
-                    //     .unwrap();
-                    // assert!(bytes_in == bytes_out);
                 } else {
-                    progress.write(|| {
-                        array_out.store_chunk_opt(&chunk_indices, bytes, &codec_options)
-                    })?;
+                    let bytes = progress.read(|| retrieve_array_subset(&chunk_subset))?;
+                    *bytes_decoded.lock().unwrap() += bytes.size();
+
+                    if validate {
+                        progress.write(|| {
+                            array_out.store_chunk_opt(&chunk_indices, bytes.clone(), &codec_options)
+                        })?;
+                        let bytes_out = array_out
+                            .retrieve_chunk_opt(&chunk_indices, &codec_options)
+                            .unwrap();
+                        assert!(bytes == bytes_out);
+                        // let bytes_in = array_in
+                        //     .retrieve_array_subset_opt(&chunk_subset, &codec_options)
+                        //     .unwrap();
+                        // assert!(bytes_in == bytes_out);
+                    } else {
+                        progress.write(|| {
+                            array_out.store_chunk_opt(&chunk_indices, bytes, &codec_options)
+                        })?;
+                    }
+                    progress.next();
                 }
-                progress.next();
                 Ok::<_, ArrayError>(())
             }
         )?;
