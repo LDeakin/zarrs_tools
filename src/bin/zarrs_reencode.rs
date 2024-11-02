@@ -71,7 +71,7 @@ struct Args {
     /// This parameter is ignored for unsharded arrays (the write shape is the chunk shape).
     ///
     /// Prefer to set the write shape to an integer multiple of the chunk shape to avoid unnecessary reads.
-    /// 
+    ///
     #[arg(long, verbatim_doc_comment, value_delimiter = ',')]
     write_shape: Option<Vec<NonZeroU64>>,
 }
