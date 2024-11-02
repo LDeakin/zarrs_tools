@@ -10,18 +10,14 @@ use std::{
     },
 };
 use zarrs_tools::{
-    get_array_builder,
+    calculate_chunk_and_codec_concurrency, get_array_builder,
     progress::{Progress, ProgressCallback, ProgressStats},
     ZarrEncodingArgs,
 };
 
 use zarrs::{
-    array::{
-        codec::CodecOptionsBuilder, Array, ArrayCodecTraits, DataType, DimensionName,
-        RecommendedConcurrency,
-    },
+    array::{codec::CodecOptionsBuilder, Array, DataType, DimensionName},
     array_subset::ArraySubset,
-    config::global_config,
     filesystem::FilesystemStore,
     storage::{
         store::MemoryStore, ReadableWritableListableStorage, ReadableWritableStorageTraits,
@@ -108,25 +104,13 @@ fn ncfiles_to_array<TStore: ReadableWritableStorageTraits + ?Sized + 'static>(
     let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
 
     let concurrent_target = std::thread::available_parallelism().unwrap().get();
-    let (chunks_concurrent_limit, codec_concurrent_target) =
-        zarrs::array::concurrency::calc_concurrency_outer_inner(
-            concurrent_target,
-            &if let Some(concurrent_chunks) = concurrent_chunks {
-                let concurrent_chunks =
-                    std::cmp::min(chunks.num_elements_usize(), concurrent_chunks);
-                RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
-            } else {
-                let concurrent_chunks = std::cmp::min(
-                    chunks.num_elements_usize(),
-                    global_config().chunk_concurrent_minimum(),
-                );
-                RecommendedConcurrency::new_minimum(concurrent_chunks)
-            },
-            &array
-                .codecs()
-                .recommended_concurrency(&chunk_representation)
-                .unwrap(),
-        );
+    let (chunks_concurrent_limit, codec_concurrent_target) = calculate_chunk_and_codec_concurrency(
+        concurrent_target,
+        concurrent_chunks,
+        array.codecs(),
+        chunks.num_elements_usize(),
+        &chunk_representation,
+    );
     let codec_options = CodecOptionsBuilder::new()
         .concurrent_target(codec_concurrent_target)
         .build();

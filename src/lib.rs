@@ -20,8 +20,8 @@ use zarrs::{
         concurrency::RecommendedConcurrency,
         Array, ArrayBuilder, ArrayChunkCacheExt, ArrayError, ChunkCacheDecodedLruChunkLimit,
         ChunkCacheDecodedLruChunkLimitThreadLocal, ChunkCacheDecodedLruSizeLimit,
-        ChunkCacheDecodedLruSizeLimitThreadLocal, CodecChain, DataType, DimensionName, FillValue,
-        FillValueMetadataV3,
+        ChunkCacheDecodedLruSizeLimitThreadLocal, ChunkRepresentation, CodecChain, DataType,
+        DimensionName, FillValue, FillValueMetadataV3,
     },
     array_subset::ArraySubset,
     config::global_config,
@@ -814,4 +814,27 @@ fn convert_fill_value(
         (Float32, f32),
         (Float64, f64)
     ])
+}
+
+pub fn calculate_chunk_and_codec_concurrency(
+    concurrent_target: usize,
+    concurrent_chunks: Option<usize>,
+    codecs: &CodecChain,
+    num_chunks: usize,
+    chunk_representation: &ChunkRepresentation,
+) -> (usize, usize) {
+    zarrs::array::concurrency::calc_concurrency_outer_inner(
+        concurrent_target,
+        &if let Some(concurrent_chunks) = concurrent_chunks {
+            let concurrent_chunks = std::cmp::min(num_chunks, concurrent_chunks);
+            RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
+        } else {
+            let concurrent_chunks =
+                std::cmp::min(num_chunks, global_config().chunk_concurrent_minimum());
+            RecommendedConcurrency::new_minimum(concurrent_chunks)
+        },
+        &codecs
+            .recommended_concurrency(chunk_representation)
+            .unwrap(),
+    )
 }

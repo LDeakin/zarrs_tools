@@ -6,15 +6,10 @@ use std::{
 use clap::Parser;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use zarrs::{
-    array::{
-        codec::{ArrayCodecTraits, CodecOptionsBuilder},
-        concurrency::RecommendedConcurrency,
-    },
-    array_subset::ArraySubset,
-    config::global_config,
-    filesystem::FilesystemStore,
+    array::codec::CodecOptionsBuilder, array_subset::ArraySubset, filesystem::FilesystemStore,
     storage::ReadableStorage,
 };
+use zarrs_tools::calculate_chunk_and_codec_concurrency;
 
 /// Benchmark zarrs read throughput with the sync API.
 #[derive(Parser, Debug)]
@@ -68,22 +63,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
         let concurrent_target = std::thread::available_parallelism().unwrap().get();
         let (chunks_concurrent_limit, codec_concurrent_target) =
-            zarrs::array::concurrency::calc_concurrency_outer_inner(
+            calculate_chunk_and_codec_concurrency(
                 concurrent_target,
-                &if let Some(concurrent_chunks) = args.concurrent_chunks {
-                    let concurrent_chunks =
-                        std::cmp::min(chunks.num_elements_usize(), concurrent_chunks);
-                    RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
-                } else {
-                    let concurrent_chunks = std::cmp::min(
-                        chunks.num_elements_usize(),
-                        global_config().chunk_concurrent_minimum(),
-                    );
-                    RecommendedConcurrency::new_minimum(concurrent_chunks)
-                },
-                &array
-                    .codecs()
-                    .recommended_concurrency(&chunk_representation)?,
+                args.concurrent_chunks,
+                array.codecs(),
+                chunks.num_elements_usize(),
+                &chunk_representation,
             );
         let codec_options = CodecOptionsBuilder::new()
             .concurrent_target(codec_concurrent_target)
