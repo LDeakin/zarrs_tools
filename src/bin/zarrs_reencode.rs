@@ -1,4 +1,5 @@
 use core::f32;
+use std::num::NonZeroU64;
 use std::sync::Arc;
 
 use clap::Parser;
@@ -62,6 +63,17 @@ struct Args {
     /// An optional per-thread chunk cache size (in chunks).
     #[arg(long)]
     cache_chunks_thread: Option<u64>,
+
+    /// Write shape (optional). A comma separated list of the write size along each array dimension.
+    ///
+    /// Use this parameter to incrementally write shards in batches of chunks of the specified write shape.
+    /// The write shape defaults to the shard shape for sharded arrays.
+    /// This parameter is ignored for unsharded arrays (the write shape is the chunk shape).
+    ///
+    /// Prefer to set the write shape to an integer multiple of the chunk shape to avoid unnecessary reads.
+    /// 
+    #[arg(long, verbatim_doc_comment, value_delimiter = ',')]
+    write_shape: Option<Vec<NonZeroU64>>,
 }
 
 fn bar_style_run() -> ProgressStyle {
@@ -181,6 +193,7 @@ fn main() -> anyhow::Result<()> {
         args.concurrent_chunks,
         &progress_callback,
         cache_size,
+        args.write_shape,
     )?;
     bar.set_style(bar_style_finish());
     bar.finish_and_clear();
