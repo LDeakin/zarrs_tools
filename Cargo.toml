@@ -1,6 +1,6 @@
 [package]
 name = "zarrs_tools"
-version = "0.6.0"
+version = "0.6.0-beta.0"
 authors = ["Lachlan Deakin <ljdgit@gmail.com>"]
 edition = "2021"
 rust-version = "1.80"
@@ -105,15 +105,6 @@ lto = "thin"
 # codegen-units = 1
 # panic = "abort"
 # debug = true
-
-# [workspace.metadata.dist]
-# cargo-dist-version = "0.10.0"
-# ci = ["github"]
-# installers = []
-# targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
-# pr-run-mode = "plan"
-# all-features = false
-# create-release = false
 
 # [workspace.metadata.dist.github-custom-runners]
 # aarch64-apple-darwin = "macos-14"
