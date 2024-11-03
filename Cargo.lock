@@ -938,7 +938,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.6",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -2137,7 +2137,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -2400,7 +2400,7 @@ dependencies = [
 [[package]]
 name = "zarrs"
 version = "0.18.0-dev"
-source = "git+https://github.com/LDeakin/zarrs.git#330ce8651b919d82dc2824e2236b5442eac1a38b"
+source = "git+https://github.com/LDeakin/zarrs.git#b5667ae46474b519074ea542cd4b2360981bc038"
 dependencies = [
  "async-trait",
  "blosc-src",
@@ -2434,7 +2434,7 @@ dependencies = [
 [[package]]
 name = "zarrs_filesystem"
 version = "0.1.0"
-source = "git+https://github.com/LDeakin/zarrs.git#330ce8651b919d82dc2824e2236b5442eac1a38b"
+source = "git+https://github.com/LDeakin/zarrs.git#b5667ae46474b519074ea542cd4b2360981bc038"
 dependencies = [
  "bytes",
  "derive_more",
@@ -2451,7 +2451,7 @@ dependencies = [
 [[package]]
 name = "zarrs_metadata"
 version = "0.2.0"
-source = "git+https://github.com/LDeakin/zarrs.git#330ce8651b919d82dc2824e2236b5442eac1a38b"
+source = "git+https://github.com/LDeakin/zarrs.git#b5667ae46474b519074ea542cd4b2360981bc038"
 dependencies = [
  "derive_more",
  "half",
@@ -2466,7 +2466,7 @@ dependencies = [
 [[package]]
 name = "zarrs_opendal"
 version = "0.3.1"
-source = "git+https://github.com/LDeakin/zarrs.git#330ce8651b919d82dc2824e2236b5442eac1a38b"
+source = "git+https://github.com/LDeakin/zarrs.git#b5667ae46474b519074ea542cd4b2360981bc038"
 dependencies = [
  "async-trait",
  "futures",
@@ -2477,7 +2477,7 @@ dependencies = [
 [[package]]
 name = "zarrs_storage"
 version = "0.3.0-dev"
-source = "git+https://github.com/LDeakin/zarrs.git#330ce8651b919d82dc2824e2236b5442eac1a38b"
+source = "git+https://github.com/LDeakin/zarrs.git#b5667ae46474b519074ea542cd4b2360981bc038"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2491,7 +2491,7 @@ dependencies = [
 
 [[package]]
 name = "zarrs_tools"
-version = "0.6.0"
+version = "0.6.0-beta.0"
 dependencies = [
  "anyhow",
  "approx",
