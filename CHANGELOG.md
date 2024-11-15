@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - [#12](https://github.com/LDeakin/zarrs_tools/pull/12) Bump netcdf to 0.10.2 by [@magnusuMET]
  - **Breaking**: Bump MSRV to 1.80
  - Bump `sysinfo` to 0.31
- - Bump `zarrs` to 0.18.0-dev
+ - Bump `zarrs` to 0.18.0-beta.0
  - `ncvar2zarr`:
    - Switch to output concurrency
    - **Breaking**: Rename `concurrent-blocks` argument to `concurrent-chunks`
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - **Breaking**: Removed `concat-dim` argument. Concatenation is now only supported along the first (slowest varying) dimension
    - This tool is intended to be replaced by chunk manifests when the specification and `virtualizarr` matures
  - Move benchmark scripts and measurements to https://github.com/LDeakin/zarr_benchmarks
+ - Bump `zarrs_opendal` to 0.4.0 (`opendal` 0.50)
 
 ### Fixed
  - `zarrs_ome` fix axis unit parsing (broken in 0.5.3)
