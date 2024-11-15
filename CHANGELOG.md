@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0-beta.1] - 2024-11-15
+
 ### Added
  - Add `zarrs_validate` to check that arrays are equivalent
  - Add `--write-shape` argument to `zarrs_reencode`
@@ -22,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - **Breaking**: Rename `concurrent-blocks` argument to `concurrent-chunks`
    - **Breaking**: Removed `validate` argument
    - **Breaking**: Removed `concat-dim` argument. Concatenation is now only supported along the first (slowest varying) dimension
-   - This tool is intended to be replaced by chunk manifests when the specification and `virtualizarr` matures
+   - This tool is intended to be replaced by `icechunk` / `virtualizarr` when they mature
  - Move benchmark scripts and measurements to https://github.com/LDeakin/zarr_benchmarks
  - Bump `zarrs_opendal` to 0.4.0 (`opendal` 0.50)
 
@@ -185,6 +187,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Initial public release
 
 [unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.5.5...HEAD
+[0.6.0-beta.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.6.0-beta.1
 [0.5.5]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.5
 [0.5.4]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.4
 [0.5.3]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.3
