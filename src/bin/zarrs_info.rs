@@ -14,7 +14,7 @@ use zarrs::{
 
 /// Get information about a Zarr V3 array as JSON.
 #[derive(Parser)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Cli {
     /// The maximum number of chunks concurrently processed.
     ///

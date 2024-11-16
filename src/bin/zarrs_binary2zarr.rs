@@ -20,7 +20,7 @@ use zarrs::{
 
 /// Convert an N-dimensional binary array from standard input to a Zarr V3 array.
 #[derive(Parser)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 #[allow(rustdoc::bare_urls)]
 struct Cli {
     /// The endianness of the binary data. If unspecified, it is assumed to match the host endianness.

@@ -329,6 +329,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "const_format"
+version = "0.2.33"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50c655d81ff1114fb0dcdea9225ea9f0cc712a6f8d189378e82bdf62a473a64b"
+dependencies = [
+ "const_format_proc_macros",
+]
+
+[[package]]
+name = "const_format_proc_macros"
+version = "0.2.33"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eff1a44b93f47b1bac19a27932f5c591e43d1ba357ee4f61526c8a25603f0eb1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-xid",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1058,9 +1078,9 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
-version = "0.2.162"
+version = "0.2.164"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18d287de67fe55fd7e1581fe933d965a5a9477b38e949cfa9f8574ef01506398"
+checksum = "433bfe06b8c75da9b2e3fbea6e5329ff87748f0b144ef75306e674c3f6f7c13f"
 
 [[package]]
 name = "libloading"
@@ -1441,9 +1461,9 @@ dependencies = [
 
 [[package]]
 name = "openssl-src"
-version = "300.4.0+3.4.0"
+version = "300.4.1+3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a709e02f2b4aca747929cca5ed248880847c650233cf8b8cdc48f40aaf4898a6"
+checksum = "faa4eac4138c62414b5622d1b31c5c304f34b406b013c079c2bbc652fdd6678c"
 dependencies = [
  "cc",
 ]
@@ -2618,8 +2638,7 @@ dependencies = [
 [[package]]
 name = "zarrs"
 version = "0.18.0-beta.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cf2268e57ea21ebb30abee0f5707a73d59b3ee822d8cd92dffd4230286ea6af"
+source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
 dependencies = [
  "async-trait",
  "blosc-src",
@@ -2653,8 +2672,7 @@ dependencies = [
 [[package]]
 name = "zarrs_filesystem"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f1c095b47dafbeee5c6714adc7a989f4cb1541212e5f9206509e732f678c71e"
+source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
 dependencies = [
  "bytes",
  "derive_more",
@@ -2671,8 +2689,7 @@ dependencies = [
 [[package]]
 name = "zarrs_metadata"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "902f67415f15036895770fab4dd3b274fb4a6cd44390d68feaa21b3f0dfabba4"
+source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
 dependencies = [
  "derive_more",
  "half",
@@ -2687,8 +2704,7 @@ dependencies = [
 [[package]]
 name = "zarrs_opendal"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0e5151abecb70514fd2f6c86cd5280f65bd741c110181a9c08d16720a3cd539"
+source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
 dependencies = [
  "async-trait",
  "futures",
@@ -2699,8 +2715,7 @@ dependencies = [
 [[package]]
 name = "zarrs_storage"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d23665d868dd8843989bb74239956eb4600f0bd713f1f81489b4c1877503b607"
+source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2714,13 +2729,14 @@ dependencies = [
 
 [[package]]
 name = "zarrs_tools"
-version = "0.6.0-beta.0"
+version = "0.6.0-beta.2"
 dependencies = [
  "anyhow",
  "approx",
  "async-scoped",
  "bytemuck",
  "clap",
+ "const_format",
  "enum_dispatch",
  "futures",
  "half",

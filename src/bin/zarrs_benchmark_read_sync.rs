@@ -13,7 +13,7 @@ use zarrs_tools::calculate_chunk_and_codec_concurrency;
 
 /// Benchmark zarrs read throughput with the sync API.
 #[derive(Parser, Debug)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Args {
     /// The path or URL of a zarr array.
     path: String,

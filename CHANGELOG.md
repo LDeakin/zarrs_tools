@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+ - Include `zarrs` version when running binaries with `-v`/`--version`
+
 ## [0.6.0-beta.1] - 2024-11-15
 
 ### Added

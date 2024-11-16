@@ -17,7 +17,7 @@ use zarrs::{
 
 /// Benchmark zarrs read throughput with the async API.
 #[derive(Parser, Debug)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Args {
     /// The zarr array directory.
     path: String,

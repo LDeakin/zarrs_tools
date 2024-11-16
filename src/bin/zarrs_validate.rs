@@ -21,7 +21,7 @@ use zarrs_tools::calculate_chunk_and_codec_concurrency;
 ///
 /// Differences in encoding (e.g codecs, chunk key encoding) and attributes are ignored.
 #[derive(Parser, Debug)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Args {
     /// The path to the first zarr array.
     first: String,

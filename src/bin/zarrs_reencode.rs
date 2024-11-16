@@ -19,7 +19,7 @@ use zarrs_tools::{
 
 /// Reencode a Zarr V3 array.
 #[derive(Parser, Debug)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Args {
     #[command(flatten)]
     encoding: ZarrReencodingArgs,

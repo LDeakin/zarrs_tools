@@ -33,7 +33,7 @@ enum OutputExists {
 
 /// Apply simple image filters (transformations) to a Zarr V3 array.
 #[derive(Parser, Debug)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Cli {
     /// Behaviour if the output exists.
     #[arg(long)]

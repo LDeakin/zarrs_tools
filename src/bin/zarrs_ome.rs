@@ -67,7 +67,7 @@ impl std::fmt::Display for OMEZarrVersion {
 
 /// Convert a Zarr V3 array to OME-Zarr (0.5-dev).
 #[derive(Parser, Debug)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Cli {
     /// The input array path.
     input: PathBuf,
@@ -410,7 +410,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let serde_json::Value::Object(multiscales_metadata) = serde_json::json!({
         "description": "Created with zarrs_ome",
         "repository": env!("CARGO_PKG_REPOSITORY"),
-        "version": env!("CARGO_PKG_VERSION"),
+        "version": zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS,
     }) else {
         unreachable!()
     };

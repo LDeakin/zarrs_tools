@@ -34,6 +34,16 @@ pub mod filter;
 pub mod info;
 pub mod progress;
 
+/// The `zarrs` tools version with the `zarrs` version.
+///
+/// Example:
+/// `zarrs_tools 0.6.0-beta.1 (zarrs 0.18.0-beta.0)`
+pub const ZARRS_TOOLS_VERSION_WITH_ZARRS: &str = const_format::formatcp!(
+    "{} (zarrs {})",
+    env!("CARGO_PKG_VERSION"),
+    zarrs::version::version_str(),
+);
+
 #[derive(Parser)]
 #[allow(rustdoc::bare_urls)]
 pub struct ZarrEncodingArgs {

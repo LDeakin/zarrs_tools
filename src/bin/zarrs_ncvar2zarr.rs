@@ -27,7 +27,7 @@ use zarrs::{
 
 /// Convert a netCDF variable to a Zarr V3 array.
 #[derive(Parser)]
-#[command(author, version)]
+#[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Cli {
     #[command(flatten)]
     encoding: ZarrEncodingArgs,

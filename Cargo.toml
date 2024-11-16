@@ -1,6 +1,6 @@
 [package]
 name = "zarrs_tools"
-version = "0.6.0-beta.1"
+version = "0.6.0-beta.2"
 authors = ["Lachlan Deakin <ljdgit@gmail.com>"]
 edition = "2021"
 rust-version = "1.80"
@@ -31,6 +31,7 @@ approx = "0.5.1"
 async-scoped = { version = "0.9.0", features = ["use-tokio"] }
 bytemuck = "1.16.0"
 clap = { version = "4.4.6", features = ["derive"] }
+const_format = "0.2.33"
 enum_dispatch = "0.3.12"
 futures = "0.3.29"
 half = { version = "2.4.0", features = ["num-traits"] }
@@ -113,5 +114,5 @@ lto = "thin"
 [patch.crates-io]
 # zarrs = { path = "../zarrs/zarrs" }
 # zarrs_opendal = { path = "../zarrs/zarrs_opendal" }
-# zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
-# zarrs_opendal = { git = "https://github.com/LDeakin/zarrs.git" }
+zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
+zarrs_opendal = { git = "https://github.com/LDeakin/zarrs.git" }
