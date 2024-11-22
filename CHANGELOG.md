@@ -13,8 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  - Include `zarrs` version when running binaries with `-v`/`--version`
  - Cleanup `zarrs_info` docs and CLI help
- - `zarrs_ome`: add [OME-Zarr 0.5](https://ngff.openmicroscopy.org/0.5/) support, remove interim 0.5 version support
+ - `zarrs_ome`
+   - add [OME-Zarr 0.5](https://ngff.openmicroscopy.org/0.5/) support, remove interim 0.5 version support
    - Bump `ome_zarr_metadata` to 0.2.0
+   - Rename `--version` to `--ome-zarr-version`
+   - Remove `--no-gaussian` argument
+   - Add `--gaussian-sigma` and `--gaussian-kernel-half-size` arguments, mean downsampling is now the default
+   - Map a "channel" unit to a channel type axis
+
 
 ### Removed
  - `zarrs_info`: Remove `--time` argument
