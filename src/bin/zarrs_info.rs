@@ -12,7 +12,9 @@ use zarrs::{
     node::{Node, NodeMetadata},
 };
 
-/// Get information about a Zarr array as JSON.
+/// Get information about a Zarr array or group.
+///
+/// Outputs are JSON encoded.
 #[derive(Parser)]
 #[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Cli {
@@ -23,7 +25,7 @@ struct Cli {
     #[arg(long, default_value_t = current_num_threads())]
     chunk_limit: usize,
 
-    /// Path to zarr input array.
+    /// Path to the Zarr input array or group.
     path: std::path::PathBuf,
 
     #[command(subcommand)]
@@ -39,23 +41,23 @@ struct HistogramParams {
 
 #[derive(Subcommand, Debug)]
 enum InfoCommand {
-    /// The array/group metadata.
+    /// Get the array/group metadata.
     Metadata,
-    /// The array/group metadata (interpreted as V3).
+    /// Get the array/group metadata (interpreted as V3).
     MetadataV3,
-    /// The array/group attributes.
+    /// Get the array/group attributes.
     Attributes,
-    /// The array shape.
+    /// Get the array shape.
     Shape,
-    /// The array data type.
+    /// Get the array data type.
     DataType,
-    /// The array fill value.
+    /// Get the array fill value.
     FillValue,
-    /// The array dimension names.
+    /// Get the array dimension names.
     DimensionNames,
-    /// The array range.
+    /// Get the array data range.
     Range,
-    /// The array histogram.
+    /// Get the array data histogram.
     Histogram(HistogramParams),
 }
 
