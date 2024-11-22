@@ -32,6 +32,13 @@ See the [LDeakin/zarr_benchmarks](https://github.com/LDeakin/zarr_benchmarks) re
 
 ## Install
 
+### Prebuilt Binaries
+```shell
+# Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
+cargo binstall zarrs_tools
+```
+Prebuilt binaries are not available on all platforms.
+
 ### From [crates.io](https://crates.io/crates/zarrs_tools)
 ```bash
 cargo install --all-features zarrs_tools

@@ -20,7 +20,14 @@ The filters currently supported are:
 ## Installation
 `zarrs_filter` is installed with the `filter` feature of `zarrs_tools`
 
+### Prebuilt Binaries
+```shell
+# Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
+cargo binstall zarrs_tools
 ```
+
+### From Source
+```shell
 cargo install --features=filter zarrs_tools
 ```
 

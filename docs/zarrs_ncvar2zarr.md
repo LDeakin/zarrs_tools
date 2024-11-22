@@ -7,7 +7,14 @@ Multi-file variables are supported.
 ## Installation
 `zarrs_ncvar2zarr` is installed with the `ncvar2zarr` feature of `zarrs_tools`
 
+### Prebuilt Binaries
+```shell
+# Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
+cargo binstall zarrs_tools
 ```
+
+### From Source
+```shell
 cargo install --features=ncvar2zarr zarrs_tools
 ```
 

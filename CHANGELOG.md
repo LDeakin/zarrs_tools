@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - Add `cargo binstall` install instructions
+
 ### Changed
  - Include `zarrs` version when running binaries with `-v`/`--version`
  - Cleanup `zarrs_info` docs and CLI help

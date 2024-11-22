@@ -5,7 +5,14 @@ Reencode/rechunk a Zarr V2/V3 to a Zarr v3 array.
 ## Installation
 `zarrs_reencode` packaged by default with `zarrs_tools` and requires no extra features.
 
+### Prebuilt Binaries
+```shell
+# Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
+cargo binstall zarrs_tools
 ```
+
+### From Source
+```shell
 cargo install zarrs_tools
 ```
 

@@ -7,6 +7,7 @@ Get information about a Zarr array or group.
 
 ### Prebuilt Binaries
 ```shell
+# Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
 cargo binstall zarrs_tools
 ```
 
