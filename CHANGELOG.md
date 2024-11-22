@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  - Include `zarrs` version when running binaries with `-v`/`--version`
 
+### Removed
+ - `zarrs_info`: Remove `--time` argument
+
 ## [0.6.0-beta.1] - 2024-11-15
 
 ### Added

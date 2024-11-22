@@ -12,7 +12,7 @@ use zarrs::{
     node::{Node, NodeMetadata},
 };
 
-/// Get information about a Zarr V3 array as JSON.
+/// Get information about a Zarr array as JSON.
 #[derive(Parser)]
 #[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Cli {
@@ -22,9 +22,6 @@ struct Cli {
     /// Consider reducing this for images with large chunk sizes or on systems with low memory availability.
     #[arg(long, default_value_t = current_num_threads())]
     chunk_limit: usize,
-
-    #[arg(long, default_value_t = false)]
-    time: bool,
 
     /// Path to zarr input array.
     path: std::path::PathBuf,
@@ -86,8 +83,6 @@ fn array_metadata_options_v3() -> ArrayMetadataOptions {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
-
-    let start = std::time::Instant::now();
 
     let storage = Arc::new(FilesystemStore::new(&cli.path)?);
 
@@ -200,11 +195,6 @@ fn run() -> Result<(), Box<dyn Error>> {
                 );
             }
         }
-    }
-
-    if cli.time {
-        let duration_s = start.elapsed().as_secs_f32();
-        eprintln!("Completed in {duration_s:.2}s");
     }
 
     Ok(())
