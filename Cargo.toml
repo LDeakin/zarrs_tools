@@ -116,3 +116,4 @@ lto = "thin"
 # zarrs_opendal = { path = "../zarrs/zarrs_opendal" }
 zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
 zarrs_opendal = { git = "https://github.com/LDeakin/zarrs.git" }
+ome_zarr_metadata = { git = "https://github.com/LDeakin/rust_ome_zarr_metadata.git" }

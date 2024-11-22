@@ -10,7 +10,7 @@ use half::{bf16, f16};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use num_traits::AsPrimitive;
-use ome_zarr_metadata::v0_5_dev::{
+use ome_zarr_metadata::v0_5::{
     Axis, AxisUnit, CoordinateTransform, CoordinateTransformScale, CoordinateTransformTranslation,
     MultiscaleImageDataset, MultiscaleImageMetadata,
 };
@@ -46,21 +46,15 @@ enum OutputExists {
 #[allow(non_camel_case_types)]
 #[derive(clap::ValueEnum, Debug, Clone)]
 enum OMEZarrVersion {
-    /// 0.5-dev (Zarr V3 version of Editor's Draft 12 June 2024).
-    ///
-    /// Supported by Neuroglancer since v2.37.
-    #[value(name = "0.5-dev")]
-    V0_5_dev,
-    /// 0.5-dev1 (Identical to 0.5-dev aside from the "version").
-    #[value(name = "0.5-dev1")]
-    V0_5_dev1,
+    /// 0.5 https://ngff.openmicroscopy.org/0.5/
+    #[value(name = "0.5")]
+    V0_5,
 }
 
 impl std::fmt::Display for OMEZarrVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            OMEZarrVersion::V0_5_dev => write!(f, "0.5-dev"),
-            OMEZarrVersion::V0_5_dev1 => write!(f, "0.5-dev1"),
+            OMEZarrVersion::V0_5 => write!(f, "0.5"),
         }
     }
 }
@@ -75,7 +69,7 @@ struct Cli {
     output: PathBuf,
 
     // The OME-Zarr version.
-    #[arg(long, default_value_t = OMEZarrVersion::V0_5_dev)]
+    #[arg(long, default_value_t = OMEZarrVersion::V0_5)]
     version: OMEZarrVersion,
 
     /// The downsample factor.
@@ -386,7 +380,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                     .as_str()
                     .map(|s| s.to_string())
                     .unwrap_or_else(|| i.to_string()),
-                r#type: Some(ome_zarr_metadata::v0_5_dev::AxisType::Space),
+                r#type: Some(ome_zarr_metadata::v0_5::AxisType::Space),
                 unit,
             })
         }
@@ -394,7 +388,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         for (i, unit) in physical_units.into_iter().enumerate() {
             axes.push(Axis {
                 name: i.to_string(),
-                r#type: Some(ome_zarr_metadata::v0_5_dev::AxisType::Space),
+                r#type: Some(ome_zarr_metadata::v0_5::AxisType::Space),
                 unit,
             })
         }
@@ -686,24 +680,8 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
 
     match cli.version {
-        OMEZarrVersion::V0_5_dev => {
-            let multiscales = [ome_zarr_metadata::v0_5_dev::MultiscaleImage {
-                version: Default::default(),
-                name: cli.name,
-                axes,
-                datasets,
-                coordinate_transformations: base_transform,
-                r#type: Some(downsample_type),
-                metadata: Some(multiscales_metadata),
-            }];
-            group.attributes_mut().insert(
-                "multiscales".to_string(),
-                serde_json::to_value(multiscales).unwrap(),
-            );
-        }
-        OMEZarrVersion::V0_5_dev1 => {
-            let multiscales = [ome_zarr_metadata::v0_5_dev1::MultiscaleImage {
-                version: Default::default(),
+        OMEZarrVersion::V0_5 => {
+            let multiscales = [ome_zarr_metadata::v0_5::MultiscaleImage {
                 name: cli.name,
                 axes,
                 datasets,
