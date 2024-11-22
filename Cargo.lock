@@ -1416,8 +1416,8 @@ dependencies = [
 
 [[package]]
 name = "ome_zarr_metadata"
-version = "0.1.0"
-source = "git+https://github.com/LDeakin/rust_ome_zarr_metadata.git#89a6a08e4687d37704606af78775702a1df0e5e0"
+version = "0.2.0"
+source = "git+https://github.com/LDeakin/rust_ome_zarr_metadata.git#0565b6936941b1953e4f7da84f445e56729a4ba7"
 dependencies = [
  "monostate",
  "serde",
