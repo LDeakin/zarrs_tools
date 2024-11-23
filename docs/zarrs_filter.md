@@ -18,7 +18,7 @@ The filters currently supported are:
  - **guided filter**:       Apply a guided filter (edge-preserving noise filter).
 
 ## Installation
-`zarrs_filter` is installed with the `filter` feature of `zarrs_tools`
+`zarrs_filter` is installed with the `filter` feature of `zarrs_tools`.
 
 ### Prebuilt Binaries
 ```shell
@@ -31,11 +31,64 @@ cargo binstall zarrs_tools
 cargo install --features=filter zarrs_tools
 ```
 
-## Help
-```bash
-zarrs_filter --help
-zarrs_filter <COMMAND> --help
+## Usage
+
+<details>
+<summary>zarrs_filter --help</summary>
+
+```text
+Apply simple image filters (transformations) to a Zarr array
+
+Usage: zarrs_filter [OPTIONS] [RUN_CONFIG] [COMMAND]
+
+Commands:
+  reencode            Reencode an array
+  crop                Crop an array given an offset and shape
+  rescale             Rescale array values given a multiplier and offset
+  clamp               Clamp values between a minimum and maximum
+  equal               Return a binary image where the input is equal to some value
+  downsample          Downsample an image given a stride
+  gradient-magnitude  Compute the gradient magnitude (sobel)
+  gaussian            Apply a Gaussian kernel
+  summed-area-table   Compute a summed area table (integral image)
+  guided-filter       Apply a guided filter (edge-preserving noise filter)
+  replace-value       Replace a value with another value
+  help                Print this message or the help of the given subcommand(s)
+
+Arguments:
+  [RUN_CONFIG]
+          Path to a JSON run configuration
+
+Options:
+      --exists <EXISTS>
+          Behaviour if the output exists
+          
+          [default: erase]
+
+          Possible values:
+          - erase: Erase the output
+          - exit:  Exit if the output already exists
+
+      --tmp <TMP>
+          Directory for temporary arrays.
+          
+          If omitted, defaults to the platform-specific temporary directory (e.g. ${TMPDIR}, /tmp, etc.)
+
+      --chunk-limit <CHUNK_LIMIT>
+          The maximum number of chunks concurrently processed.
+          
+          By default, this is set to the number of CPUs. Consider reducing this for images with large chunk sizes or on systems with low memory availability.
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
 ```
+
+</details>
+
+Run `zarrs_filter <COMMAND> --help` for more information on a specific command.
 
 ## Examples (CLI)
 ```bash

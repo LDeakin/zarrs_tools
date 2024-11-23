@@ -17,7 +17,7 @@ The physical size and units of the array elements can be set explicitly.
 The array can be reencoded when output to OME-Zarr.
 
 ## Installation
-`zarrs_ome` is installed with the `ome` feature of `zarrs_tools`
+`zarrs_ome` is installed with the `ome` feature of `zarrs_tools`.
 
 ### Prebuilt Binaries
 ```shell

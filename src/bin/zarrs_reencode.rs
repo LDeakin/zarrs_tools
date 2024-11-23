@@ -17,7 +17,7 @@ use zarrs_tools::{
     CacheSize, ZarrReencodingArgs,
 };
 
-/// Reencode a Zarr V3 array.
+/// Reencode a Zarr array.
 #[derive(Parser, Debug)]
 #[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Args {

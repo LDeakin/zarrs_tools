@@ -21,7 +21,7 @@ cargo install zarrs_tools
 <summary>zarrs_reencode --help</summary>
 
 ```text
-Reencode a Zarr V3 array
+Reencode a Zarr array
 
 Usage: zarrs_reencode [OPTIONS] <PATH_IN> <PATH_OUT>
 

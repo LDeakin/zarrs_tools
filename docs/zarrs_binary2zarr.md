@@ -3,7 +3,7 @@
 Create a Zarr V3 array from piped binary data.
 
 ## Installation
-`zarrs_binary2zarr` is installed with the `binary2zarr` feature of `zarrs_tools`
+`zarrs_binary2zarr` is installed with the `binary2zarr` feature of `zarrs_tools`.
 
 ### Prebuilt Binaries
 ```shell

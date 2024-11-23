@@ -31,7 +31,7 @@ enum OutputExists {
     Exit,
 }
 
-/// Apply simple image filters (transformations) to a Zarr V3 array.
+/// Apply simple image filters (transformations) to a Zarr array.
 #[derive(Parser, Debug)]
 #[command(author, version=zarrs_tools::ZARRS_TOOLS_VERSION_WITH_ZARRS)]
 struct Cli {

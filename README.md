@@ -17,7 +17,7 @@ Some tools additionally support input of a [V3 compatible subset](https://docs.r
 - [`zarrs_ome`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to an [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) multi-scale image.
   - Supports OME-Zarr `0.5-dev` (as Zarr V3) and `0.5-dev1`. The first is recognised by [Neuroglancer](https://github.com/google/neuroglancer).
 - [`zarrs_info`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_info.md) (feature `info`): return metadata related info or the range/histogram of an array.
-- `zarrs_validate` (feature `validate`): validate that two arrays are equivalent.
+- [`zarrs_validate`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_validate.md) (feature `validate`): validate that two arrays are equivalent.
 - [`zarrs_binary2zarr`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
 - [`zarrs_ncvar2zarr`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ncvar2zarr.md) (feature `ncvar2zarr`): convert a netCDF variable to an array.
 
