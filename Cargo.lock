@@ -1127,9 +1127,9 @@ checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
 
 [[package]]
 name = "litemap"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "643cb0b8d4fcc284004d5fd0d67ccf61dfffadb7f75e1e71bc420f4688a3a704"
+checksum = "4ee93343901ab17bd981295f2cf0026d4ad018c7c31ba84549a4ddbb47a45104"
 
 [[package]]
 name = "lock_api"
@@ -1417,7 +1417,8 @@ dependencies = [
 [[package]]
 name = "ome_zarr_metadata"
 version = "0.2.0"
-source = "git+https://github.com/LDeakin/rust_ome_zarr_metadata.git#0565b6936941b1953e4f7da84f445e56729a4ba7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8799aefed5e3a2055b7562933e5e8b5d108f09fc1ab4060c6f20e2ac26c0a632"
 dependencies = [
  "monostate",
  "serde",
@@ -2612,9 +2613,9 @@ checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
 
 [[package]]
 name = "yoke"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c5b1314b079b0930c31e3af543d8ee1757b1951ae1e1565ec704403a7240ca5"
+checksum = "120e6aef9aa629e3d4f52dc8cc43a015c7724194c97dfaf45180d2daf2b77f40"
 dependencies = [
  "serde",
  "stable_deref_trait",
@@ -2624,9 +2625,9 @@ dependencies = [
 
 [[package]]
 name = "yoke-derive"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28cc31741b18cb6f1d5ff12f5b7523e3d6eb0852bbbad19d73905511d9849b95"
+checksum = "2380878cad4ac9aac1e2435f3eb4020e8374b5f13c296cb75b4620ff8e229154"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2636,8 +2637,9 @@ dependencies = [
 
 [[package]]
 name = "zarrs"
-version = "0.18.0-beta.0"
-source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2957fbdc365a192c71fe61ab2e759d4e77fbad598e032102b87b4188c32369d"
 dependencies = [
  "async-trait",
  "blosc-src",
@@ -2671,7 +2673,8 @@ dependencies = [
 [[package]]
 name = "zarrs_filesystem"
 version = "0.2.0"
-source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f1c095b47dafbeee5c6714adc7a989f4cb1541212e5f9206509e732f678c71e"
 dependencies = [
  "bytes",
  "derive_more",
@@ -2688,7 +2691,8 @@ dependencies = [
 [[package]]
 name = "zarrs_metadata"
 version = "0.2.0"
-source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "902f67415f15036895770fab4dd3b274fb4a6cd44390d68feaa21b3f0dfabba4"
 dependencies = [
  "derive_more",
  "half",
@@ -2703,7 +2707,8 @@ dependencies = [
 [[package]]
 name = "zarrs_opendal"
 version = "0.4.0"
-source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0e5151abecb70514fd2f6c86cd5280f65bd741c110181a9c08d16720a3cd539"
 dependencies = [
  "async-trait",
  "futures",
@@ -2714,7 +2719,8 @@ dependencies = [
 [[package]]
 name = "zarrs_storage"
 version = "0.3.0"
-source = "git+https://github.com/LDeakin/zarrs.git#2e3ea683a3c765cb00742665cf7a3603141e57cf"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d23665d868dd8843989bb74239956eb4600f0bd713f1f81489b4c1877503b607"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2752,7 +2758,7 @@ dependencies = [
  "serde_json",
  "sysinfo",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tokio",
  "unsafe_cell_slice",
  "zarrs",
@@ -2761,18 +2767,18 @@ dependencies = [
 
 [[package]]
 name = "zerofrom"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91ec111ce797d0e0784a1116d0ddcdbea84322cd79e5d5ad173daeba4f93ab55"
+checksum = "cff3ee08c995dee1859d998dea82f7374f2826091dd9cd47def953cae446cd2e"
 dependencies = [
  "zerofrom-derive",
 ]
 
 [[package]]
 name = "zerofrom-derive"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ea7b4a3637ea8669cedf0f1fd5c286a17f3de97b8dd5a70a6c167a1730e63a5"
+checksum = "595eed982f7d355beb85837f651fa22e90b3c044842dc7f2c2842c086f295808"
 dependencies = [
  "proc-macro2",
  "quote",

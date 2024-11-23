@@ -8,9 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+ - Add `zarrs_validate` to check that arrays are equivalent
+ - Add `--write-shape` argument to `zarrs_reencode`
+   - This enables writing sharded arrays incrementally
  - Add `cargo binstall` install instructions
 
 ### Changed
+ - [#12](https://github.com/LDeakin/zarrs_tools/pull/12) Bump netcdf to 0.10.2 by [@magnusuMET]
+ - **Breaking**: Bump MSRV to 1.80
+ - Bump `sysinfo` to 0.31
+ - Bump `zarrs` to 0.18.0
+ - `ncvar2zarr`:
+   - Switch to output concurrency
+   - **Breaking**: Rename `concurrent-blocks` argument to `concurrent-chunks`
+   - **Breaking**: Removed `validate` argument
+   - **Breaking**: Removed `concat-dim` argument. Concatenation is now only supported along the first (slowest varying) dimension
+   - This tool is intended to be replaced by `icechunk` / `virtualizarr` when they mature
+ - Move benchmark scripts and measurements to https://github.com/LDeakin/zarr_benchmarks
+ - Bump `zarrs_opendal` to 0.4.0 (`opendal` 0.50)
  - Include `zarrs` version when running binaries with `-v`/`--version`
  - Cleanup `zarrs_info` docs and CLI help
  - `zarrs_ome`
@@ -20,34 +35,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - Remove `--no-gaussian` argument
    - Add `--gaussian-sigma` and `--gaussian-kernel-half-size` arguments, mean downsampling is now the default
    - Map a "channel" unit to a channel type axis
-
+ - Bump `thiserror` to 2.0.0
 
 ### Removed
  - `zarrs_info`: Remove `--time` argument
 
-## [0.6.0-beta.1] - 2024-11-15
-
-### Added
- - Add `zarrs_validate` to check that arrays are equivalent
- - Add `--write-shape` argument to `zarrs_reencode`
-   - This enables writing sharded arrays incrementally
-
-### Changed
- - [#12](https://github.com/LDeakin/zarrs_tools/pull/12) Bump netcdf to 0.10.2 by [@magnusuMET]
- - **Breaking**: Bump MSRV to 1.80
- - Bump `sysinfo` to 0.31
- - Bump `zarrs` to 0.18.0-beta.0
- - `ncvar2zarr`:
-   - Switch to output concurrency
-   - **Breaking**: Rename `concurrent-blocks` argument to `concurrent-chunks`
-   - **Breaking**: Removed `validate` argument
-   - **Breaking**: Removed `concat-dim` argument. Concatenation is now only supported along the first (slowest varying) dimension
-   - This tool is intended to be replaced by `icechunk` / `virtualizarr` when they mature
- - Move benchmark scripts and measurements to https://github.com/LDeakin/zarr_benchmarks
- - Bump `zarrs_opendal` to 0.4.0 (`opendal` 0.50)
-
 ### Fixed
  - `zarrs_ome` fix axis unit parsing (broken in 0.5.3)
+
+## [0.6.0-beta.1] - 2024-11-15
 
 ## [0.5.5] - 2024-07-31
 
