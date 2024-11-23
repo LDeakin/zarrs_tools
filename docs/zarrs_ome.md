@@ -1,6 +1,6 @@
 # zarrs_ome
 
-Convert a Zarr V3 array to [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) (0.5-dev).
+Convert a Zarr array to an [OME-Zarr](https://ngff.openmicroscopy.org/0.5/index.html) multiscales hierarchy.
 
 > [!WARNING]
 > `zarrs_ome` is highly experimental and has had limited production testing.
@@ -36,7 +36,7 @@ cargo install --features=ome zarrs_tools
 <summary>zarrs_ome --help</summary>
 
 ```text
-Convert a Zarr V3 array to OME-Zarr (0.5-dev)
+Convert a Zarr array to an OME-Zarr multiscales hierarchy
 
 Usage: zarrs_ome [OPTIONS] <INPUT> <OUTPUT> [DOWNSAMPLE_FACTOR]...
 
@@ -48,39 +48,60 @@ Arguments:
           The output group path
 
   [DOWNSAMPLE_FACTOR]...
-          The downsample factor.
+          The downsample factor per axis, comma separated.
           
           Defaults to 2 on each axis.
 
 Options:
+      --ome-zarr-version <OME_ZARR_VERSION>
+          [default: 0.5]
+
+          Possible values:
+          - 0.5: https://ngff.openmicroscopy.org/0.5/
+
       --max-levels <MAX_LEVELS>
           Maximum number of downsample levels
           
           [default: 10]
 
       --physical-size <PHYSICAL_SIZE>
-          Physical size (per axis)
+          Physical size per axis, comma separated
 
       --physical-units <PHYSICAL_UNITS>
-          Physical units (per axis)
+          Physical units per axis, comma separated.
+          
+          Set to "channel" for a channel axis.
 
       --name <NAME>
           OME Zarr dataset name
 
-      --no-gaussian
-          Disable gaussian smoothing of continuous data
-
       --discrete
-          Do majority downsampling and do not apply gaussian smoothing
+          Set to true for discrete data.
+          
+          Performs majority downsampling instead of creating a Gaussian image pyramid or mean downsampling.
+
+      --gaussian-sigma <GAUSSIAN_SIGMA>
+          The Gaussian "sigma" to apply when creating a Gaussian image pyramid per axis, comma separated.
+          
+          This is typically set to 0.5 times the downsample factor for each axis. If omitted, then mean downsampling is applied.
+          
+          Ignored for discrete data.
+
+      --gaussian-kernel-half-size <GAUSSIAN_KERNEL_HALF_SIZE>
+          The Gaussian kernel half size per axis, comma separated.
+          
+          If omitted, defaults to ceil(3 * sigma).
+          
+          Ignored for discrete data or if --gaussian-sigma is not set.
 
       --exists <EXISTS>
           Behaviour if the output exists
           
-          [default: overwrite]
+          [default: erase]
 
           Possible values:
-          - overwrite: Overwrite existing files. Useful if the output includes additional non-zarr files to be preserved
           - erase:     Erase the output
+          - overwrite: Overwrite existing files. Useful if the output includes additional non-zarr files to be preserved. May fail if changing the encoding
           - exit:      Exit if the output already exists
 
       --group-attributes <GROUP_ATTRIBUTES>
@@ -105,7 +126,7 @@ Options:
           The fill value must be compatible with the data type.
           
           Examples:
-            int/uint: 0
+            int/uint: 0 100 -100
             float: 0.0 "NaN" "Infinity" "-Infinity"
             r*: "[0, 255]"
 
@@ -126,27 +147,36 @@ Options:
       --array-to-array-codecs <ARRAY_TO_ARRAY_CODECS>
           Array to array codecs.
           
-          JSON holding array to array codec metadata.
+          JSON holding an array of array to array codec metadata.
           
           Examples:
+            '[ { "name": "transpose", "configuration": { "order": [0, 2, 1] } } ]'
             '[ { "name": "bitround", "configuration": { "keepbits": 9 } } ]'
 
       --array-to-bytes-codec <ARRAY_TO_BYTES_CODEC>
           Array to bytes codec.
           
-          JSON holding array to array codec metadata.
+          JSON holding array to bytes codec metadata.
           
           Examples:
+            '{ "name": "bytes", "configuration": { "endian": "little" } }'
+            '{ "name": "pcodec", "configuration": { "level": 12 } }'
             '{ "name": "zfp", "configuration": { "mode": "fixedprecision", "precision": 19 } }'
 
       --bytes-to-bytes-codecs <BYTES_TO_BYTES_CODECS>
           Bytes to bytes codecs.
           
-          JSON holding bytes to bytes codec configurations.
+          JSON holding an array bytes to bytes codec configurations.
           
           Examples:
             '[ { "name": "blosc", "configuration": { "cname": "blosclz", "clevel": 9, "shuffle": "bitshuffle", "typesize": 2, "blocksize": 0 } } ]'
-            '[ { "name": "gzip", "configuration": { "level": 3 } } ]'
+            '[ { "name": "bz2", "configuration": { "level": 9 } } ]'
+            '[ { "name": "crc32c" } ]'
+            '[ { "name": "gzip", "configuration": { "level": 9 } } ]'
+            '[ { "name": "zstd", "configuration": { "level": 22, "checksum": false } } ]'
+
+      --dimension-names <DIMENSION_NAMES>
+          Dimension names (optional). Comma separated.
 
       --attributes <ATTRIBUTES>
           Attributes (optional).
