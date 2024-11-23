@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2024-11-23
+
 ### Added
  - Add `zarrs_validate` to check that arrays are equivalent
  - Add `--write-shape` argument to `zarrs_reencode`
@@ -16,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  - [#12](https://github.com/LDeakin/zarrs_tools/pull/12) Bump netcdf to 0.10.2 by [@magnusuMET]
  - **Breaking**: Bump MSRV to 1.80
- - Bump `sysinfo` to 0.31
+ - Bump `sysinfo` to 0.32
  - Bump `zarrs` to 0.18.0
  - `ncvar2zarr`:
    - Switch to output concurrency
@@ -200,7 +202,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Initial public release
 
-[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.5.5...HEAD
+[unreleased]: https://github.com/LDeakin/zarrs_tools/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.6.0
 [0.6.0-beta.1]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.6.0-beta.1
 [0.5.5]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.5
 [0.5.4]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.5.4
