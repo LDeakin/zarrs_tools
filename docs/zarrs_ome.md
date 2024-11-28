@@ -1,11 +1,10 @@
 # zarrs_ome
 
-Convert a Zarr array to an [OME-Zarr](https://ngff.openmicroscopy.org/0.5/index.html) multiscales hierarchy.
+Convert a Zarr array to an [OME-Zarr](https://ngff.openmicroscopy.org/0.5/index.html) 0.5 multiscales hierarchy.
 
-> [!WARNING]
-> `zarrs_ome` is highly experimental and has had limited production testing.
->
-> Conformance with the OME-Zarr 0.5-dev specification is not guaranteed and input validation is currently limited.
+> [!WARNING]>
+> Conformance with the OME-Zarr 0.5 specification is not guaranteed, and input validation is limited.
+> For example, it is possible to create multiscale arrays with nonconformant axis ordering.
 
 `zarrs_ome` creates a multi-resolution Zarr V3 array through various methods:
  - Gaussian image pyramid

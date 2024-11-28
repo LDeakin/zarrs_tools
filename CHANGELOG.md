@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix OME-Zarr version support in docs
+
 ## [0.6.0] - 2024-11-23
 
 ### Added
