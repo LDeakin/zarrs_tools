@@ -2,7 +2,7 @@
 
 Convert a Zarr array to an [OME-Zarr](https://ngff.openmicroscopy.org/0.5/index.html) 0.5 multiscales hierarchy.
 
-> [!WARNING]>
+> [!WARNING]
 > Conformance with the OME-Zarr 0.5 specification is not guaranteed, and input validation is limited.
 > For example, it is possible to create multiscale arrays with nonconformant axis ordering.
 
