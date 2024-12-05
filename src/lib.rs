@@ -341,6 +341,7 @@ pub struct ZarrReencodingArgs {
     pub bytes_to_bytes_codecs: Option<String>,
 
     /// Dimension names (optional). Comma separated.
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(long, verbatim_doc_comment, value_delimiter = ',')]
     pub dimension_names: Option<Vec<String>>,
 

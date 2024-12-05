@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix OME-Zarr version support in docs
+- skip serialising ZarrReencodingArgs dimension names if empty
 
 ## [0.6.0] - 2024-11-23
 
