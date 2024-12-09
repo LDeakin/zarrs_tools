@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Bump `ome_zarr_metadata` to 0.2.3
+
 ### Fixed
 - Fix OME-Zarr version support in docs
-- skip serialising ZarrReencodingArgs dimension names if empty
+- Skip serialising ZarrReencodingArgs dimension names if empty
+- `zarrs_ome`: fix OME-Zarr metadata not being nested under the "ome" attribute
 
 ## [0.6.0] - 2024-11-23
 
