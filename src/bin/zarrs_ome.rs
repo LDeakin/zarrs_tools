@@ -744,7 +744,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     match cli.ome_zarr_version {
         OMEZarrVersion::V0_5 => {
-            let multiscales = [ome_zarr_metadata::v0_5::MultiscaleImage {
+            let multiscales = vec![ome_zarr_metadata::v0_5::MultiscaleImage {
                 name: cli.name,
                 axes,
                 datasets,
@@ -752,10 +752,13 @@ fn run() -> Result<(), Box<dyn Error>> {
                 r#type: Some(downsample_type),
                 metadata: Some(multiscales_metadata),
             }];
-            group.attributes_mut().insert(
-                "multiscales".to_string(),
-                serde_json::to_value(multiscales).unwrap(),
-            );
+            let ome = ome_zarr_metadata::v0_5::OmeFields {
+                multiscales: Some(multiscales),
+                ..Default::default()
+            };
+            group
+                .attributes_mut()
+                .insert("ome".to_string(), serde_json::to_value(ome).unwrap());
         }
     }
 
