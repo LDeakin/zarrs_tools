@@ -1,6 +1,6 @@
 [package]
 name = "zarrs_tools"
-version = "0.6.2"
+version = "0.7.0"
 authors = ["Lachlan Deakin <ljdgit@gmail.com>"]
 edition = "2021"
 rust-version = "1.80"
@@ -21,14 +21,12 @@ benchmark = []
 binary2zarr = []
 filter = []
 info = []
-ncvar2zarr = ["dep:netcdf"]
 ome = ["dep:ome_zarr_metadata"]
 validate = []
 
 [dependencies]
 anyhow = "1.0.86"
 approx = "0.5.1"
-async-scoped = { version = "0.9.0", features = ["use-tokio"] }
 bytemuck = "1.16.0"
 clap = { version = "4.4.6", features = ["derive"] }
 const_format = "0.2.33"
@@ -38,7 +36,6 @@ half = { version = "2.4.0", features = ["num-traits"] }
 indicatif = { version = "0.17.7", features = ["rayon"] }
 itertools = "0.13.0"
 ndarray = { version = "0.16.0", features = ["approx", "rayon"] }
-netcdf = { version = "0.10.2", optional = true, features = ["static"] }
 num-traits = "0.2.18"
 # object_store = { version = "0.11.0", optional = true, features = ["http"] } # , "aws"
 ome_zarr_metadata = { version = "0.2.3", optional = true }
@@ -79,10 +76,6 @@ required-features = ["filter"]
 [[bin]]
 name = "zarrs_info"
 required-features = ["info"]
-
-[[bin]]
-name = "zarrs_ncvar2zarr"
-required-features = ["ncvar2zarr"]
 
 [[bin]]
 name = "zarrs_ome"
