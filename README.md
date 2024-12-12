@@ -18,7 +18,6 @@ Some tools additionally support input of a [V3 compatible subset](https://docs.r
 - [`zarrs_info`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_info.md) (feature `info`): return metadata related info or the range/histogram of an array.
 - [`zarrs_validate`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_validate.md) (feature `validate`): validate that two arrays are equivalent.
 - [`zarrs_binary2zarr`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
-- [`zarrs_ncvar2zarr`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ncvar2zarr.md) (feature `ncvar2zarr`): convert a netCDF variable to an array.
 
 See [docs/](https://github.com/LDeakin/zarrs_tools/blob/main/docs/) for tool documentation.
 
