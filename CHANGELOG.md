@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Compile x86_64 linux release artifacts for manylinux_2_28
+
 ## [0.6.1] - 2024-12-10
 
 ### Changed
