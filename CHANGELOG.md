@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add additional platforms to release artifacts
+  - `aarch64-unknown-linux-gnu`, `aarch64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-pc-windows-msvc`
+  - Prebuilt binaries can now be installed on more platforms with `cargo binstall zarrs_tools`
+
 ### Changed
 - Reduce MSRV to 1.79 from 1.80
+
+### Removed
+- Remove `zarrs_ncvar2zarr` [#26]
+  - See [#26] for reasoning
 
 ## [0.6.2] - 2024-12-13
 
@@ -243,3 +252,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.0]: https://github.com/LDeakin/zarrs_tools/releases/tag/v0.1.0
 
 [@magnusuMET]: https://github.com/magnusuMET
+
+[#26]: https://github.com/LDeakin/zarrs_tools/pull/26
