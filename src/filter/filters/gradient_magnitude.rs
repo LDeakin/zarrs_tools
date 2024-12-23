@@ -308,7 +308,7 @@ mod tests {
         let store: FilesystemStore = FilesystemStore::new(path.path())?;
         let mut array_output = array.builder().build(store.into(), "/")?;
         let progress_callback = |_stats: ProgressStats| {};
-        GradientMagnitude::new(None).apply(
+        GradientMagnitude::new(&GradientMagnitudeArguments::default(), None).apply(
             &array,
             &mut array_output,
             &ProgressCallback::new(&progress_callback),
