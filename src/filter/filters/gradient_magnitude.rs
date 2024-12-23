@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use ndarray::ArrayD;
 use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -21,8 +21,20 @@ use crate::filter::{
     FilterArguments, FilterCommonArguments,
 };
 
+#[derive(Debug, Clone, Copy, ValueEnum, Serialize, Deserialize, Default)]
+pub enum GradientMagnitudeOperator {
+    #[default]
+    Sobel,
+    CentralDifference,
+}
+
 #[derive(Debug, Clone, Parser, Serialize, Deserialize, Default)]
-pub struct GradientMagnitudeArguments {}
+pub struct GradientMagnitudeArguments {
+    /// Gradient magnitude operator (kernel).
+    #[arg(long)]
+    #[clap(value_enum, default_value_t=GradientMagnitudeOperator::Sobel)]
+    pub operator: GradientMagnitudeOperator,
+}
 
 impl FilterArguments for GradientMagnitudeArguments {
     fn name(&self) -> String {
@@ -33,17 +45,24 @@ impl FilterArguments for GradientMagnitudeArguments {
         &self,
         common_args: &FilterCommonArguments,
     ) -> Result<Box<dyn FilterTraits>, FilterError> {
-        Ok(Box::new(GradientMagnitude::new(*common_args.chunk_limit())))
+        Ok(Box::new(GradientMagnitude::new(
+            self,
+            *common_args.chunk_limit(),
+        )))
     }
 }
 
 pub struct GradientMagnitude {
+    operator: GradientMagnitudeOperator,
     chunk_limit: Option<usize>,
 }
 
 impl GradientMagnitude {
-    pub fn new(chunk_limit: Option<usize>) -> Self {
-        Self { chunk_limit }
+    pub fn new(arguments: &GradientMagnitudeArguments, chunk_limit: Option<usize>) -> Self {
+        Self {
+            operator: arguments.operator,
+            chunk_limit,
+        }
     }
 
     pub fn apply_chunk<TIn, TOut>(
@@ -88,26 +107,39 @@ impl GradientMagnitude {
     }
 
     pub fn apply_ndarray(&self, input: &ndarray::ArrayD<f32>) -> ndarray::ArrayD<f32> {
-        let mut staging_in = ArrayD::<f32>::zeros(input.shape());
         let mut staging_out = ArrayD::<f32>::zeros(input.shape());
         let mut gradient_magnitude = ArrayD::<f32>::zeros(input.shape());
 
-        for axis in 0..input.ndim() {
-            staging_in.assign(input);
-            for i in 0..input.ndim() {
-                if i == axis {
-                    apply_1d_difference_operator(i, &staging_in, &mut staging_out);
-                } else {
-                    apply_1d_triangle_filter(i, &staging_in, &mut staging_out);
-                }
-                if i != input.ndim() - 1 {
-                    std::mem::swap(&mut staging_in, &mut staging_out);
+        match self.operator {
+            GradientMagnitudeOperator::Sobel => {
+                let mut staging_in = ArrayD::<f32>::zeros(input.shape());
+                for axis in 0..input.ndim() {
+                    staging_in.assign(input);
+                    for i in 0..input.ndim() {
+                        if i == axis {
+                            apply_1d_difference_operator(i, &staging_in, &mut staging_out);
+                        } else {
+                            apply_1d_triangle_filter(i, &staging_in, &mut staging_out);
+                        }
+                        if i != input.ndim() - 1 {
+                            std::mem::swap(&mut staging_in, &mut staging_out);
+                        }
+                    }
+
+                    ndarray::Zip::from(&mut gradient_magnitude)
+                        .and(&staging_out)
+                        .par_for_each(|g, &s| *g += s * s);
                 }
             }
+            GradientMagnitudeOperator::CentralDifference => {
+                for axis in 0..input.ndim() {
+                    apply_1d_difference_operator(axis, input, &mut staging_out);
 
-            ndarray::Zip::from(&mut gradient_magnitude)
-                .and(&staging_out)
-                .par_for_each(|g, &s| *g += s * s);
+                    ndarray::Zip::from(&mut gradient_magnitude)
+                        .and(&staging_out)
+                        .par_for_each(|g, &s| *g += s * s);
+                }
+            }
         }
         gradient_magnitude.map_inplace(|x| *x = x.sqrt());
 
@@ -276,7 +308,7 @@ mod tests {
         let store: FilesystemStore = FilesystemStore::new(path.path())?;
         let mut array_output = array.builder().build(store.into(), "/")?;
         let progress_callback = |_stats: ProgressStats| {};
-        GradientMagnitude::new(None).apply(
+        GradientMagnitude::new(&GradientMagnitudeArguments::default(), None).apply(
             &array,
             &mut array_output,
             &ProgressCallback::new(&progress_callback),
