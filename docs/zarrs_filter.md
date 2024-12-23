@@ -12,7 +12,7 @@ The filters currently supported are:
  - **clamp**:               Clamp values between a minimum and maximum.
  - **equal**:               Return a binary image where the input is equal to some value.
  - **downsample**:          Downsample given a stride.
- - **gradient-magnitude**:  Compute the gradient magnitude (sobel).
+ - **gradient-magnitude**:  Compute the gradient magnitude.
  - **gaussian**:            Apply a Gaussian kernel.
  - **summed area table**:   Compute the summed area table.
  - **guided filter**:       Apply a guided filter (edge-preserving noise filter).
@@ -48,7 +48,7 @@ Commands:
   clamp               Clamp values between a minimum and maximum
   equal               Return a binary image where the input is equal to some value
   downsample          Downsample an image given a stride
-  gradient-magnitude  Compute the gradient magnitude (sobel)
+  gradient-magnitude  Compute the gradient magnitude
   gaussian            Apply a Gaussian kernel
   summed-area-table   Compute a summed area table (integral image)
   guided-filter       Apply a guided filter (edge-preserving noise filter)

@@ -77,7 +77,7 @@ pub enum FilterCommand {
     Equal(FilterCombinedArgs<filters::equal::EqualArguments>),
     /// Downsample an image given a stride.
     Downsample(FilterCombinedArgs<filters::downsample::DownsampleArguments>),
-    /// Compute the gradient magnitude (sobel).
+    /// Compute the gradient magnitude.
     GradientMagnitude(FilterCombinedArgs<filters::gradient_magnitude::GradientMagnitudeArguments>),
     /// Apply a Gaussian kernel.
     Gaussian(FilterCombinedArgs<filters::gaussian::GaussianArguments>),
