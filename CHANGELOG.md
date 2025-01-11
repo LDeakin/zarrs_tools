@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `itertools` to 0.14
 - Bump `zarrs_opendal` to 0.5
 - Bump `opendal` to 0.51
+- Bump `sysinfo` to 0.33
 
 ### Removed
 - Remove `zarrs_ncvar2zarr` [#26]

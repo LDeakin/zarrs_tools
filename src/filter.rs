@@ -40,7 +40,7 @@ use sysinfo::{MemoryRefreshKind, RefreshKind, System};
 /// Calculates the chunk limit based on the amount of available memory.
 pub fn calculate_chunk_limit(memory_per_chunk: usize) -> Result<usize, FilterError> {
     let system = System::new_with_specifics(
-        RefreshKind::new().with_memory(MemoryRefreshKind::new().with_ram()),
+        RefreshKind::nothing().with_memory(MemoryRefreshKind::nothing().with_ram()),
     );
     let available_memory = usize::try_from(system.available_memory()).unwrap();
     let available_memory_target = available_memory * 8 / 10; // 80%
