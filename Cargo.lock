@@ -2675,7 +2675,7 @@ dependencies = [
  "futures",
  "half",
  "indicatif",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "ndarray",
  "num-traits",
  "ome_zarr_metadata",

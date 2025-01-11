@@ -15,8 +15,8 @@ impl ArraySubsetOverlap {
             .zip(overlap)
             .map(|(f, o)| f.saturating_sub(*o))
             .collect::<Vec<_>>();
-        let subset_overlap_end = itertools::izip!(&subset_src.end_exc(), shape_src, overlap)
-            .map(|(e, &s, o)| std::cmp::min(*e + o, s))
+        let subset_overlap_end = itertools::izip!(subset_src.end_exc(), shape_src, overlap)
+            .map(|(e, &s, o)| std::cmp::min(e + o, s))
             .collect();
         let offset_dst = subset_src
             .start()
