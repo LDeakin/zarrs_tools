@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Reduce MSRV to 1.79 from 1.80
+- Bump `zarrs` to 0.19
 
 ### Removed
 - Remove `zarrs_ncvar2zarr` [#26]

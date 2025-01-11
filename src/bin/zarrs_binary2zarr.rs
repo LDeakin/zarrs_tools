@@ -7,9 +7,9 @@ use zarrs_tools::{get_array_builder, ZarrEncodingArgs};
 
 use zarrs::{
     array::{
-        codec::{array_to_bytes::bytes::reverse_endianness, ArrayCodecTraits, CodecOptionsBuilder},
+        codec::{ArrayCodecTraits, CodecOptionsBuilder},
         concurrency::RecommendedConcurrency,
-        Array, DimensionName, Endianness,
+        Array, DataType, DimensionName, Endianness,
     },
     array_subset::ArraySubset,
     config::global_config,
@@ -17,6 +17,35 @@ use zarrs::{
     metadata::v3::array::data_type::DataTypeMetadataV3,
     storage::ListableStorageTraits,
 };
+
+fn reverse_endianness(v: &mut [u8], data_type: &DataType) -> anyhow::Result<()> {
+    match data_type {
+        DataType::Bool | DataType::Int8 | DataType::UInt8 | DataType::RawBits(_) => {}
+        DataType::Int16 | DataType::UInt16 | DataType::Float16 | DataType::BFloat16 => {
+            let swap = |chunk: &mut [u8]| {
+                let bytes = u16::from_ne_bytes(unsafe { chunk.try_into().unwrap_unchecked() });
+                chunk.copy_from_slice(bytes.swap_bytes().to_ne_bytes().as_slice());
+            };
+            v.chunks_exact_mut(2).for_each(swap);
+        }
+        DataType::Int32 | DataType::UInt32 | DataType::Float32 | DataType::Complex64 => {
+            let swap = |chunk: &mut [u8]| {
+                let bytes = u32::from_ne_bytes(unsafe { chunk.try_into().unwrap_unchecked() });
+                chunk.copy_from_slice(bytes.swap_bytes().to_ne_bytes().as_slice());
+            };
+            v.chunks_exact_mut(4).for_each(swap);
+        }
+        DataType::Int64 | DataType::UInt64 | DataType::Float64 | DataType::Complex128 => {
+            let swap = |chunk: &mut [u8]| {
+                let bytes = u64::from_ne_bytes(unsafe { chunk.try_into().unwrap_unchecked() });
+                chunk.copy_from_slice(bytes.swap_bytes().to_ne_bytes().as_slice());
+            };
+            v.chunks_exact_mut(8).for_each(swap);
+        }
+        _ => anyhow::bail!("unsupported data type {data_type} for reverse_endianness"),
+    };
+    Ok(())
+}
 
 /// Convert an N-dimensional binary array from standard input to a Zarr V3 array.
 #[derive(Parser)]
@@ -83,7 +112,7 @@ fn stdin_to_array(
     array: &Array<FilesystemStore>,
     endianness: Option<Endianness>,
     concurrent_chunks: Option<usize>,
-) -> usize {
+) -> anyhow::Result<usize> {
     let data_type_size = array
         .data_type()
         .fixed_size()
@@ -160,19 +189,20 @@ fn stdin_to_array(
 
         if let Some(endianness) = endianness {
             if !endianness.is_native() {
-                reverse_endianness(&mut subset_bytes, array.data_type());
+                reverse_endianness(&mut subset_bytes, array.data_type())?;
             }
         }
 
         array
             .store_array_subset_opt(&array_subset, subset_bytes, &codec_options)
             .unwrap();
+        Ok::<_, anyhow::Error>(())
     };
-    iter_concurrent_limit!(concurrent_chunks, 0..n_blocks, for_each, op);
-    bytes_read.load(std::sync::atomic::Ordering::Relaxed)
+    iter_concurrent_limit!(concurrent_chunks, 0..n_blocks, try_for_each, op)?;
+    Ok(bytes_read.load(std::sync::atomic::Ordering::Relaxed))
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     // Parse and validate arguments
     let cli = Cli::parse();
 
@@ -196,7 +226,7 @@ fn main() {
 
     // Read stdin to the array and write chunks/shards
     let start = std::time::Instant::now();
-    let bytes_read: usize = stdin_to_array(&array, cli.endianness, cli.concurrent_chunks);
+    let bytes_read: usize = stdin_to_array(&array, cli.endianness, cli.concurrent_chunks)?;
     let duration_s = start.elapsed().as_secs_f32();
 
     // Output stats
@@ -209,4 +239,5 @@ fn main() {
         bytes_read = DecimalBytes(bytes_read as u64),
         size_out = DecimalBytes(size_out),
     );
+    Ok(())
 }
