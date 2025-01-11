@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--operator` argument accepts `sobel` (default, existing behaviour) and `central-difference`
 
 ### Changed
-- Reduce MSRV to 1.79 from 1.80
+- Bump MSRV to 1.82
 - Bump `zarrs` to 0.19
 - Bump `itertools` to 0.14
 
