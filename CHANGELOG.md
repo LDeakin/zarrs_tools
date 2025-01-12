@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add additional platforms to release artifacts
-  - `aarch64-unknown-linux-gnu`, `aarch64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-pc-windows-msvc`
+  - `aarch64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-pc-windows-msvc`
   - Prebuilt binaries can now be installed on more platforms with `cargo binstall zarrs_tools`
 - `zarrs_filter`: support central difference operator in `gradient-magnitude` filter
   - `--operator` argument accepts `sobel` (default, existing behaviour) and `central-difference`
