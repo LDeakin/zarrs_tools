@@ -222,9 +222,9 @@ checksum = "325918d6fe32f23b19878fe4b34794ae41fc19ddbe53b10571a4874d44ffd39b"
 
 [[package]]
 name = "cc"
-version = "1.2.8"
+version = "1.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad0cf6e91fde44c773c6ee7ec6bba798504641a8bc2eb7e37a04ffbf4dfaa55a"
+checksum = "c8293772165d9345bdaaa39b45b2109591e63fe5e6fbc23c6ff930a048aa310b"
 dependencies = [
  "jobserver",
  "libc",
@@ -1784,9 +1784,9 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snappy_src"
-version = "0.2.3+snappy.1.2.1"
+version = "0.2.4+snappy.1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc78d0b5fea71fda96c2e67f99ff3cfb34757307dd088a9abed3a4ba0a7f7465"
+checksum = "73cacdec271c70981dbb6df068f9836c9737b643f62980115bc8d622353247b6"
 dependencies = [
  "cc",
  "link-cplusplus",
