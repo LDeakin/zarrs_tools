@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add additional platforms to release artifacts
+  - `aarch64-unknown-linux-gnu`
+
 ## [0.7.0] - 2025-01-12
 
 ### Added
