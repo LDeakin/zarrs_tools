@@ -31,7 +31,7 @@ See the [LDeakin/zarr_benchmarks](https://github.com/LDeakin/zarr_benchmarks) re
 ## Install
 
 ### Prebuilt Binaries
-```shell
+```bash
 # Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
 cargo binstall zarrs_tools
 ```

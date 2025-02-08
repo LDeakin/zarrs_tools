@@ -6,13 +6,13 @@ Create a Zarr V3 array from piped binary data.
 `zarrs_binary2zarr` is installed with the `binary2zarr` feature of `zarrs_tools`.
 
 ### Prebuilt Binaries
-```shell
+```bash
 # Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
 cargo binstall zarrs_tools
 ```
 
 ### From Source
-```shell
+```bash
 cargo install --features=binary2zarr zarrs_tools
 ```
 

@@ -6,13 +6,13 @@ Get information about a Zarr array or group.
 `zarrs_info` is installed with the `info` feature of `zarrs_tools`.
 
 ### Prebuilt Binaries
-```shell
+```bash
 # Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
 cargo binstall zarrs_tools
 ```
 
 ### From Source
-```shell
+```bash
 cargo install --features=info zarrs_tools
 ```
 
@@ -63,7 +63,7 @@ Options:
 ## Examples
 
 #### Data Type
-```shell
+```bash
 zarrs_info array.zarr data-type
 ```
 ```text
@@ -73,7 +73,7 @@ zarrs_info array.zarr data-type
 ```
 
 ### Array Shape
-```shell
+```bash
 zarrs_info array.zarr shape
 ```
 ```text
@@ -87,7 +87,7 @@ zarrs_info array.zarr shape
 ```
 
 ### Data Range
-```shell
+```bash
 zarrs_info array.zarr range
 ```
 ```text

@@ -19,13 +19,13 @@ The array can be reencoded when output to OME-Zarr.
 `zarrs_ome` is installed with the `ome` feature of `zarrs_tools`.
 
 ### Prebuilt Binaries
-```shell
+```bash
 # Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
 cargo binstall zarrs_tools
 ```
 
 ### From Source
-```shell
+```bash
 cargo install --features=ome zarrs_tools
 ```
 

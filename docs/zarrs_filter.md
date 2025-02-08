@@ -21,13 +21,13 @@ The filters currently supported are:
 `zarrs_filter` is installed with the `filter` feature of `zarrs_tools`.
 
 ### Prebuilt Binaries
-```shell
+```bash
 # Requires cargo-binstall https://github.com/cargo-bins/cargo-binstall
 cargo binstall zarrs_tools
 ```
 
 ### From Source
-```shell
+```bash
 cargo install --features=filter zarrs_tools
 ```
 
