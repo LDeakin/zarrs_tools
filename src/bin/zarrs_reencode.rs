@@ -6,16 +6,22 @@ use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use zarrs::filesystem::{FilesystemStore, FilesystemStoreOptions};
 use zarrs::storage::{
-    storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
-    AsyncReadableListableStorage, ListableStorageTraits, ReadableListableStorage, StorePrefix,
-    WritableStorageTraits,
+    ListableStorageTraits, ReadableListableStorage, StorePrefix, WritableStorageTraits,
 };
-use zarrs_opendal::AsyncOpendalStore;
 use zarrs_tools::{
     do_reencode, get_array_builder_reencode,
     progress::{ProgressCallback, ProgressStats},
     CacheSize, ZarrReencodingArgs,
 };
+
+#[cfg(feature = "async")]
+use zarrs::storage::{
+    storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},
+    AsyncReadableListableStorage,
+};
+
+#[cfg(feature = "async")]
+use zarrs_opendal::AsyncOpendalStore;
 
 /// Reencode a Zarr array.
 #[derive(Parser, Debug)]
@@ -113,8 +119,10 @@ fn progress_callback(stats: ProgressStats, bar: &ProgressBar) {
     }
 }
 
+#[cfg(feature = "async")]
 struct TokioBlockOn(tokio::runtime::Runtime);
 
+#[cfg(feature = "async")]
 impl AsyncToSyncBlockOn for TokioBlockOn {
     fn block_on<F: core::future::Future>(&self, future: F) -> F::Output {
         self.0.block_on(future)
@@ -123,11 +131,16 @@ impl AsyncToSyncBlockOn for TokioBlockOn {
 
 fn get_storage(path: &str) -> anyhow::Result<ReadableListableStorage> {
     if path.starts_with("http://") || path.starts_with("https://") {
-        let builder = opendal::services::Http::default().endpoint(path);
-        let operator = opendal::Operator::new(builder)?.finish();
-        let storage: AsyncReadableListableStorage = Arc::new(AsyncOpendalStore::new(operator));
-        let block_on = TokioBlockOn(tokio::runtime::Runtime::new()?);
-        Ok(Arc::new(AsyncToSyncStorageAdapter::new(storage, block_on)))
+        #[cfg(feature = "async")]
+        {
+            let builder = opendal::services::Http::default().endpoint(path);
+            let operator = opendal::Operator::new(builder)?.finish();
+            let storage: AsyncReadableListableStorage = Arc::new(AsyncOpendalStore::new(operator));
+            let block_on = TokioBlockOn(tokio::runtime::Runtime::new()?);
+            Ok(Arc::new(AsyncToSyncStorageAdapter::new(storage, block_on)))
+        }
+        #[cfg(not(feature = "async"))]
+        anyhow::bail!("zarrs_tools has not been compiled with the async feature for HTTP stores")
     // } else if path.starts_with("s3://") {
     //     let endpoint = "";
     //     let bucket = "";
