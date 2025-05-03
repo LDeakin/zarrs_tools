@@ -357,7 +357,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             let reencode = zarrs_tools::filter::filters::reencode::Reencode::new(cli.chunk_limit);
             let store_out = FilesystemStore::new(&cli.output)?;
             let mut array_out = reencode
-                .output_array_builder(&array_in, &cli.reencoding)
+                .output_array_builder(&array_in, &cli.reencoding)?
                 .build(store_out.into(), "/0")?;
             reencode.apply(&array_in, &mut array_out, &progress_callback)?;
             array_out.store_metadata()?;
@@ -434,7 +434,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         {
             let axis = units_to_axis(
                 dimension_name
-                    .as_str()
+                    .as_ref()
                     .map(|s| s.to_string())
                     .unwrap_or_else(|| i.to_string()),
                 unit,
@@ -530,13 +530,8 @@ fn run() -> Result<(), Box<dyn Error>> {
             array_input.chunk_array_representation(&vec![0; array_input.dimensionality()])?;
         let output_shape = downsample_filter.output_shape(&array_input).unwrap();
         let mut reencoding = ZarrReencodingArgs::default();
-        if array_input
-            .codecs()
-            .array_to_bytes_codec()
-            .create_metadata()
-            .unwrap()
-            .name()
-            == "sharding_indexed"
+        if array_input.codecs().array_to_bytes_codec().identifier()
+            == zarrs::registry::codec::SHARDING
         {
             reencoding.shard_shape = Some(
                 std::iter::zip(chunk_representation.shape(), &output_shape)
@@ -564,7 +559,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             );
         }
         // println!("{:?} {:?}", reencoding.chunk_shape, reencoding.shard_shape);
-        let output_builder = downsample_filter.output_array_builder(&array_input, &reencoding);
+        let output_builder = downsample_filter.output_array_builder(&array_input, &reencoding)?;
 
         // Output
         let output_path = cli.output.join(i.to_string());

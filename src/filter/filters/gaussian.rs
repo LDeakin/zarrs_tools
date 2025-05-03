@@ -5,7 +5,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
+    array::{Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     filesystem::FilesystemStore,
 };
@@ -14,6 +14,7 @@ use crate::{
     filter::{
         calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits,
         kernel::apply_1d_kernel, ArraySubsetOverlap, FilterArguments, FilterCommonArguments,
+        UnsupportedDataTypeError,
     },
     progress::{Progress, ProgressCallback},
 };

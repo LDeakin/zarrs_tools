@@ -16,7 +16,8 @@ use zarrs::{
     array::{
         codec::{
             array_to_bytes::sharding, ArrayCodecTraits, ArrayToBytesCodecTraits, BytesCodec, Codec,
-            CodecOptionsBuilder, Crc32cCodec, ShardingCodec,
+            CodecOptionsBuilder, Crc32cCodec, NamedArrayToArrayCodec, NamedArrayToBytesCodec,
+            NamedBytesToBytesCodec, ShardingCodec,
         },
         concurrency::RecommendedConcurrency,
         Array, ArrayBuilder, ArrayChunkCacheExt, ArrayError, ArrayShardedExt,
@@ -26,7 +27,7 @@ use zarrs::{
     },
     array_subset::ArraySubset,
     config::global_config,
-    metadata::v3::{array::data_type::DataTypeMetadataV3, MetadataV3},
+    metadata::v3::MetadataV3,
     storage::{ReadableStorageTraits, ReadableWritableStorageTraits},
 };
 
@@ -119,14 +120,13 @@ pub struct ZarrEncodingArgs {
     pub attributes: Option<String>,
 }
 
-fn parse_data_type(data_type: &str) -> std::io::Result<DataTypeMetadataV3> {
+fn parse_data_type(data_type: &str) -> std::io::Result<MetadataV3> {
     serde_json::from_value(serde_json::Value::String(data_type.to_string()))
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
+        .map_err(|err| std::io::Error::other(err.to_string()))
 }
 
 fn parse_fill_value(fill_value: &str) -> std::io::Result<FillValueMetadataV3> {
-    serde_json::from_str(fill_value)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
+    serde_json::from_str(fill_value).map_err(|err| std::io::Error::other(err.to_string()))
 }
 
 #[must_use]
@@ -169,10 +169,17 @@ pub fn get_array_builder(
                 serde_json::from_str(array_to_array_codecs.as_str()).unwrap();
             let mut codecs = Vec::with_capacity(metadatas.len());
             for metadata in metadatas {
-                codecs.push(match Codec::from_metadata(&metadata).unwrap() {
-                    Codec::ArrayToArray(codec) => codec,
-                    _ => panic!("Must be a bytes to bytes codec"),
-                });
+                codecs.push(
+                    match Codec::from_metadata(
+                        &metadata,
+                        zarrs::config::global_config().codec_aliases_v3(),
+                    )
+                    .unwrap()
+                    {
+                        Codec::ArrayToArray(codec) => codec,
+                        _ => panic!("Must be a bytes to bytes codec"),
+                    },
+                );
             }
             codecs
         },
@@ -186,7 +193,9 @@ pub fn get_array_builder(
         },
         |array_codec| {
             let metadata = MetadataV3::try_from(array_codec.as_str()).unwrap();
-            match Codec::from_metadata(&metadata).unwrap() {
+            match Codec::from_metadata(&metadata, zarrs::config::global_config().codec_aliases_v3())
+                .unwrap()
+            {
                 Codec::ArrayToBytes(codec) => codec,
                 _ => panic!("Must be a arrayc to array codec"),
             }
@@ -201,10 +210,17 @@ pub fn get_array_builder(
                 serde_json::from_str(bytes_to_bytes_codecs.as_str()).unwrap();
             let mut codecs = Vec::with_capacity(metadatas.len());
             for metadata in metadatas {
-                codecs.push(match Codec::from_metadata(&metadata).unwrap() {
-                    Codec::BytesToBytes(codec) => codec,
-                    _ => panic!("Must be a bytes to bytes codec"),
-                });
+                codecs.push(
+                    match Codec::from_metadata(
+                        &metadata,
+                        zarrs::config::global_config().codec_aliases_v3(),
+                    )
+                    .unwrap()
+                    {
+                        Codec::BytesToBytes(codec) => codec,
+                        _ => panic!("Must be a bytes to bytes codec"),
+                    },
+                );
             }
             codecs
         },
@@ -269,7 +285,7 @@ pub struct ZarrReencodingArgs {
     ///   - r* (raw bits, where * is a multiple of 8)
     #[serde(skip_serializing_if = "Option::is_none")]
     #[arg(short, long, verbatim_doc_comment, value_parser = parse_data_type)]
-    pub data_type: Option<DataTypeMetadataV3>,
+    pub data_type: Option<MetadataV3>,
 
     /// Fill value. See <https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#fill-value>
     ///
@@ -395,19 +411,16 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
     array: &Array<TStorage>,
     array_shape: Option<Vec<u64>>,
 ) -> zarrs::array::ArrayBuilder {
-    let array_to_bytes_metadata = array
-        .codecs()
-        .array_to_bytes_codec()
-        .create_metadata()
-        .unwrap();
+    let array_to_bytes_codec = array.codecs().array_to_bytes_codec();
+    let array_to_bytes_identifier = array_to_bytes_codec.identifier();
     let (
         chunk_shape,
         shard_shape,
         array_to_array_codecs,
         array_array_to_bytes_codec,
         bytes_to_bytes_codecs,
-    ) = if array_to_bytes_metadata.name() == "sharding_indexed" {
-        let sharding_configuration = array_to_bytes_metadata.configuration().unwrap();
+    ) = if array_to_bytes_identifier == zarrs::registry::codec::SHARDING {
+        let sharding_configuration = array_to_bytes_codec.configuration().unwrap();
         // println!("{sharding_configuration:#?}");
         let chunk_shape: Vec<u64> =
             serde_json::from_value(sharding_configuration["chunk_shape"].clone()).unwrap();
@@ -490,10 +503,19 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
                 serde_json::from_str(array_to_array_codecs.as_str()).unwrap();
             let mut codecs = Vec::with_capacity(metadatas.len());
             for metadata in metadatas {
-                codecs.push(match Codec::from_metadata(&metadata).unwrap() {
+                let codec = match Codec::from_metadata(
+                    &metadata,
+                    zarrs::config::global_config().codec_aliases_v3(),
+                )
+                .unwrap()
+                {
                     Codec::ArrayToArray(codec) => codec,
-                    _ => panic!("Must be a bytes to bytes codec"),
-                });
+                    _ => panic!("Must be an array to array codec"),
+                };
+                codecs.push(NamedArrayToArrayCodec::new(
+                    metadata.name().to_string(),
+                    codec,
+                ));
             }
             codecs
         },
@@ -504,10 +526,16 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
         array_array_to_bytes_codec,
         |array_codec| {
             let metadata = MetadataV3::try_from(array_codec.as_str()).unwrap();
-            match Codec::from_metadata(&metadata).unwrap() {
+            let codec = match Codec::from_metadata(
+                &metadata,
+                zarrs::config::global_config().codec_aliases_v3(),
+            )
+            .unwrap()
+            {
                 Codec::ArrayToBytes(codec) => codec,
-                _ => panic!("Must be a arrayc to array codec"),
-            }
+                _ => panic!("Must be an array to bytes codec"),
+            };
+            NamedArrayToBytesCodec::new(metadata.name().to_string(), codec)
         },
     );
 
@@ -519,10 +547,19 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
                 serde_json::from_str(bytes_to_bytes_codecs.as_str()).unwrap();
             let mut codecs = Vec::with_capacity(metadatas.len());
             for metadata in metadatas {
-                codecs.push(match Codec::from_metadata(&metadata).unwrap() {
+                let codec = match Codec::from_metadata(
+                    &metadata,
+                    zarrs::config::global_config().codec_aliases_v3(),
+                )
+                .unwrap()
+                {
                     Codec::BytesToBytes(codec) => codec,
                     _ => panic!("Must be a bytes to bytes codec"),
-                });
+                };
+                codecs.push(NamedBytesToBytesCodec::new(
+                    metadata.name().to_string(),
+                    codec,
+                ));
             }
             codecs
         },
@@ -552,7 +589,11 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
     }
 
     if let Some(data_type) = &encoding_args.data_type {
-        let data_type = DataType::from_metadata(data_type).unwrap();
+        let data_type = DataType::from_metadata(
+            data_type,
+            zarrs::config::global_config().data_type_aliases_v3(),
+        )
+        .unwrap();
         array_builder.data_type(data_type.clone());
     }
 
@@ -570,7 +611,11 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
         array_builder.fill_value(fill_value);
     } else if let Some(data_type) = &encoding_args.data_type {
         // The data type was changed, but no fill value supplied, so just cast it
-        let data_type = DataType::from_metadata(data_type).unwrap();
+        let data_type = DataType::from_metadata(
+            data_type,
+            zarrs::config::global_config().data_type_aliases_v3(),
+        )
+        .unwrap();
         let fill_value = convert_fill_value(array.data_type(), array.fill_value(), &data_type);
         array_builder.fill_value(fill_value);
     }
@@ -582,7 +627,7 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
             Arc::<BytesCodec>::default(),
             vec![Arc::new(Crc32cCodec::new())],
         ));
-        let inner_codecs = Arc::new(CodecChain::new(
+        let inner_codecs = Arc::new(CodecChain::new_named(
             array_to_array_codecs,
             array_to_bytes_codec,
             bytes_to_bytes_codecs,
@@ -596,9 +641,9 @@ pub fn get_array_builder_reencode<TStorage: ?Sized>(
         )));
         array_builder.bytes_to_bytes_codecs(vec![]);
     } else {
-        array_builder.array_to_array_codecs(array_to_array_codecs);
-        array_builder.array_to_bytes_codec(array_to_bytes_codec);
-        array_builder.bytes_to_bytes_codecs(bytes_to_bytes_codecs);
+        array_builder.array_to_array_codecs_named(array_to_array_codecs);
+        array_builder.array_to_bytes_codec_named(array_to_bytes_codec);
+        array_builder.bytes_to_bytes_codecs_named(bytes_to_bytes_codecs);
     }
 
     array_builder
@@ -612,6 +657,7 @@ pub enum CacheSize {
     ChunksPerThread(u64),
 }
 
+#[allow(clippy::large_enum_variant)]
 pub enum Cache {
     SizeDefault(ChunkCacheDecodedLruSizeLimit),
     SizeThreadLocal(ChunkCacheDecodedLruSizeLimitThreadLocal),

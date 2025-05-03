@@ -3,7 +3,7 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
+    array::{Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     filesystem::FilesystemStore,
 };
@@ -11,7 +11,7 @@ use zarrs::{
 use crate::{
     filter::{
         calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits,
-        FilterArguments, FilterCommonArguments,
+        FilterArguments, FilterCommonArguments, UnsupportedDataTypeError,
     },
     progress::{Progress, ProgressCallback},
 };
@@ -109,7 +109,9 @@ impl FilterTraits for Reencode {
                 | DataType::Float32
                 | DataType::Float64
                 | DataType::BFloat16 => {}
-                _ => Err(UnsupportedDataTypeError::from(data_type.to_string()))?,
+                _ => Err(FilterError::UnsupportedDataType(
+                    UnsupportedDataTypeError::from(data_type.to_string()),
+                ))?,
             };
         }
         Ok(())

@@ -3,15 +3,13 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{
-        data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned, FillValue,
-        FillValueMetadataV3,
-    },
+    array::{Array, DataType, Element, ElementOwned, FillValue, FillValueMetadataV3},
     array_subset::ArraySubset,
     filesystem::FilesystemStore,
 };
 
 use crate::{
+    filter::UnsupportedDataTypeError,
     parse_fill_value,
     progress::{Progress, ProgressCallback},
 };

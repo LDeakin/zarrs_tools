@@ -96,7 +96,10 @@ fn get_array_input_output(
     reencode: &ZarrReencodingArgs,
 ) -> Result<(Array<FilesystemStore>, Array<FilesystemStore>), ArrayCreateError> {
     let array_input = load_array(input)?;
-    let array_output = create_array(output, &filter.output_array_builder(&array_input, reencode))?;
+    let array_output = create_array(
+        output,
+        &filter.output_array_builder(&array_input, reencode)?,
+    )?;
     Ok((array_input, array_output))
 }
 
@@ -190,10 +193,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     } else if let Some(filter) = cli.filter {
         vec![filter]
     } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "no filters supplied",
-        ))?
+        Err(std::io::Error::other("no filters supplied"))?
     };
 
     // Setup progress bars
@@ -361,8 +361,7 @@ fn get_input_output_paths(
         let output_path = get_path(filter.io_args().output(), tmp_dir, &mut id_to_path, &None)?;
         if input_paths.is_empty() {
             if let PathOrTempPath::TempPath(_) = input_path {
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                Err(std::io::Error::other(
                     "the first filter must have a valid input path",
                 ))?
             }

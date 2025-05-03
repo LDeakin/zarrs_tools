@@ -8,7 +8,7 @@ use zarrs::{
     array::{Array, ArrayMetadataOptions, DimensionName, FillValueMetadataV3},
     filesystem::FilesystemStore,
     group::{Group, GroupMetadataOptions},
-    metadata::v3::array::data_type::DataTypeMetadataV3,
+    metadata::v3::MetadataV3,
     node::{Node, NodeMetadata},
 };
 
@@ -136,7 +136,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             InfoCommand::DataType => {
                 #[derive(Serialize)]
                 struct DataType {
-                    data_type: DataTypeMetadataV3,
+                    data_type: MetadataV3,
                 }
                 println!(
                     "{}",
@@ -153,7 +153,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 println!(
                     "{}",
                     serde_json::to_string_pretty(&FillValue {
-                        fill_value: array.data_type().metadata_fill_value(array.fill_value())
+                        fill_value: array.data_type().metadata_fill_value(array.fill_value())?
                     })?
                 );
             }

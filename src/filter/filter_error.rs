@@ -1,11 +1,11 @@
 use thiserror::Error;
 use zarrs::{
-    array::{
-        data_type::{IncompatibleFillValueMetadataError, UnsupportedDataTypeError},
-        ArrayCreateError, ArrayError,
-    },
+    array::{data_type::DataTypeFillValueMetadataError, ArrayCreateError, ArrayError},
     storage::StorageError,
 };
+
+/// A data type is not supported by a filter.
+pub use super::UnsupportedDataTypeError;
 
 #[derive(Debug, Error)]
 pub enum FilterError {
@@ -22,7 +22,7 @@ pub enum FilterError {
     #[error("Unsupported data type {_0}")]
     UnsupportedDataType(#[from] UnsupportedDataTypeError),
     #[error(transparent)]
-    IncompatibleFillValue(#[from] IncompatibleFillValueMetadataError),
+    IncompatibleFillValue(#[from] DataTypeFillValueMetadataError),
     #[error(transparent)]
     IOError(#[from] std::io::Error),
     #[error("{_0}")]

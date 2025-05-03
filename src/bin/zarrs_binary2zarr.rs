@@ -9,12 +9,12 @@ use zarrs::{
     array::{
         codec::{ArrayCodecTraits, CodecOptionsBuilder},
         concurrency::RecommendedConcurrency,
-        Array, DataType, DimensionName, Endianness,
+        Array, DataType, Endianness,
     },
     array_subset::ArraySubset,
     config::global_config,
     filesystem::FilesystemStore,
-    metadata::v3::array::data_type::DataTypeMetadataV3,
+    metadata::v3::MetadataV3,
     storage::ListableStorageTraits,
 };
 
@@ -73,7 +73,7 @@ struct Cli {
     ///   complex64 complex128
     ///   r8 r16 r24 r32 r64 (r* where * is a multiple of 8)
     #[arg(short, long, verbatim_doc_comment, value_parser = parse_data_type)]
-    data_type: DataTypeMetadataV3,
+    data_type: MetadataV3,
 
     /// Array shape. A comma separated list of the sizes of each array dimension.
     #[arg(short, long, required = true, value_delimiter = ',')]
@@ -90,9 +90,9 @@ struct Cli {
     // file: Vec<PathBuf>,
 }
 
-fn parse_data_type(data_type: &str) -> std::io::Result<DataTypeMetadataV3> {
+fn parse_data_type(data_type: &str) -> std::io::Result<MetadataV3> {
     serde_json::from_value(serde_json::Value::String(data_type.to_string()))
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
+        .map_err(|err| std::io::Error::other(err.to_string()))
 }
 
 fn parse_endianness(endianness: &str) -> std::io::Result<Endianness> {
@@ -101,10 +101,7 @@ fn parse_endianness(endianness: &str) -> std::io::Result<Endianness> {
     } else if endianness == "big" {
         Ok(Endianness::Big)
     } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Endianness must be little or big",
-        ))
+        Err(std::io::Error::other("Endianness must be little or big"))
     }
 }
 
@@ -177,7 +174,7 @@ fn stdin_to_array(
         startn.resize(dimensionality, 0);
         let mut endn = vec![end];
         endn.extend(array_shape.iter().skip(1));
-        let array_subset = unsafe { ArraySubset::new_with_start_end_exc_unchecked(startn, endn) };
+        let array_subset = ArraySubset::new_with_start_end_exc(startn, endn).unwrap();
 
         let bytes_len =
             usize::try_from(array_subset.num_elements() * data_type_size as u64).unwrap();
@@ -207,7 +204,11 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     // Get data type
-    let data_type = zarrs::array::DataType::from_metadata(&cli.data_type).unwrap();
+    let data_type = zarrs::array::DataType::from_metadata(
+        &cli.data_type,
+        zarrs::config::global_config().data_type_aliases_v3(),
+    )
+    .unwrap();
 
     // Create storage
     let path_out = cli.out.as_path();
@@ -216,7 +217,7 @@ fn main() -> anyhow::Result<()> {
     // Create array
     let dimension_names = cli
         .dimension_names
-        .map(|f| f.iter().map(DimensionName::new).collect());
+        .map(|dimension_names| dimension_names.into_iter().map(Some).collect());
     let array_builder =
         get_array_builder(&cli.encoding, &cli.array_shape, data_type, dimension_names);
     let array = array_builder.build(store.clone(), "/").unwrap();

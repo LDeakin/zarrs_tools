@@ -9,26 +9,24 @@ pub struct ArraySubsetOverlap {
 
 impl ArraySubsetOverlap {
     pub fn new(shape_src: &[u64], subset_src: &ArraySubset, overlap: &[u64]) -> Self {
-        let subset_overlap_start = subset_src
-            .start()
-            .iter()
-            .zip(overlap)
+        let subset_overlap_start = itertools::izip!(subset_src.start(), overlap)
             .map(|(f, o)| f.saturating_sub(*o))
             .collect::<Vec<_>>();
         let subset_overlap_end = itertools::izip!(subset_src.end_exc(), shape_src, overlap)
             .map(|(e, &s, o)| std::cmp::min(e + o, s))
             .collect();
-        let offset_dst = subset_src
-            .start()
-            .iter()
-            .zip(subset_overlap_start.iter())
-            .map(|(start, overlap_start)| start - overlap_start)
-            .collect::<Vec<u64>>();
+        let start_shape = itertools::izip!(
+            subset_src.start(),
+            subset_src.shape(),
+            subset_overlap_start.iter()
+        )
+        .map(|(start, shape, overlap_start)| {
+            let start = start - overlap_start;
+            start..start + shape
+        });
+        let subset_dst_in_src = ArraySubset::from(start_shape);
         let subset_src_overlap =
             ArraySubset::new_with_start_end_exc(subset_overlap_start, subset_overlap_end).unwrap();
-        let subset_dst_in_src = unsafe {
-            ArraySubset::new_with_start_shape_unchecked(offset_dst, subset_src.shape().to_vec())
-        };
 
         ArraySubsetOverlap {
             subset_src_overlap,

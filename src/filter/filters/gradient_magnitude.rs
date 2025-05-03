@@ -4,13 +4,13 @@ use num_traits::AsPrimitive;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
+    array::{Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     filesystem::FilesystemStore,
 };
 
 use crate::{
-    filter::{calculate_chunk_limit, ArraySubsetOverlap},
+    filter::{calculate_chunk_limit, ArraySubsetOverlap, UnsupportedDataTypeError},
     progress::{Progress, ProgressCallback},
 };
 

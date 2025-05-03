@@ -5,12 +5,15 @@ use rayon::iter::{
 };
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
+    array::{Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     filesystem::FilesystemStore,
 };
 
-use crate::filter::filters::summed_area_table::{summed_area_table, summed_area_table_mean};
+use crate::filter::{
+    filters::summed_area_table::{summed_area_table, summed_area_table_mean},
+    UnsupportedDataTypeError,
+};
 use crate::{
     filter::{
         calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits,

@@ -1,5 +1,8 @@
 use zarrs::{
-    array::{Array, ArrayBuilder, ArrayShape, ChunkRepresentation, DataType, FillValue},
+    array::{
+        data_type::DataTypeFillValueError, Array, ArrayBuilder, ArrayShape, ChunkRepresentation,
+        DataType, FillValue,
+    },
     filesystem::FilesystemStore,
 };
 
@@ -45,12 +48,16 @@ pub trait FilterTraits {
         &self,
         array_input: &Array<FilesystemStore>,
         reencoding_args: &ZarrReencodingArgs,
-    ) -> ArrayBuilder {
+    ) -> Result<ArrayBuilder, DataTypeFillValueError> {
         let mut reencoding_args = reencoding_args.clone();
 
         if let Some(data_type) = &reencoding_args.data_type {
             // Use explicitly set data type
-            let data_type = DataType::from_metadata(data_type).unwrap();
+            let data_type = DataType::from_metadata(
+                data_type,
+                zarrs::config::global_config().data_type_aliases_v3(),
+            )
+            .unwrap();
             if reencoding_args.fill_value.is_none() {
                 // Convert fill value to new data type if no explicit fill value set
                 reencoding_args.fill_value =
@@ -58,20 +65,20 @@ pub trait FilterTraits {
                         array_input.data_type(),
                         array_input.fill_value(),
                         &data_type,
-                    )));
+                    ))?);
             }
             reencoding_args.data_type = Some(data_type.metadata());
         } else if let Some((data_type, fill_value)) = self.output_data_type(array_input) {
             // Use auto data type/fill value from filter, if defined
             reencoding_args.data_type = Some(data_type.metadata());
-            reencoding_args.fill_value = Some(data_type.metadata_fill_value(&fill_value));
+            reencoding_args.fill_value = Some(data_type.metadata_fill_value(&fill_value)?);
         }
 
-        get_array_builder_reencode(
+        Ok(get_array_builder_reencode(
             &reencoding_args,
             array_input,
             self.output_shape(array_input),
-        )
+        ))
     }
 
     fn apply(
@@ -117,7 +124,7 @@ impl<T: FilterTraits + ?Sized> FilterTraits for Box<T> {
         &self,
         array_input: &Array<FilesystemStore>,
         reencoding_args: &ZarrReencodingArgs,
-    ) -> ArrayBuilder {
+    ) -> Result<ArrayBuilder, DataTypeFillValueError> {
         (**self).output_array_builder(array_input, reencoding_args)
     }
 

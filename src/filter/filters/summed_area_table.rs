@@ -6,7 +6,7 @@ use num_traits::{AsPrimitive, Zero};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use zarrs::{
-    array::{data_type::UnsupportedDataTypeError, Array, DataType, Element, ElementOwned},
+    array::{Array, DataType, Element, ElementOwned},
     array_subset::ArraySubset,
     filesystem::FilesystemStore,
 };
@@ -14,7 +14,7 @@ use zarrs::{
 use crate::{
     filter::{
         calculate_chunk_limit, filter_error::FilterError, filter_traits::FilterTraits,
-        FilterArguments, FilterCommonArguments,
+        FilterArguments, FilterCommonArguments, UnsupportedDataTypeError,
     },
     progress::{Progress, ProgressCallback},
 };
