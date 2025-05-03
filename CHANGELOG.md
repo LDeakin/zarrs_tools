@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Bump `opendal` to 0.53 and `zarrs_opendal` to 0.7
+- Bump `sysinfo` to 0.35
+
 ## [0.7.1] - 2025-02-24
 
 ### Added
@@ -212,7 +216,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - `--ignore_checksums` argument to `zarrs_reencode` and `zarrs_benchmark_read_{sync,async}`
-   - See the [relevant zarrs docs](https://docs.rs/zarrs/latest/zarrs/#correctness-issues-with-past-versions) on fixing errant arrays encoded with old `zarrs`/`zarrs_tools` versions 
+   - See the [relevant zarrs docs](https://docs.rs/zarrs/latest/zarrs/#correctness-issues-with-past-versions) on fixing errant arrays encoded with old `zarrs`/`zarrs_tools` versions
 
 ### Changed
  - Bump `zarrs` to 0.11.6
