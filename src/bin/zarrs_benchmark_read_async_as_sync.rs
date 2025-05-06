@@ -6,7 +6,10 @@ use std::{
 use clap::Parser;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use zarrs::{
-    array::{codec::CodecOptionsBuilder, ArrayShardedExt, ArrayShardedReadableExt, ArrayShardedReadableExtCache, ChunkRepresentation},
+    array::{
+        codec::CodecOptionsBuilder, ArrayShardedExt, ArrayShardedReadableExt,
+        ArrayShardedReadableExtCache, ChunkRepresentation,
+    },
     array_subset::ArraySubset,
     storage::{
         storage_adapter::async_to_sync::{AsyncToSyncBlockOn, AsyncToSyncStorageAdapter},

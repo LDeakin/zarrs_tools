@@ -7,15 +7,10 @@ use clap::Parser;
 use futures::{FutureExt, StreamExt};
 use zarrs::{
     array::{
-        codec::{ArrayCodecTraits, CodecOptionsBuilder},
-        AsyncArrayShardedReadableExtCache,
-        ChunkRepresentation,
-        concurrency::RecommendedConcurrency,
-        ArrayShardedExt,
-        AsyncArrayShardedReadableExt,
+        codec::CodecOptionsBuilder, ArrayShardedExt, AsyncArrayShardedReadableExt,
+        AsyncArrayShardedReadableExtCache, ChunkRepresentation,
     },
     array_subset::ArraySubset,
-    config::global_config,
     storage::AsyncReadableStorage,
 };
 use zarrs_tools::calculate_chunk_and_codec_concurrency;
@@ -83,8 +78,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let array = Arc::new(zarrs::array::Array::async_open(storage.clone(), "/").await?);
     // println!("{:#?}", array.metadata());
 
-    let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
-
     let concurrent_target = std::thread::available_parallelism().unwrap().get();
     let start = SystemTime::now();
     let mut bytes_decoded = 0;
@@ -127,7 +120,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let shard_index_cache = shard_index_cache.clone();
                 async move {
                     array
-                        .async_retrieve_inner_chunk_opt(&shard_index_cache, &inner_chunk_indices, &codec_options)
+                        .async_retrieve_inner_chunk_opt(
+                            &shard_index_cache,
+                            &inner_chunk_indices,
+                            &codec_options,
+                        )
                         .map(|bytes| bytes.map(|bytes| bytes.size()))
                         .await
                 }
@@ -139,6 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     } else {
         // Calculate chunk/codec concurrency
+        let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
         let chunk_representation =
             array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
         let (chunk_concurrent_limit, codec_concurrent_target) =
@@ -146,8 +144,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 concurrent_target,
                 args.concurrent_chunks,
                 array.codecs(),
-                inner_chunks.num_elements_usize(),
-                &inner_chunk_representation,
+                chunks.num_elements_usize(),
+                &chunk_representation,
             );
         let codec_options = CodecOptionsBuilder::new()
             .concurrent_target(codec_concurrent_target)
