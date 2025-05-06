@@ -8,12 +8,17 @@ use futures::{FutureExt, StreamExt};
 use zarrs::{
     array::{
         codec::{ArrayCodecTraits, CodecOptionsBuilder},
+        AsyncArrayShardedReadableExtCache,
+        ChunkRepresentation,
         concurrency::RecommendedConcurrency,
+        ArrayShardedExt,
+        AsyncArrayShardedReadableExt,
     },
     array_subset::ArraySubset,
     config::global_config,
     storage::AsyncReadableStorage,
 };
+use zarrs_tools::calculate_chunk_and_codec_concurrency;
 
 /// Benchmark zarrs read throughput with the async API.
 #[derive(Parser, Debug)]
@@ -31,6 +36,12 @@ struct Args {
     /// If set, `concurrent_chunks` is ignored.
     #[arg(long, default_value_t = false)]
     read_all: bool,
+
+    /// Read inner-chunk-by-inner-chunk for sharded arrays.
+    ///
+    /// Ignored for unsharded arrays.
+    #[arg(long, default_value_t = false)]
+    inner_chunks: bool,
 
     /// Ignore checksums.
     ///
@@ -74,41 +85,75 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
 
+    let concurrent_target = std::thread::available_parallelism().unwrap().get();
     let start = SystemTime::now();
     let mut bytes_decoded = 0;
-    let chunk_indices = chunks.indices().into_iter().collect::<Vec<_>>();
     if args.read_all {
         let array_data = array
             .async_retrieve_array_subset(&array.subset_all())
             .await?;
         bytes_decoded += array_data.size();
+    } else if let (Some(inner_chunk_shape), true) =
+        (array.effective_inner_chunk_shape(), args.inner_chunks)
+    {
+        let inner_chunks = ArraySubset::new_with_shape(array.inner_chunk_grid_shape().unwrap());
+        let inner_chunk_indices = inner_chunks.indices();
+        let inner_chunk_representation = ChunkRepresentation::new(
+            inner_chunk_shape.to_vec(),
+            array.data_type().clone(),
+            array.fill_value().clone(),
+        )?;
+        let (chunk_concurrent_limit, codec_concurrent_target) =
+            calculate_chunk_and_codec_concurrency(
+                concurrent_target,
+                args.concurrent_chunks,
+                array.codecs(),
+                inner_chunks.num_elements_usize(),
+                &inner_chunk_representation,
+            );
+        let codec_options = Arc::new(
+            CodecOptionsBuilder::new()
+                .concurrent_target(codec_concurrent_target)
+                .build(),
+        );
+        let shard_index_cache = Arc::new(AsyncArrayShardedReadableExtCache::new(&array));
+
+        let futures = inner_chunk_indices
+            .into_iter()
+            .map(|inner_chunk_indices| {
+                // println!("Chunk/shard: {:?}", inner_chunk_indices);
+                let array = array.clone();
+                let codec_options = codec_options.clone();
+                let shard_index_cache = shard_index_cache.clone();
+                async move {
+                    array
+                        .async_retrieve_inner_chunk_opt(&shard_index_cache, &inner_chunk_indices, &codec_options)
+                        .map(|bytes| bytes.map(|bytes| bytes.size()))
+                        .await
+                }
+            })
+            .map(tokio::task::spawn);
+        let mut stream = futures::stream::iter(futures).buffer_unordered(chunk_concurrent_limit);
+        while let Some(item) = stream.next().await {
+            bytes_decoded += item.unwrap()?;
+        }
     } else {
         // Calculate chunk/codec concurrency
         let chunk_representation =
             array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
-        let concurrent_target = std::thread::available_parallelism().unwrap().get();
         let (chunk_concurrent_limit, codec_concurrent_target) =
-            zarrs::array::concurrency::calc_concurrency_outer_inner(
+            calculate_chunk_and_codec_concurrency(
                 concurrent_target,
-                &if let Some(concurrent_chunks) = args.concurrent_chunks {
-                    let concurrent_chunks =
-                        std::cmp::min(chunks.num_elements_usize(), concurrent_chunks);
-                    RecommendedConcurrency::new(concurrent_chunks..concurrent_chunks)
-                } else {
-                    let concurrent_chunks = std::cmp::min(
-                        chunks.num_elements_usize(),
-                        global_config().chunk_concurrent_minimum(),
-                    );
-                    RecommendedConcurrency::new_minimum(concurrent_chunks)
-                },
-                &array
-                    .codecs()
-                    .recommended_concurrency(&chunk_representation)?,
+                args.concurrent_chunks,
+                array.codecs(),
+                inner_chunks.num_elements_usize(),
+                &inner_chunk_representation,
             );
         let codec_options = CodecOptionsBuilder::new()
             .concurrent_target(codec_concurrent_target)
             .build();
 
+        let chunk_indices = chunks.indices();
         let futures = chunk_indices
             .into_iter()
             .map(|chunk_indices| {

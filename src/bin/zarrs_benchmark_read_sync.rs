@@ -6,7 +6,12 @@ use std::{
 use clap::Parser;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use zarrs::{
-    array::codec::CodecOptionsBuilder, array_subset::ArraySubset, filesystem::FilesystemStore,
+    array::{
+        codec::CodecOptionsBuilder, ArrayShardedExt, ArrayShardedReadableExt,
+        ArrayShardedReadableExtCache, ChunkRepresentation,
+    },
+    array_subset::ArraySubset,
+    filesystem::FilesystemStore,
     storage::ReadableStorage,
 };
 use zarrs_tools::calculate_chunk_and_codec_concurrency;
@@ -27,6 +32,12 @@ struct Args {
     /// If set, `concurrent_chunks` is ignored.
     #[arg(long, default_value_t = false)]
     read_all: bool,
+
+    /// Read inner-chunk-by-inner-chunk for sharded arrays.
+    ///
+    /// Ignored for unsharded arrays.
+    #[arg(long, default_value_t = false)]
+    inner_chunks: bool,
 
     /// Ignore checksums.
     ///
@@ -52,16 +63,56 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     zarrs::config::global_config_mut().set_validate_checksums(!args.ignore_checksums);
 
-    let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
+    let concurrent_target = std::thread::available_parallelism().unwrap().get();
 
     let start = SystemTime::now();
     let bytes_decoded = Mutex::new(0);
     if args.read_all {
         *bytes_decoded.lock().unwrap() += array.retrieve_array_subset(&array.subset_all())?.size();
+    } else if let (Some(inner_chunk_shape), true) =
+        (array.effective_inner_chunk_shape(), args.inner_chunks)
+    {
+        let inner_chunks = ArraySubset::new_with_shape(array.inner_chunk_grid_shape().unwrap());
+        let inner_chunk_indices = inner_chunks.indices();
+        let inner_chunk_representation = ChunkRepresentation::new(
+            inner_chunk_shape.to_vec(),
+            array.data_type().clone(),
+            array.fill_value().clone(),
+        )?;
+        let (chunks_concurrent_limit, codec_concurrent_target) =
+            calculate_chunk_and_codec_concurrency(
+                concurrent_target,
+                args.concurrent_chunks,
+                array.codecs(),
+                inner_chunks.num_elements_usize(),
+                &inner_chunk_representation,
+            );
+        let codec_options = CodecOptionsBuilder::new()
+            .concurrent_target(codec_concurrent_target)
+            .build();
+        let shard_index_cache = ArrayShardedReadableExtCache::new(&array);
+
+        rayon_iter_concurrent_limit::iter_concurrent_limit!(
+            chunks_concurrent_limit,
+            inner_chunk_indices,
+            for_each,
+            |inner_chunk_indices: Vec<u64>| {
+                // println!("Chunk/shard: {:?}", chunk_indices);
+                let bytes = array
+                    .retrieve_inner_chunk_opt(
+                        &shard_index_cache,
+                        &inner_chunk_indices,
+                        &codec_options,
+                    )
+                    .unwrap();
+                *bytes_decoded.lock().unwrap() += bytes.size();
+            }
+        );
     } else {
+        let chunks = ArraySubset::new_with_shape(array.chunk_grid_shape().unwrap());
+        let chunk_indices = chunks.indices();
         let chunk_representation =
             array.chunk_array_representation(&vec![0; array.chunk_grid().dimensionality()])?;
-        let concurrent_target = std::thread::available_parallelism().unwrap().get();
         let (chunks_concurrent_limit, codec_concurrent_target) =
             calculate_chunk_and_codec_concurrency(
                 concurrent_target,
@@ -75,15 +126,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build();
 
         // println!("chunks_concurrent_limit {chunks_concurrent_limit:?} codec_concurrent_target {codec_concurrent_target:?}");
-        let n_chunks = usize::try_from(chunks.shape().iter().product::<u64>()).unwrap();
         // NOTE: Could init memory per split with for_each_init and then reuse it with retrieve_chunk_into_array_view_opt.
         //       But that might be cheating against tensorstore.
         rayon_iter_concurrent_limit::iter_concurrent_limit!(
             chunks_concurrent_limit,
-            0..n_chunks,
+            chunk_indices,
             for_each,
-            |chunk_index: usize| {
-                let chunk_indices = zarrs::array::unravel_index(chunk_index as u64, chunks.shape());
+            |chunk_indices: Vec<u64>| {
                 // println!("Chunk/shard: {:?}", chunk_indices);
                 let bytes = array
                     .retrieve_chunk_opt(&chunk_indices, &codec_options)
