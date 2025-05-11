@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `sysinfo` to 0.35
 - Bump `zarrs` to 0.20.0-beta.1
 
+### Removed
+- Remove `aarch64-pc-windows-msvc` release artifact
+  - Broken with `cargo-dist` which has become unmaintained
+
 ## [0.7.1] - 2025-02-24
 
 ### Added
