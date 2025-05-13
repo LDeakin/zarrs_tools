@@ -6,7 +6,7 @@ edition = "2021"
 rust-version = "1.82"
 description = "Tools for creating and manipulating Zarr V3 data"
 documentation = "https://docs.rs/zarrs_tools"
-repository = "https://github.com/LDeakin/zarrs_tools"
+repository = "https://github.com/zarrs/zarrs_tools"
 license = "MIT OR Apache-2.0"
 keywords = ["zarr", "zarrs"]
 categories = ["command-line-utilities", "encoding"]
@@ -110,7 +110,7 @@ lto = "thin"
 # zarrs = { git = "https://github.com/LDeakin/zarrs.git" }
 # zarrs_storage = { git = "https://github.com/LDeakin/zarrs.git" }
 # zarrs_opendal = { git = "https://github.com/LDeakin/zarrs.git" }
-# ome_zarr_metadata = { git = "https://github.com/LDeakin/rust_ome_zarr_metadata.git" }
+# ome_zarr_metadata = { git = "https://github.com/zarrs/ome_zarr_metadata.git" }
 
 [lints.clippy]
 result_large_err = "allow"

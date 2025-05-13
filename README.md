@@ -2,24 +2,24 @@
 
 [![Latest Version](https://img.shields.io/crates/v/zarrs_tools.svg)](https://crates.io/crates/zarrs_tools)
 ![msrv](https://img.shields.io/crates/msrv/zarrs_tools)
-[![build](https://github.com/LDeakin/zarrs_tools/actions/workflows/ci.yml/badge.svg)](https://github.com/LDeakin/zarrs_tools/actions/workflows/ci.yml)
+[![build](https://github.com/zarrs/zarrs_tools/actions/workflows/ci.yml/badge.svg)](https://github.com/zarrs/zarrs_tools/actions/workflows/ci.yml)
 
 Various tools for creating and manipulating [Zarr v3](https://zarr.dev) data with the [zarrs](https://github.com/LDeakin/zarrs) rust crate.
 
-A changelog can be found [here](https://github.com/LDeakin/zarrs_tools/blob/main/CHANGELOG.md).
+A changelog can be found [here](https://github.com/zarrs/zarrs_tools/blob/main/CHANGELOG.md).
 
 ## Tools
 All tools support input and output of [Zarr V3](https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html) data.
 Some tools additionally support input of a [V3 compatible subset](https://docs.rs/zarrs/latest/zarrs/#implementation-status) of [Zarr V2](https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html).
 
-- [`zarrs_reencode`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
-- [`zarrs_filter`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
-- [`zarrs_ome`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to an [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) 0.5 multi-scale image.
-- [`zarrs_info`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_info.md) (feature `info`): return metadata related info or the range/histogram of an array.
-- [`zarrs_validate`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_validate.md) (feature `validate`): validate that two arrays are equivalent.
-- [`zarrs_binary2zarr`](https://github.com/LDeakin/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
+- [`zarrs_reencode`](https://github.com/zarrs/zarrs_tools/blob/main/docs/zarrs_reencode.md): reencode an array. Manipulate the chunk size, shard size, codecs, fill value, chunk key encoding separator, and attributes.
+- [`zarrs_filter`](https://github.com/zarrs/zarrs_tools/blob/main/docs/zarrs_filter.md) (feature `filter`): apply simple image filters (transformations) to an array.
+- [`zarrs_ome`](https://github.com/zarrs/zarrs_tools/blob/main/docs/zarrs_ome.md) (feature `ome`): convert an array to an [OME-Zarr](https://ngff.openmicroscopy.org/latest/index.html) 0.5 multi-scale image.
+- [`zarrs_info`](https://github.com/zarrs/zarrs_tools/blob/main/docs/zarrs_info.md) (feature `info`): return metadata related info or the range/histogram of an array.
+- [`zarrs_validate`](https://github.com/zarrs/zarrs_tools/blob/main/docs/zarrs_validate.md) (feature `validate`): validate that two arrays are equivalent.
+- [`zarrs_binary2zarr`](https://github.com/zarrs/zarrs_tools/blob/main/docs/zarrs_binary2zarr.md) (feature `binary2zarr`): create an array from piped binary data.
 
-See [docs/](https://github.com/LDeakin/zarrs_tools/blob/main/docs/) for tool documentation.
+See [docs/](https://github.com/zarrs/zarrs_tools/blob/main/docs/) for tool documentation.
 
 ## `zarrs` Benchmarking
 - `zarrs_reencode`: suitable for round trip benchmarking.
@@ -42,10 +42,10 @@ Prebuilt binaries are not available on all platforms.
 cargo install --all-features zarrs_tools
 ```
 
-### From [source](https://github.com/LDeakin/zarrs_tools)
+### From [source](https://github.com/zarrs/zarrs_tools)
 ```bash
 cargo install --all-features --path .
-# cargo install --all-features --git https://github.com/LDeakin/zarrs_tools
+# cargo install --all-features --git https://github.com/zarrs/zarrs_tools
 ```
 
 ### Enabling SIMD intrinsics
