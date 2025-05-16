@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Bump `zarrs` to 0.20.0-beta.2
+
 ## [0.7.2] - 2025-05-12
 
 ### Added
